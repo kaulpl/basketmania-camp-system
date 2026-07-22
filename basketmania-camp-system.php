@@ -22,6 +22,21 @@ require_once BCS_DIR . 'includes/class-bcs-updater.php';
 BCS_License::init();
 BCS_Updater::init();
 
+add_action('admin_menu', function () {
+    if (!current_user_can('manage_options') || BCS_License::is_valid()) {
+        return;
+    }
+    add_menu_page(
+        'Basketmania Camp – licencja',
+        'Basketmania Camp',
+        'manage_options',
+        'bcs-license',
+        ['BCS_License', 'render_page'],
+        'dashicons-lock',
+        58
+    );
+}, 1);
+
 add_action('plugins_loaded', function () {
     if (!BCS_License::is_valid()) {
         return;
