@@ -1,0 +1,95 @@
+.bcs-wrap{--orange:#f97316;--orange-dark:#c2410c;--orange-soft:#fff7ed;--ink:#172033;--muted:#64748b;max-width:1120px;margin:30px auto;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);box-sizing:border-box}.bcs-wrap *{box-sizing:border-box}.bcs-brand,.bcs-parent-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}.bcs-brand{justify-content:flex-start}.bcs-brand strong,.bcs-parent-logo strong{font-size:20px}.bcs-brand span,.bcs-parent-logo small{display:block;color:var(--muted)}.bcs-ball,.bcs-logo-ball{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fb923c,#ea580c);color:#fff;font-weight:900;font-size:22px;box-shadow:0 8px 20px rgba(234,88,12,.22)}.bcs-parent-logo{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink)}.bcs-parent-logo img{max-height:54px;max-width:220px}.bcs-id{display:inline-flex;padding:5px 9px;border-radius:999px;background:#f1f5f9;color:#64748b;font-size:12px;font-weight:800}.bcs-parent-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:28px;border-radius:18px;background:linear-gradient(135deg,#7c2d12,#f97316);color:#fff;box-shadow:0 14px 35px rgba(194,65,12,.22)}.bcs-parent-hero h1{margin:4px 0 5px;font-size:32px}.bcs-parent-hero p{margin:0;opacity:.9}.bcs-eyebrow{font-size:11px;letter-spacing:.13em;text-transform:uppercase;font-weight:800;opacity:.8}.bcs-parent-person{min-width:220px;padding:14px 18px;border:1px solid rgba(255,255,255,.25);border-radius:12px;background:rgba(255,255,255,.1)}.bcs-parent-person small,.bcs-parent-person strong{display:block}.bcs-parent-person strong{font-size:18px;margin-top:3px}.bcs-steps{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:18px 0}.bcs-step{display:flex;align-items:center;gap:8px;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;color:#64748b}.bcs-step span{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#e2e8f0;color:#fff;font-size:12px}.bcs-step.done{color:#166534;border-color:#bbf7d0;background:#f0fdf4}.bcs-step.done span{background:#22c55e}.bcs-step.current{color:#9a3412;border-color:#fdba74;background:#fff7ed}.bcs-step.current span{background:#f97316}.bcs-parent-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(270px,.75fr);gap:18px}.bcs-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.bcs-grid label,.bcs-card label{display:flex;flex-direction:column;gap:7px;font-weight:700}.bcs-grid input,.bcs-grid select,.bcs-grid textarea,.bcs-card input,.bcs-card textarea{padding:12px;border:1px solid #cbd5e1;border-radius:9px;font:inherit;width:100%}.bcs-span{grid-column:1/-1}.bcs-check{display:flex!important;flex-direction:row!important;align-items:flex-start;gap:10px;margin:18px 0;font-weight:400!important}.bcs-button{display:inline-block;border:0;border-radius:9px;padding:13px 18px;background:var(--orange);color:#fff!important;text-decoration:none;font-weight:800;cursor:pointer;box-shadow:0 6px 15px rgba(249,115,22,.18)}.bcs-button:hover{background:var(--orange-dark)}.bcs-secondary{background:#334155}.bcs-card,.bcs-form{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:22px;margin:16px 0;box-shadow:0 8px 26px rgba(15,23,42,.055)}.bcs-card h2,.bcs-form h2{margin-top:0}.bcs-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}.bcs-highlight{border-color:#fdba74;background:linear-gradient(180deg,#fff,#fff7ed)}.bcs-alert{padding:16px;background:#fff3cd;border-radius:10px}.bcs-success{padding:16px;background:#dcfce7;color:#166534;border-radius:10px}.bcs-badge{display:inline-flex;padding:5px 10px;border-radius:999px;background:#fff7ed;color:#9a3412;font-size:12px;font-weight:800}.bcs-payment-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}.bcs-payment-summary>div{padding:14px;background:#f8fafc;border-radius:10px}.bcs-payment-summary small,.bcs-payment-summary strong{display:block}.bcs-payment-summary strong{font-size:20px;margin-top:4px}.bcs-text-link{color:var(--orange-dark);font-weight:700}.bcs-form{padding:26px}#bcs-code-box{margin-top:18px}#bcs-message{margin-top:12px;font-weight:700}@media(max-width:900px){.bcs-steps{grid-template-columns:repeat(3,1fr)}.bcs-parent-grid{grid-template-columns:1fr}}@media(max-width:700px){.bcs-wrap{margin:12px}.bcs-grid{grid-template-columns:1fr}.bcs-span{grid-column:auto}.bcs-parent-hero{align-items:flex-start;flex-direction:column}.bcs-parent-person{min-width:0;width:100%}.bcs-steps{grid-template-columns:1fr 1fr}.bcs-step strong{font-size:12px}}
+
+
+/* 0.10.33 — podpis umowy kodem SMS */
+.bcs-agreement-ready{display:grid;gap:16px}.bcs-agreement-confirm{padding:14px;border:1px solid #fed7aa;border-radius:10px;background:#fff7ed}.bcs-agreement-confirm input{margin-top:2px}.bcs-button:disabled{opacity:.48;cursor:not-allowed}.bcs-modal[hidden]{display:none!important}.bcs-modal{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px}.bcs-modal-backdrop{position:absolute;inset:0;background:rgba(15,23,42,.66)}.bcs-modal-dialog{position:relative;width:min(460px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 24px 80px rgba(15,23,42,.3);z-index:1}.bcs-modal-dialog h3{margin:0 0 10px;font-size:24px}.bcs-modal-dialog label{display:grid;gap:8px;font-weight:700;margin:18px 0}.bcs-modal-dialog input{font-size:28px;letter-spacing:.32em;text-align:center;font-weight:800;padding:12px;border-radius:10px}.bcs-modal-close{position:absolute;right:12px;top:10px;border:0;background:transparent;font-size:30px;line-height:1;cursor:pointer;color:#64748b}.bcs-otp-timer{margin:0 0 18px;padding:10px 12px;border-radius:9px;background:#f8fafc;text-align:center}.bcs-modal-open{overflow:hidden}#bcs-message,#bcs-modal-message{margin-top:10px;font-weight:700;color:#9a3412}@media(max-width:600px){.bcs-modal{padding:12px}.bcs-modal-dialog{padding:24px 18px}.bcs-modal-dialog input{font-size:24px}}
+
+/* 0.10.35 — tryb testowy i podgląd umowy w popupie */
+.bcs-test-banner{margin:0 0 18px;padding:14px 16px;border:1px solid #fbbf24;border-radius:12px;background:#fffbeb;color:#92400e}
+.bcs-document-dialog{width:min(1000px,96vw);height:min(860px,92vh);display:flex;flex-direction:column;padding:22px}
+.bcs-document-dialog h3{padding-right:36px}
+.bcs-document-dialog iframe{width:100%;min-height:0;flex:1;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
+@media(max-width:700px){.bcs-document-modal{padding:8px}.bcs-document-dialog{width:100%;height:96vh;padding:18px 12px}.bcs-document-dialog h3{font-size:19px}}
+
+/* 0.11.8 — odświeżony Panel Rodzica */
+.bcs-parent-header{position:relative;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:12px 4px}.bcs-parent-logo{justify-self:center;grid-column:2}.bcs-parent-header>h2{grid-column:2;margin:72px 0 0;position:absolute;justify-self:center;font-size:26px;font-weight:850;letter-spacing:-.03em}.bcs-parent-access{justify-self:end}.bcs-status-card h3{margin:18px 0 6px;font-size:22px}.bcs-payment-state{padding:18px;border-radius:12px;text-align:center;font-size:20px;font-weight:900;letter-spacing:.02em;color:#fff;margin:14px 0}.bcs-payment-due{background:#dc2626}.bcs-payment-paid{background:#16a34a}.bcs-parent-actions{display:grid;gap:10px}.bcs-disabled{background:transparent!important;border:1px solid #cbd5e1!important;color:#94a3b8!important;box-shadow:none!important;cursor:not-allowed}.bcs-summary-check{display:inline-grid;place-items:center;width:22px;height:22px;margin-right:5px;border-radius:50%;background:#16a34a;color:#fff;font-size:13px;font-weight:900;vertical-align:middle}
+@media(max-width:700px){.bcs-parent-header{grid-template-columns:1fr;justify-items:center;gap:12px;text-align:center}.bcs-parent-logo,.bcs-parent-header>h2,.bcs-parent-access{grid-column:1;position:static;margin:0;justify-self:center}.bcs-parent-header>h2{font-size:24px}.bcs-parent-logo img{max-width:190px}.bcs-payment-state{font-size:17px}}
+
+.bcs-form-section{margin:0 0 20px;padding:18px;border:1px solid #e5e7eb;border-radius:14px;background:#fff}.bcs-form-section h3{margin:0 0 14px;font-size:18px}.bcs-form-section label small{display:block;margin-top:6px;color:#6b7280;font-size:12px}.bcs-form-section-muted{background:#f8fafc}.bcs-check-left{display:flex!important;justify-content:flex-start!important;align-items:flex-start!important;text-align:left!important;width:100%}.bcs-check-left input{flex:0 0 auto;margin:3px 9px 0 0!important}.bcs-check-left span{display:block}
+
+/* 0.16.1 — nowy Panel Rodzica i czytelny workflow */
+.bcs-parent-dashboard{--bcs-navy:#101828;--bcs-slate:#475467;--bcs-line:#e4e7ec;--bcs-surface:#f8fafc;--bcs-orange:#f36f21;--bcs-orange-dark:#d9540f;max-width:1180px;padding:0 12px 32px}
+.bcs-parent-header-modern{padding:14px 18px;margin:0 0 14px;border:1px solid var(--bcs-line);border-radius:18px;background:rgba(255,255,255,.96);box-shadow:0 8px 30px rgba(16,24,40,.06)}
+.bcs-parent-header-modern .bcs-parent-logo img{max-height:46px}.bcs-parent-title{text-align:center}.bcs-parent-title span,.bcs-section-kicker{display:block;color:var(--bcs-orange-dark);font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.bcs-parent-title h2{margin:2px 0 0;font-size:20px;color:var(--bcs-navy)}
+.bcs-secure-pill{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:999px;background:#ecfdf3;color:#027a48;font-size:12px;font-weight:800}.bcs-secure-pill:before{content:'✓';display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#12b76a;color:#fff;font-size:11px}
+.bcs-parent-hero-modern{position:relative;overflow:hidden;min-height:210px;padding:38px 40px;border-radius:26px;background:linear-gradient(120deg,#101828 0%,#293056 50%,#f36f21 135%);box-shadow:0 22px 48px rgba(16,24,40,.18)}.bcs-parent-hero-modern:before{content:'';position:absolute;right:-90px;top:-120px;width:330px;height:330px;border:1px solid rgba(255,255,255,.16);border-radius:50%}.bcs-parent-hero-modern:after{content:'';position:absolute;right:45px;bottom:-165px;width:280px;height:280px;border:52px solid rgba(255,255,255,.07);border-radius:50%}.bcs-parent-hero-copy,.bcs-parent-person{position:relative;z-index:1}.bcs-parent-hero-modern h1{max-width:700px;margin:8px 0 10px;font-size:clamp(29px,4vw,44px);line-height:1.08}.bcs-parent-hero-modern p{font-size:16px}.bcs-parent-person{display:flex;align-items:center;gap:13px;min-width:245px;padding:16px 18px;border:1px solid rgba(255,255,255,.22);border-radius:16px;background:rgba(255,255,255,.12);backdrop-filter:blur(8px)}.bcs-person-icon{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:#fff;color:#101828;font-size:23px}.bcs-parent-person div small,.bcs-parent-person div strong{display:block}.bcs-parent-person div strong{margin-top:3px;font-size:17px}
+.bcs-progress-card{margin:18px 0 22px;padding:24px;border:1px solid var(--bcs-line);border-radius:22px;background:#fff;box-shadow:0 12px 34px rgba(16,24,40,.07)}.bcs-progress-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:20px}.bcs-progress-head h2{margin:4px 0 0;color:var(--bcs-navy);font-size:22px}.bcs-progress-count{display:inline-flex;align-items:center;justify-content:center;min-width:66px;padding:9px 12px;border-radius:999px;background:#fff4ed;color:#c4320a;font-weight:900}
+.bcs-progress-card .bcs-steps{position:relative;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:10px;margin:0}.bcs-progress-card .bcs-step{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-height:116px;padding:15px 12px;border:1px solid var(--bcs-line);border-radius:16px;background:#f9fafb;color:#667085;transition:.2s ease}.bcs-progress-card .bcs-step-marker{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:#eaecf0;color:#667085;font-size:12px;font-weight:900}.bcs-progress-card .bcs-step-copy{display:block}.bcs-progress-card .bcs-step strong{display:block;color:#344054;font-size:13px;line-height:1.25}.bcs-progress-card .bcs-step small{display:block;margin-top:5px;color:#98a2b3;font-size:11px;line-height:1.35}.bcs-progress-card .bcs-step.done{border-color:#abefc6;background:#ecfdf3}.bcs-progress-card .bcs-step.done .bcs-step-marker{background:#12b76a;color:#fff}.bcs-progress-card .bcs-step.done strong{color:#027a48}.bcs-progress-card .bcs-step.current{border:2px solid #f79009;background:#fffaeb;box-shadow:0 10px 24px rgba(247,144,9,.14);transform:translateY(-3px)}.bcs-progress-card .bcs-step.current .bcs-step-marker{background:#f79009;color:#fff}.bcs-progress-card .bcs-step.current strong{color:#b54708}.bcs-progress-card .bcs-step.current:after{content:'TERAZ';position:absolute;top:12px;right:10px;color:#b54708;font-size:8px;font-weight:900;letter-spacing:.08em}
+.bcs-parent-dashboard .bcs-parent-grid{gap:22px}.bcs-parent-dashboard .bcs-card{border-color:var(--bcs-line);border-radius:20px;box-shadow:0 10px 30px rgba(16,24,40,.06)}.bcs-parent-dashboard .bcs-status-card{border-left:5px solid var(--bcs-orange);background:linear-gradient(135deg,#fff 0%,#fff9f5 100%)}.bcs-parent-dashboard .bcs-status-card h3{margin:18px 0 7px;font-size:24px;color:var(--bcs-navy)}.bcs-parent-dashboard .bcs-badge{background:#fff0e8;color:#c4320a}.bcs-parent-actions{display:grid;gap:9px}.bcs-parent-actions .bcs-button{width:100%;text-align:center}.bcs-parent-dashboard .bcs-button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border-radius:11px}.bcs-parent-dashboard .bcs-secondary{background:#344054}.bcs-disabled{background:#f2f4f7!important;color:#98a2b3!important;box-shadow:none!important;cursor:not-allowed}.bcs-section-kicker+ h2,.bcs-section-kicker+h2{margin-top:4px}.bcs-form-preview-grid>div{border-color:var(--bcs-line);border-radius:14px;background:#f9fafb;box-shadow:none}.bcs-form-preview-grid span{color:#667085;font-size:11px;letter-spacing:.04em;text-transform:uppercase}.bcs-form-preview-grid strong{color:#101828;font-size:15px}
+@media(max-width:1080px){.bcs-progress-card .bcs-steps{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:700px){.bcs-parent-dashboard{padding:0 4px 24px}.bcs-parent-header-modern{align-items:center;justify-content:space-between}.bcs-parent-title{display:none}.bcs-secure-pill{font-size:0;padding:8px}.bcs-secure-pill:before{margin:0}.bcs-parent-hero-modern{min-height:0;padding:28px 22px}.bcs-parent-hero-modern h1{font-size:30px}.bcs-progress-card{padding:18px 14px}.bcs-progress-card .bcs-steps{grid-template-columns:repeat(2,1fr)}.bcs-progress-card .bcs-step{min-height:105px}.bcs-progress-head h2{font-size:19px}.bcs-parent-person{width:100%;min-width:0}.bcs-progress-card .bcs-step.current{transform:none}}
+@media(max-width:420px){.bcs-progress-card .bcs-steps{grid-template-columns:1fr}.bcs-progress-card .bcs-step{min-height:0;flex-direction:row;align-items:center}.bcs-progress-card .bcs-step.current:after{top:8px}.bcs-parent-header-modern .bcs-parent-logo img{max-width:165px}}
+
+
+/* 0.16.2 — uproszczona, pięcioetapowa oś procesu */
+.bcs-progress-card .bcs-steps-five{grid-template-columns:repeat(5,minmax(0,1fr));position:relative;gap:14px}
+.bcs-progress-card .bcs-steps-five .bcs-step{overflow:visible}
+@media(min-width:701px){
+ .bcs-progress-card .bcs-steps-five:before{content:"";position:absolute;left:6%;right:6%;top:30px;height:2px;background:#e4e7ec;z-index:0}
+ .bcs-progress-card .bcs-steps-five .bcs-step{z-index:1;background:#f9fafb}
+ .bcs-progress-card .bcs-steps-five .bcs-step.done{background:#ecfdf3}
+ .bcs-progress-card .bcs-steps-five .bcs-step.current{background:#fffaeb}
+}
+@media(max-width:700px){
+ .bcs-progress-card .bcs-steps-five{display:flex;flex-direction:column;gap:0;margin-top:8px}
+ .bcs-progress-card .bcs-steps-five .bcs-step{position:relative;min-height:88px;padding:14px 14px 14px 58px;border:0;border-radius:0;border-bottom:1px solid #eaecf0;background:transparent;box-shadow:none;transform:none;display:block}
+ .bcs-progress-card .bcs-steps-five .bcs-step:last-child{border-bottom:0}
+ .bcs-progress-card .bcs-steps-five .bcs-step:before{content:"";position:absolute;left:28px;top:44px;bottom:-45px;width:2px;background:#e4e7ec}
+ .bcs-progress-card .bcs-steps-five .bcs-step:last-child:before{display:none}
+ .bcs-progress-card .bcs-steps-five .bcs-step-marker{position:absolute;left:12px;top:14px;width:34px;height:34px;border-radius:50%;z-index:2}
+ .bcs-progress-card .bcs-steps-five .bcs-step-copy strong{font-size:15px}
+ .bcs-progress-card .bcs-steps-five .bcs-step-copy small{font-size:12px;margin-top:4px}
+ .bcs-progress-card .bcs-steps-five .bcs-step.done:before{background:#12b76a}
+ .bcs-progress-card .bcs-steps-five .bcs-step.current{border:1px solid #f79009;border-radius:14px;margin:6px 0;background:#fffaeb;padding-top:16px;padding-bottom:16px}
+ .bcs-progress-card .bcs-steps-five .bcs-step.current .bcs-step-marker{top:15px}
+ .bcs-progress-card .bcs-steps-five .bcs-step.current:after{top:12px;right:12px}
+}
+
+/* 0.16.3 — korekta znaczników i opisów osi procesu */
+.bcs-progress-card .bcs-step > .bcs-step-copy{
+ display:block;
+ flex:1 1 auto;
+ min-width:0;
+ width:auto;
+ height:auto;
+ border-radius:0;
+ background:transparent;
+ color:inherit;
+ font-size:inherit;
+ overflow-wrap:anywhere;
+ word-break:normal;
+}
+.bcs-progress-card .bcs-step > .bcs-step-copy strong,
+.bcs-progress-card .bcs-step > .bcs-step-copy small{
+ width:100%;
+ max-width:100%;
+ white-space:normal;
+ overflow-wrap:anywhere;
+}
+.bcs-progress-card .bcs-steps-five .bcs-step{
+ min-width:0;
+ overflow:hidden;
+}
+.bcs-progress-card .bcs-steps-five .bcs-step-marker{
+ flex:0 0 auto;
+}
+@media(min-width:701px){
+ .bcs-progress-card .bcs-steps-five .bcs-step{padding:15px 12px;}
+ .bcs-progress-card .bcs-steps-five .bcs-step-copy{padding-right:0;}
+ .bcs-progress-card .bcs-steps-five .bcs-step.current .bcs-step-copy{padding-right:34px;}
+}
+@media(max-width:700px){
+ .bcs-progress-card .bcs-steps-five .bcs-step{overflow:visible;}
+ .bcs-progress-card .bcs-steps-five .bcs-step-copy{display:block;width:100%;}
+ .bcs-progress-card .bcs-steps-five .bcs-step.current .bcs-step-copy{padding-right:52px;}
+}

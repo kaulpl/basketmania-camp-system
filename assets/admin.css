@@ -1,0 +1,557 @@
+.bcs-admin{max-width:none;width:auto;margin-right:20px}.bcs-page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin:24px 0}.bcs-page-head h1{font-size:28px;line-height:1.2;margin:0 0 6px}.bcs-page-head p{margin:0;color:#64748b;font-size:14px}.bcs-actions,.bcs-card-actions,.bcs-form-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.bcs-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin:18px 0 24px}.bcs-kpi,.bcs-panel,.bcs-list-card,.bcs-camp-card,.bcs-empty{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 6px 22px rgba(15,23,42,.05)}.bcs-kpi{padding:18px;display:flex;align-items:center;gap:14px}.bcs-kpi>.dashicons{width:42px;height:42px;font-size:24px;display:flex;align-items:center;justify-content:center;border-radius:12px;background:#eff6ff;color:#2563eb}.bcs-kpi small,.bcs-stat-grid span,.bcs-money span{display:block;color:#64748b;margin-bottom:5px}.bcs-kpi strong{font-size:22px}.bcs-camp-grid,.bcs-list-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.bcs-camp-card,.bcs-list-card{padding:20px}.bcs-card-top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.bcs-card-top h2{margin:8px 0 4px;font-size:20px}.bcs-card-top p{margin:0;color:#64748b}.bcs-badge{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:600;background:#f1f5f9;color:#475569}.bcs-badge.status-open{background:#dcfce7;color:#166534}.bcs-badge.status-closed{background:#fee2e2;color:#991b1b}.bcs-badge.status-draft{background:#f1f5f9;color:#475569}.bcs-count{font-size:22px;color:#0f172a}.bcs-progress{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin:18px 0 7px}.bcs-progress span{display:block;height:100%;background:linear-gradient(90deg,#2563eb,#38bdf8)}.bcs-progress-meta{display:flex;justify-content:space-between;color:#64748b}.bcs-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.bcs-stat-grid>div,.bcs-money>div{padding:12px;background:#f8fafc;border-radius:10px}.bcs-money{display:grid;grid-template-columns:1fr 1fr;gap:10px}.bcs-muted{color:#64748b}.bcs-list-card dl{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}.bcs-list-card dl div{padding:10px;background:#f8fafc;border-radius:9px;min-width:0}.bcs-list-card dt{color:#64748b;font-size:12px}.bcs-list-card dd{margin:4px 0 0;font-weight:600;overflow-wrap:anywhere}.bcs-inline-delete{display:inline-flex;margin:0}.bcs-panel{padding:24px;margin-top:22px}.bcs-panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.bcs-panel h2,.bcs-panel h3{margin-top:0}.bcs-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.bcs-form-grid label{display:flex;flex-direction:column;gap:6px}.bcs-form-grid label>span{font-weight:600;color:#334155}.bcs-form-grid input:not([type=checkbox]),.bcs-form-grid select,.bcs-form-grid textarea{width:100%;max-width:none;min-height:40px;border-color:#cbd5e1;border-radius:8px}.bcs-form-grid textarea{min-height:90px}.bcs-span-2{grid-column:span 2}.bcs-checkbox{flex-direction:row!important;align-items:center;align-self:end;min-height:40px}.bcs-checkbox input{margin:0}.bcs-subpanel,.bcs-editor-block{margin-top:22px;padding:18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px}.bcs-form-actions{margin-top:22px}.button-hero{min-height:42px!important;padding:5px 20px!important}.bcs-two-cols{display:grid;grid-template-columns:1.3fr .9fr;gap:18px}.bcs-meta-list{margin-top:20px;padding-top:14px;border-top:1px solid #e2e8f0}.bcs-danger-zone{margin-top:24px;padding:20px;border:1px solid #fecaca;background:#fff7f7;border-radius:14px}.bcs-danger-zone h2{color:#991b1b;margin-top:0}.bcs-back{text-decoration:none;color:#2563eb;display:inline-block;margin-bottom:8px}.bcs-empty{padding:32px;text-align:center;color:#64748b}.bcs-table-wrap{background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:auto;box-shadow:0 6px 22px rgba(15,23,42,.05)}.bcs-table{border:0!important}.bcs-table th{background:#f8fafc}.bcs-table td,.bcs-table th{padding:14px 12px!important;vertical-align:middle}.bcs-row-actions{display:flex;gap:5px;flex-wrap:wrap}.bcs-toolbar{display:flex;gap:10px;align-items:center;margin:14px 0;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px}.bcs-filter{display:flex;gap:8px;align-items:center;margin-left:auto}@media(max-width:1100px){.bcs-kpis{grid-template-columns:repeat(2,1fr)}.bcs-camp-grid,.bcs-list-grid,.bcs-two-cols{grid-template-columns:1fr}.bcs-stat-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:782px){.bcs-page-head{flex-direction:column}.bcs-form-grid{grid-template-columns:1fr}.bcs-span-2{grid-column:span 1}.bcs-kpis{grid-template-columns:1fr}.bcs-list-card dl{grid-template-columns:1fr}.bcs-toolbar{align-items:stretch;flex-direction:column}.bcs-filter{margin-left:0}}
+
+/* 0.8.0 — IDs and template library */
+.bcs-id{display:inline-flex;align-items:center;font-size:11px;font-weight:800;letter-spacing:.055em;color:#64748b;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:999px;padding:4px 8px;line-height:1}
+.bcs-card-labels{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.bcs-template-library .bcs-page-head{margin-bottom:26px}
+.bcs-template-section{margin:0 0 32px}
+.bcs-section-heading{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px}
+.bcs-section-heading h2{margin:0;font-size:19px}
+.bcs-section-heading>span{display:inline-grid;place-items:center;min-width:28px;height:28px;border-radius:999px;background:#e8eefc;color:#274690;font-weight:800}
+.bcs-template-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px}
+.bcs-template-card{display:grid;grid-template-columns:48px 1fr auto;align-items:center;gap:14px;background:#fff;border:1px solid #e2e8f0;border-radius:15px;padding:18px;box-shadow:0 5px 18px rgba(15,23,42,.045);transition:.18s ease}
+.bcs-template-card:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(15,23,42,.08);border-color:#cbd5e1}
+.bcs-template-icon{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,#edf3ff,#e7ecfa);color:#274690}
+.bcs-template-icon .dashicons{font-size:24px;width:24px;height:24px}
+.bcs-template-content h3{font-size:16px;margin:7px 0 4px;color:#172033}
+.bcs-template-content p{margin:0;color:#64748b;font-size:13px;line-height:1.45}
+.bcs-template-editor .bcs-page-head .bcs-id{margin:10px 0 5px}
+.bcs-template-editor .bcs-panel{max-width:1120px}
+.bcs-template-help{margin-top:20px;padding:15px 17px;border:1px solid #dbe4f0;background:#f8fafc;border-radius:12px;line-height:2}
+.bcs-template-help code{margin:2px 3px}
+.bcs-large-message{font-size:17px;line-height:1.55;padding:16px!important}
+@media(max-width:782px){.bcs-template-card{grid-template-columns:44px 1fr}.bcs-template-card>.button{grid-column:1/-1}.bcs-template-grid{grid-template-columns:1fr}}
+
+/* 0.9.0 — orange CRM */
+.bcs-admin{--bcs-orange:#f97316;--bcs-orange-dark:#c2410c;--bcs-orange-soft:#fff7ed;--bcs-ink:#1f2937}
+.bcs-admin .button-primary{background:var(--bcs-orange)!important;border-color:var(--bcs-orange)!important}.bcs-admin .button-primary:hover{background:var(--bcs-orange-dark)!important;border-color:var(--bcs-orange-dark)!important}
+.bcs-admin .bcs-kpi>.dashicons{background:var(--bcs-orange-soft);color:var(--bcs-orange)}.bcs-admin .bcs-progress span{background:linear-gradient(90deg,#ea580c,#fb923c)}.bcs-admin .bcs-back{color:var(--bcs-orange-dark)}
+.bcs-crm-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(310px,.7fr);gap:20px}.bcs-crm-layout aside .bcs-panel{position:sticky;top:48px}.bcs-crm-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}.bcs-crm-buttons .button{text-align:center}.bcs-crm-action{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid #e2e8f0}.bcs-crm-action textarea,.bcs-crm aside input,.bcs-crm aside textarea{width:100%;border-radius:8px;border-color:#cbd5e1}.bcs-crm aside label{display:grid;gap:6px;margin-bottom:12px}.bcs-timeline{position:relative;margin:10px 0}.bcs-timeline:before{content:"";position:absolute;left:10px;top:7px;bottom:7px;width:2px;background:#fed7aa}.bcs-timeline-item{position:relative;display:grid;grid-template-columns:24px 1fr;gap:12px;padding:0 0 20px}.bcs-timeline-dot{width:12px;height:12px;margin-top:3px;border:3px solid #fff;border-radius:50%;background:#f97316;box-shadow:0 0 0 2px #fed7aa;z-index:1}.bcs-timeline-item.system .bcs-timeline-dot{background:#94a3b8;box-shadow:0 0 0 2px #e2e8f0}.bcs-timeline-item small{display:block;color:#64748b;margin-top:3px}.bcs-timeline-item p{margin:7px 0 0;background:#f8fafc;padding:10px;border-radius:9px}.bcs-quick-actions h2{padding-bottom:12px;border-bottom:1px solid #e2e8f0}@media(max-width:1100px){.bcs-crm-layout{grid-template-columns:1fr}.bcs-crm-layout aside .bcs-panel{position:static}}
+
+/* 0.9.1 — quick CRM actions */
+.bcs-inline-actions{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:145px}.bcs-list-action{margin:0}.bcs-list-action .button{width:100%;white-space:normal;line-height:1.2;min-height:32px}.bcs-crm-buttons .bcs-crm-action{grid-column:1/-1;border:0;padding:0}.bcs-crm-buttons .bcs-crm-action .button{width:100%}
+
+.bcs-crm-list-layout{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:20px;align-items:start}.bcs-status-legend{position:sticky;top:48px;margin:0}.bcs-status-legend h2{margin-top:0}.bcs-legend-list{display:grid;gap:11px}.bcs-legend-row{display:flex;align-items:center;gap:10px;font-weight:600;color:#374151}.bcs-legend-dot{width:12px;height:12px;border-radius:999px;box-shadow:0 0 0 4px rgba(249,115,22,.08)}.legend-new{background:#94a3b8}.legend-confirmed{background:#fb923c}.legend-draft{background:#f59e0b}.legend-agreement{background:#ea580c}.legend-accepted{background:#c2410c}.legend-payment{background:#f97316}.legend-stripe{background:#7c3aed}.legend-partial{background:#0ea5e9}.legend-paid{background:#16a34a}.legend-cancelled{background:#dc2626}.bcs-timeline-item,.bcs-timeline-item.system{background:#fff7ed!important;border-color:#fed7aa!important}.bcs-timeline-item .bcs-timeline-dot,.bcs-timeline-item.system .bcs-timeline-dot{background:#f97316!important;box-shadow:0 0 0 5px #ffedd5!important}@media(max-width:1180px){.bcs-crm-list-layout{grid-template-columns:1fr}.bcs-status-legend{position:static;order:-1}.bcs-legend-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* 0.10.1 — CRM accordions and agreement revisions */
+.bcs-accordion-panel{padding:0;overflow:hidden}.bcs-accordion-panel>details>summary,.bcs-document-stage>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:20px 24px}.bcs-accordion-panel>details>summary::-webkit-details-marker,.bcs-document-stage>summary::-webkit-details-marker{display:none}.bcs-accordion-panel>details>summary>span:first-child,.bcs-document-stage>summary>span:first-child{display:flex;align-items:center;gap:11px}.bcs-accordion-panel summary .dashicons{color:#f97316}.bcs-accordion-hint,.bcs-stage-status{font-size:12px;font-weight:700;color:#c2410c;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;padding:6px 10px}.bcs-accordion-panel details[open]>summary{border-bottom:1px solid #fed7aa;background:#fffaf5}.bcs-accordion-content{padding:22px 24px}.bcs-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.bcs-detail-item{padding:13px 14px;border:1px solid #e2e8f0;background:#f8fafc;border-radius:11px;min-width:0}.bcs-detail-item span{display:block;color:#64748b;font-size:12px;margin-bottom:5px}.bcs-detail-item strong{display:block;color:#1f2937;overflow-wrap:anywhere}.bcs-detail-wide{grid-column:span 3}.bcs-agreements-preview{padding:24px}.bcs-document-stage{border:1px solid #e2e8f0;border-radius:12px;margin-top:12px;overflow:hidden}.bcs-document-stage>summary{padding:16px 18px;background:#fff}.bcs-document-stage>summary small{display:block;color:#64748b;font-weight:400;margin-top:3px}.bcs-document-stage.is-ready{border-color:#fdba74}.bcs-document-stage.is-ready>summary{background:#fff7ed}.bcs-document-stage.is-pending{opacity:.76}.bcs-document-stage.is-pending .bcs-stage-status{color:#64748b;background:#f8fafc;border-color:#e2e8f0}.bcs-document-meta{display:flex;flex-wrap:wrap;gap:8px 18px;padding:12px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;font-size:12px;color:#64748b}.bcs-document-meta code{font-size:11px;word-break:break-all}.bcs-document-preview{margin:18px;padding:28px;background:#fff;border:1px solid #dbe2ea;border-radius:8px;box-shadow:0 5px 22px rgba(15,23,42,.06);max-height:650px;overflow:auto;line-height:1.55;color:#1f2937}.bcs-document-preview .proof{margin-top:30px;padding:18px;border:2px solid #f97316;background:#fff7ed}.bcs-document-empty{padding:22px;color:#64748b;background:#f8fafc;border-top:1px solid #e2e8f0}.bcs-document-stage[open]>summary{border-bottom:1px solid #fed7aa}@media(max-width:1100px){.bcs-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.bcs-detail-wide{grid-column:span 2}}@media(max-width:782px){.bcs-detail-grid{grid-template-columns:1fr}.bcs-detail-wide{grid-column:span 1}.bcs-accordion-panel>details>summary,.bcs-document-stage>summary{align-items:flex-start;flex-direction:column}.bcs-document-preview{margin:10px;padding:16px}.bcs-document-meta{flex-direction:column}}
+
+/* 0.10.2 - etapy i dokumenty */
+.bcs-badge[class*="bcs-stage-"]{border:1px solid transparent;font-weight:700}
+.bcs-stage-new{background:#fff7ed!important;color:#9a3412!important;border-color:#fed7aa!important}
+.bcs-stage-admin_confirmed{background:#ecfdf3!important;color:#027a48!important;border-color:#abefc6!important}
+.bcs-stage-draft_sent{background:#fffaeb!important;color:#b54708!important;border-color:#fedf89!important}
+.bcs-stage-agreement_sent{background:#fff4ed!important;color:#c4320a!important;border-color:#ffd6ae!important}
+.bcs-stage-agreement_accepted{background:#eef4ff!important;color:#3538cd!important;border-color:#c7d7fe!important}
+.bcs-stage-awaiting_bank_payment{background:#fef3f2!important;color:#b42318!important;border-color:#fecdca!important}
+.bcs-stage-stripe_link_sent{background:#f4f3ff!important;color:#5925dc!important;border-color:#d9d6fe!important}
+.bcs-stage-partially_paid{background:#fff6ed!important;color:#c4320a!important;border-color:#ff9c66!important}
+.bcs-stage-paid{background:#ecfdf3!important;color:#027a48!important;border-color:#75e0a7!important}
+.bcs-stage-cancelled{background:#f2f4f7!important;color:#344054!important;border-color:#d0d5dd!important}
+.bcs-action-done{display:flex;align-items:center;gap:7px;padding:9px 12px;border-radius:8px;background:#ecfdf3;color:#027a48;border:1px solid #75e0a7;font-weight:700}
+.bcs-action-done .dashicons{color:#12b76a}.bcs-document-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.bcs-document-actions .bcs-full{flex-basis:100%;margin:4px 0}.bcs-complete-download{display:inline-flex!important;gap:6px;align-items:center}
+
+
+/* 0.10.3 - milestone indicators and form verification */
+.bcs-milestones{display:flex;gap:6px;margin-top:9px;align-items:center;flex-wrap:wrap}.bcs-milestone{width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;border:2px solid #d0d5dd;background:#f2f4f7;color:#98a2b3;transition:.18s ease}.bcs-milestone.is-done{color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(15,23,42,.15)}.bcs-milestone.milestone-form.is-done{background:#f97316}.bcs-milestone.milestone-agreement.is-done{background:#7c3aed}.bcs-milestone.milestone-payment.is-done{background:#16a34a}.bcs-milestone.milestone-invoice.is-done{background:#0e7490}.bcs-milestone.milestone-invoice{width:38px}.bcs-form-verification{border:2px solid #fdba74!important;background:#fffaf5!important}.bcs-form-verification form{margin-top:14px}.bcs-form-verification .button{display:inline-flex;align-items:center;gap:7px}.bcs-form-verification .dashicons{margin-top:3px}
+
+/* 0.10.4: CRM wykorzystuje pełną szerokość obszaru administracyjnego */
+.bcs-admin.bcs-crm{max-width:none;width:auto;margin-left:0;margin-right:20px}
+.bcs-crm-list-layout{grid-template-columns:minmax(0,1fr) minmax(240px,280px)}
+.bcs-crm .bcs-table-wrap{width:100%;min-width:0}
+.bcs-crm .bcs-table{width:100%;table-layout:auto}
+@media (max-width:1180px){.bcs-admin.bcs-crm{margin-right:12px}}
+
+
+/* 0.10.5 — strefa testowa i zakończona weryfikacja formularza */
+.bcs-danger-zone{border:1px solid #dc2626;background:#fff7f7;margin-top:24px}
+.bcs-danger-zone .bcs-panel-head>span{color:#dc2626;font-size:32px;width:32px;height:32px}
+.bcs-reset-confirm{display:grid;grid-template-columns:minmax(220px,360px) minmax(280px,1fr) auto;gap:18px;align-items:end}
+.bcs-reset-confirm label>span{display:block;margin-bottom:7px;font-weight:600}
+.bcs-danger-button{background:#b91c1c!important;border-color:#991b1b!important;color:#fff!important;min-height:40px}
+.bcs-danger-button:hover{background:#991b1b!important;color:#fff!important}
+.bcs-danger-button .dashicons{vertical-align:middle;margin-right:5px}
+.bcs-form-confirmed{display:inline-flex!important;align-items:center;gap:6px;padding:7px 11px!important;border-radius:999px!important;background:#dcfce7!important;border-color:#86efac!important;color:#166534!important;font-size:12px!important;font-weight:800!important;white-space:nowrap;opacity:1!important;cursor:default!important}
+.bcs-form-confirmed .dashicons{color:#16a34a}
+@media(max-width:1100px){.bcs-reset-confirm{grid-template-columns:1fr}.bcs-danger-button{justify-self:start}}
+
+
+/* 0.10.6 — układ panelu bocznego i status formularza */
+.bcs-crm-layout>aside{display:flex;flex-direction:column;gap:22px;align-self:start}
+.bcs-crm-layout>aside .bcs-panel{position:static!important;top:auto!important;margin-top:0}
+.bcs-email-panel{order:2;clear:both}
+.bcs-quick-actions{order:1}
+.bcs-accordion-statuses{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+@media(max-width:782px){.bcs-accordion-statuses{justify-content:flex-start}}
+
+/* 0.10.15: spójne pomarańczowe przyciski i osobna kolumna postępu */
+.bcs-admin .button:not(.button-primary):not(.bcs-danger-button){border-color:var(--bcs-orange)!important;color:var(--bcs-orange)!important;background:#fff!important;box-shadow:none!important}
+.bcs-admin .button:not(.button-primary):not(.bcs-danger-button):hover,.bcs-admin .button:not(.button-primary):not(.bcs-danger-button):focus{border-color:var(--bcs-orange-dark)!important;color:#fff!important;background:var(--bcs-orange-dark)!important}
+.bcs-table th:nth-child(7),.bcs-table td:nth-child(7){text-align:center;white-space:nowrap}
+.bcs-table td:nth-child(7) .bcs-milestones{justify-content:center;margin-top:0;flex-wrap:nowrap}
+
+/* 0.10.16: rozwijane moduły karty zgłoszenia i status zgodny z listą CRM */
+.bcs-stat-grid .bcs-badge{display:inline-flex;align-items:center;justify-content:center;line-height:1.25;padding:6px 10px;border-radius:999px;font-size:12px}
+.bcs-registration-data,.bcs-agreements-preview,.bcs-pdf-panel{padding:0!important;overflow:hidden}
+.bcs-agreements-preview .bcs-accordion-content{padding-top:18px}
+.bcs-pdf-panel .bcs-document-actions{margin-top:0}
+
+
+/* 0.10.18: wspólne kolory etapów i anulowanie zgłoszenia */
+.bcs-status-legend .bcs-legend-row{align-items:flex-start}
+.bcs-status-legend .bcs-badge{white-space:normal;text-align:left}
+.bcs-button-danger{border-color:#dc2626!important;color:#b91c1c!important;background:#fff!important}
+.bcs-button-danger:hover,.bcs-button-danger:focus{background:#dc2626!important;color:#fff!important;border-color:#dc2626!important}
+.bcs-button-danger .dashicons{vertical-align:middle;margin-top:3px}
+.bcs-cancel-action{margin-top:14px;padding-top:14px;border-top:1px solid #fecaca}
+.bcs-action-cancelled{display:flex;gap:8px;align-items:flex-start;padding:12px;border-radius:10px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-weight:700}
+
+/* Licznik zgłoszeń wymagających działania */
+.bcs-action-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;margin-left:6px;border-radius:999px;background:#d63638;color:#fff;font-size:12px;font-weight:700;line-height:20px;vertical-align:2px;box-sizing:border-box;box-shadow:0 0 0 2px #fff;}
+.bcs-kpi-attention .bcs-action-count{margin:0;vertical-align:0;box-shadow:none;}
+.bcs-kpi-attention strong{display:flex;align-items:center;gap:6px;}
+
+/* Zgłoszenia wymagające reakcji administratora */
+.bcs-table tr.bcs-requires-action>td{background:#fff7ed;border-top-color:#fdba74;border-bottom-color:#fdba74;}
+.bcs-table tr.bcs-requires-action>td:first-child{box-shadow:inset 4px 0 0 #ea580c;}
+.bcs-table tr.bcs-requires-action:hover>td{background:#ffedd5;}
+.bcs-row-action-marker{display:block;width:max-content;margin-top:7px;padding:3px 7px;border-radius:999px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;line-height:1.2;text-transform:uppercase;letter-spacing:.03em;}
+
+/* Summary document micro-actions */
+.bcs-summary-value{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.bcs-summary-download{display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;border:1px solid #f97316;border-radius:7px;color:#ea580c;background:#fff;text-decoration:none;box-shadow:none;transition:.15s ease}
+.bcs-summary-download:hover,.bcs-summary-download:focus{background:#f97316;color:#fff;border-color:#f97316;outline:none;box-shadow:none}
+.bcs-summary-download .dashicons{font-size:16px;width:16px;height:16px;line-height:16px}
+.bcs-summary-invoice{border-color:#fed7aa!important;background:#fff7ed!important}
+
+
+/* 0.10.27 — states of workflow buttons */
+.bcs-button-completed{display:inline-flex!important;align-items:center;gap:5px;background:#e8f7ee!important;border-color:#2e9d59!important;color:#207a43!important;cursor:default!important;box-shadow:none!important;pointer-events:none}
+.bcs-button-completed .dashicons{color:#2e9d59}
+.bcs-button-disabled{display:inline-flex!important;align-items:center;opacity:.58;cursor:not-allowed!important;pointer-events:none}
+
+
+/* 0.10.28 — zielone, zakończone akcje oraz spójny stan płatności */
+.bcs-admin .button.bcs-button-completed,
+.bcs-admin .button.bcs-button-completed:hover,
+.bcs-admin .button.bcs-button-completed:focus{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:7px!important;
+    min-height:38px!important;
+    padding:9px 12px!important;
+    border:1px solid #75e0a7!important;
+    border-radius:8px!important;
+    background:#ecfdf3!important;
+    color:#027a48!important;
+    font-weight:700!important;
+    opacity:1!important;
+    cursor:default!important;
+    pointer-events:none!important;
+    box-shadow:none!important;
+}
+.bcs-admin .button.bcs-button-completed .dashicons{color:#12b76a!important}
+
+
+/* 0.10.29 — jeden wspólny wygląd wszystkich wykonanych zadań */
+.bcs-admin .bcs-action-done,
+.bcs-admin .button.bcs-button-completed,
+.bcs-admin .button.bcs-button-completed:hover,
+.bcs-admin .button.bcs-button-completed:focus {
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:7px!important;
+    min-height:38px!important;
+    padding:9px 12px!important;
+    margin:0!important;
+    border:1px solid #75e0a7!important;
+    border-radius:8px!important;
+    background:#ecfdf3!important;
+    color:#027a48!important;
+    font-size:13px!important;
+    line-height:18px!important;
+    font-weight:700!important;
+    opacity:1!important;
+    cursor:default!important;
+    pointer-events:none!important;
+    text-decoration:none!important;
+    box-shadow:none!important;
+    vertical-align:middle!important;
+}
+.bcs-admin .bcs-action-done .dashicons,
+.bcs-admin .button.bcs-button-completed .dashicons {
+    color:#12b76a!important;
+    font-size:18px!important;
+    width:18px!important;
+    height:18px!important;
+    line-height:18px!important;
+}
+
+
+/* 0.10.30 — responsywne szybkie czynności i oznaczenie wersji */
+.bcs-version-label{display:inline-flex;align-items:center;margin-left:8px;padding:3px 8px;border-radius:999px;background:#fff7ed;border:1px solid #fed7aa;color:#c2410c;font-size:11px;font-weight:800;white-space:nowrap}
+.bcs-quick-actions,.bcs-quick-actions *{box-sizing:border-box;min-width:0}
+.bcs-quick-actions .bcs-crm-buttons{grid-template-columns:minmax(0,1fr);width:100%;max-width:100%;overflow:hidden}
+.bcs-quick-actions .bcs-crm-buttons>*,.bcs-quick-actions form,.bcs-quick-actions .button,.bcs-quick-actions .bcs-action-done,.bcs-quick-actions .bcs-action-cancelled{width:100%;max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:normal}
+.bcs-quick-actions .button{height:auto;line-height:1.3;padding-top:9px!important;padding-bottom:9px!important}
+.bcs-quick-actions textarea,.bcs-quick-actions input{max-width:100%}
+@media(max-width:1280px){.bcs-crm-layout{grid-template-columns:minmax(0,1fr) minmax(270px,320px)}.bcs-panel{padding:20px}}
+@media(max-width:1100px){.bcs-crm-layout{grid-template-columns:minmax(0,1fr)}.bcs-crm-layout>aside{width:100%;min-width:0}.bcs-quick-actions .bcs-crm-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}.bcs-quick-actions .bcs-crm-action{grid-column:auto}}
+@media(max-width:782px){.bcs-quick-actions .bcs-crm-buttons{grid-template-columns:minmax(0,1fr)}.bcs-quick-actions .bcs-crm-action{grid-column:1/-1}.bcs-page-head{flex-direction:column}.bcs-page-head .bcs-actions{width:100%}.bcs-page-head .bcs-actions .button{flex:1 1 100%;text-align:center}}
+
+
+/* 0.10.31 — responsywne szablony i wspólny stan wykonania */
+.bcs-template-card,.bcs-template-card>*{min-width:0;box-sizing:border-box}
+.bcs-template-card{grid-template-columns:48px minmax(0,1fr) auto;overflow:hidden}
+.bcs-template-content{min-width:0;overflow-wrap:anywhere}
+.bcs-template-card>.button{max-width:100%;white-space:normal;text-align:center}
+@media(max-width:1100px){.bcs-template-grid{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}.bcs-template-card{grid-template-columns:44px minmax(0,1fr)}.bcs-template-card>.button{grid-column:1/-1;width:100%}}
+@media(max-width:480px){.bcs-template-grid{grid-template-columns:minmax(0,1fr)}.bcs-template-card{padding:14px;gap:10px}}
+.bcs-admin .button.bcs-button-completed,
+.bcs-admin .button.bcs-button-completed:hover,
+.bcs-admin .button.bcs-button-completed:focus,
+.bcs-admin .bcs-action-done{
+    background:#12b76a!important;
+    border-color:#12b76a!important;
+    color:#fff!important;
+}
+.bcs-admin .button.bcs-button-completed .dashicons,
+.bcs-admin .bcs-action-done .dashicons{color:#fff!important}
+
+/* 0.10.32 — jednolite przyciski Karty zgłoszenia i edycja draftu */
+.bcs-quick-actions .button,
+.bcs-quick-actions .bcs-action-done,
+.bcs-quick-actions .bcs-action-cancelled{
+    min-height:40px!important;
+    border-radius:10px!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:8px!important;
+    line-height:1.25!important;
+    text-align:center!important;
+}
+.bcs-quick-actions .dashicons,
+.bcs-page-head .button .dashicons,
+.bcs-agreement-editor .button .dashicons{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    margin:0!important;
+    width:18px!important;
+    height:18px!important;
+    line-height:18px!important;
+    font-size:18px!important;
+    vertical-align:middle!important;
+}
+.bcs-admin .button.bcs-action-available,
+.bcs-admin .button.bcs-action-available:hover,
+.bcs-admin .button.bcs-action-available:focus{
+    background:#f97316!important;
+    border-color:#f97316!important;
+    color:#fff!important;
+    border-radius:10px!important;
+    font-weight:700!important;
+    box-shadow:none!important;
+}
+.bcs-admin .button.bcs-action-available:hover,
+.bcs-admin .button.bcs-action-available:focus{background:#ea580c!important;border-color:#ea580c!important}
+.bcs-admin .button.bcs-action-unavailable,
+.bcs-admin .button.bcs-action-unavailable:hover,
+.bcs-admin .button.bcs-action-unavailable:focus{
+    background:transparent!important;
+    border:1px solid #cbd5e1!important;
+    color:#64748b!important;
+    border-radius:10px!important;
+    opacity:1!important;
+    cursor:not-allowed!important;
+    box-shadow:none!important;
+}
+.bcs-admin .bcs-action-done,
+.bcs-admin .button.bcs-button-completed,
+.bcs-admin .button.bcs-button-completed:hover,
+.bcs-admin .button.bcs-button-completed:focus{
+    background:#12b76a!important;
+    border:1px solid #12b76a!important;
+    color:#fff!important;
+    border-radius:10px!important;
+}
+.bcs-admin .bcs-action-done .dashicons,
+.bcs-admin .button.bcs-button-completed .dashicons{color:#fff!important}
+.bcs-admin .button.bcs-button-danger,
+.bcs-admin .button.bcs-button-danger:hover,
+.bcs-admin .button.bcs-button-danger:focus{
+    background:#dc2626!important;
+    border-color:#dc2626!important;
+    color:#fff!important;
+    border-radius:10px!important;
+    font-weight:700!important;
+    box-shadow:none!important;
+}
+.bcs-admin .button.bcs-button-danger:hover,.bcs-admin .button.bcs-button-danger:focus{background:#b91c1c!important;border-color:#b91c1c!important}
+.bcs-admin .button.bcs-button-danger .dashicons{color:#fff!important}
+.bcs-agreement-editor{display:grid;gap:10px;margin:14px 0 18px;padding:16px;border:1px solid #fed7aa;border-radius:12px;background:#fff7ed}
+.bcs-agreement-editor label{display:grid;gap:7px;font-weight:700}
+.bcs-agreement-editor textarea{width:100%;max-width:100%;min-height:320px;border-radius:9px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;line-height:1.45}
+.bcs-agreement-editor .button{justify-self:start;min-height:40px;display:inline-flex;align-items:center;gap:8px}
+@media(max-width:782px){.bcs-agreement-editor .button{width:100%;justify-content:center}.bcs-agreement-editor textarea{min-height:260px}}
+
+
+/* 0.10.33 — jednoznaczny zielony stan zaksięgowanej płatności */
+.bcs-admin .bcs-quick-actions .bcs-payment-completed,
+.bcs-admin .bcs-quick-actions .bcs-payment-completed:hover,
+.bcs-admin .bcs-quick-actions .bcs-payment-completed:focus{
+    background:#12b76a!important;
+    border:1px solid #12b76a!important;
+    color:#fff!important;
+    opacity:1!important;
+    border-radius:10px!important;
+    cursor:default!important;
+    box-shadow:none!important;
+}
+.bcs-admin .bcs-quick-actions .bcs-payment-completed .dashicons{color:#fff!important}
+
+
+/* 0.10.36 — rozwijana konfiguracja dwóch bramek SMS */
+.bcs-settings-accordion{border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;background:#fff;margin-bottom:24px}
+.bcs-settings-accordion>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;background:#f8fafc;color:#1f2937}
+.bcs-settings-accordion>summary::-webkit-details-marker{display:none}
+.bcs-settings-accordion>summary>span:first-child{display:flex;align-items:center;gap:9px;font-size:17px}
+.bcs-settings-accordion>summary .dashicons{color:#f97316}
+.bcs-settings-accordion[open]>summary{border-bottom:1px solid #e2e8f0;background:#fff7ed}
+.bcs-settings-summary{font-size:12px;font-weight:700;border:1px solid #fdba74;background:#fff;color:#c2410c;border-radius:999px;padding:6px 10px}
+.bcs-settings-accordion-body{padding:20px}
+.bcs-sms-provider-box{display:none;margin-top:18px;padding:18px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc}
+.bcs-sms-provider-box.is-active{display:block}
+.bcs-sms-provider-box h3{margin:0 0 16px}
+.bcs-sms-common-settings{margin-top:18px;padding-top:18px;border-top:1px solid #e2e8f0}
+@media(max-width:782px){.bcs-settings-accordion>summary{align-items:flex-start;flex-direction:column}.bcs-settings-summary{align-self:flex-start}.bcs-settings-accordion-body{padding:14px}.bcs-sms-provider-box{padding:14px}}
+
+
+/* 0.10.37 — status aktywnej bramki SMS na Dashboardzie */
+.bcs-sms-dashboard{margin:22px 0;padding:20px;border:1px solid #e2e8f0;border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(15,23,42,.05)}
+.bcs-sms-dashboard-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.bcs-sms-dashboard-head>div{display:flex;align-items:center;gap:12px}.bcs-sms-dashboard-head .dashicons{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:#fff7ed;color:#f97316;font-size:24px}
+.bcs-sms-dashboard-head small{display:block;color:#64748b;font-weight:700}.bcs-sms-dashboard-head h2{margin:2px 0 0;font-size:21px}
+.bcs-sms-status{display:inline-flex;align-items:center;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:800}.bcs-sms-status.is-ok{background:#dcfce7;color:#166534}.bcs-sms-status.is-error{background:#fee2e2;color:#991b1b}.bcs-sms-status.is-warning{background:#ffedd5;color:#9a3412}
+.bcs-sms-dashboard-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.bcs-sms-dashboard-grid>div{min-width:0;padding:14px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc}.bcs-sms-dashboard-grid span{display:block;color:#64748b;font-size:12px;font-weight:700;margin-bottom:5px}.bcs-sms-dashboard-grid strong{display:block;color:#0f172a;font-size:18px;overflow-wrap:anywhere}
+.bcs-sms-dashboard-foot{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:16px}.bcs-sms-dashboard-foot p{margin:0;color:#64748b;font-size:12px}.bcs-sms-dashboard-error{padding:10px 12px;border-radius:10px;background:#fef2f2;color:#991b1b}
+@media(max-width:1100px){.bcs-sms-dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:782px){.bcs-sms-dashboard{padding:15px}.bcs-sms-dashboard-head,.bcs-sms-dashboard-foot{align-items:flex-start;flex-direction:column}.bcs-sms-dashboard-grid{grid-template-columns:1fr}.bcs-sms-dashboard-foot .button{width:100%;text-align:center}}
+
+/* 0.10.38 — wymuszony stan wykonania dla podpisanej umowy */
+.bcs-quick-actions .bcs-workflow-completed,
+.bcs-admin .bcs-workflow-completed,
+.bcs-admin .bcs-workflow-completed:hover,
+.bcs-admin .bcs-workflow-completed:focus{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:8px!important;
+    width:100%!important;
+    min-height:40px!important;
+    padding:9px 12px!important;
+    margin:0!important;
+    border:1px solid #12b76a!important;
+    border-radius:10px!important;
+    background:#12b76a!important;
+    color:#fff!important;
+    font-size:13px!important;
+    line-height:1.25!important;
+    font-weight:700!important;
+    text-align:center!important;
+    opacity:1!important;
+    cursor:default!important;
+    pointer-events:none!important;
+    box-shadow:none!important;
+    text-decoration:none!important;
+}
+.bcs-admin .bcs-workflow-completed .dashicons{
+    flex:0 0 18px!important;
+    width:18px!important;
+    height:18px!important;
+    font-size:18px!important;
+    line-height:18px!important;
+    color:#fff!important;
+}
+
+
+/* 0.10.39 — przypomnienie o płatności */
+.bcs-payment-action-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%;max-width:100%}
+.bcs-payment-action-row>*{width:100%!important;max-width:100%;justify-content:center;text-align:center;box-sizing:border-box}
+.bcs-admin .button.bcs-action-reminder,
+.bcs-admin .button.bcs-action-reminder:hover,
+.bcs-admin .button.bcs-action-reminder:focus{
+    background:#2563eb!important;
+    border-color:#2563eb!important;
+    color:#fff!important;
+    border-radius:10px!important;
+    font-weight:700!important;
+    box-shadow:none!important;
+}
+.bcs-admin .button.bcs-action-reminder:hover,
+.bcs-admin .button.bcs-action-reminder:focus{background:#1d4ed8!important;border-color:#1d4ed8!important}
+@media(max-width:782px){.bcs-payment-action-row{grid-template-columns:1fr}}
+[data-bcs-mail-box]{display:none}
+[data-bcs-mail-box].is-active{display:block}
+
+/* 0.11.0 — moduł Poczta */
+.bcs-mailbox .bcs-page-head form{margin:0}.bcs-mailbox .bcs-page-head .button{display:inline-flex;align-items:center;gap:7px}
+.bcs-mail-table td{vertical-align:middle}.bcs-mail-table .bcs-mail-unread td{font-weight:700;background:#eff6ff}.bcs-mail-unassigned{display:inline-flex;padding:5px 9px;border-radius:999px;background:#fff7ed;color:#9a3412;font-weight:700;font-size:12px}
+.bcs-mail-body{padding:18px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;min-height:100px;overflow-wrap:anywhere}.bcs-mail-body img{max-width:100%;height:auto}
+.bcs-mailbox select{max-width:100%}.bcs-mailbox section form label{display:block;margin:0 0 12px}.bcs-mailbox section form label>span{display:block;font-weight:700;margin-bottom:5px}
+@media(max-width:782px){.bcs-mail-table thead{display:none}.bcs-mail-table,.bcs-mail-table tbody,.bcs-mail-table tr,.bcs-mail-table td{display:block;width:100%;box-sizing:border-box}.bcs-mail-table tr{padding:10px 0}.bcs-mail-table td{border:0;padding:5px 10px}.bcs-mailbox .bcs-page-head{align-items:flex-start;flex-direction:column}.bcs-mailbox .bcs-page-head form,.bcs-mailbox .bcs-page-head .button{width:100%;justify-content:center}}
+.bcs-mail-thread{display:grid;gap:10px}.bcs-mail-thread-item{padding:13px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}.bcs-mail-thread-item.is-inbound{border-left:4px solid #2563eb}.bcs-mail-thread-item.is-outbound{border-left:4px solid #f59e0b}.bcs-mail-thread-item header{display:flex;justify-content:space-between;gap:12px;color:#64748b;font-size:12px}.bcs-mail-thread-item h4{margin:8px 0 4px}.bcs-mail-thread-item p{margin:0 0 6px}
+
+
+/* 0.11.1 — nagłówek karty zgłoszenia i spójny moduł e-mail */
+.bcs-registration-identity{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+.bcs-registration-identity>div{display:flex;flex-direction:column;gap:3px;min-width:220px;padding:11px 14px;border:1px solid #fed7aa;border-radius:12px;background:#fff7ed}
+.bcs-registration-identity span{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#9a3412}
+.bcs-registration-identity strong{font-size:18px;line-height:1.25;color:#1f2937}
+.bcs-email-panel .bcs-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.bcs-email-panel .bcs-panel-head h2{margin:0 0 5px}
+.bcs-email-panel .bcs-panel-head p{margin:0;color:#667085;font-size:12px;line-height:1.45}
+.bcs-email-panel .bcs-panel-head>.dashicons{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:10px;background:#fff7ed;color:#ea580c;font-size:20px}
+.bcs-email-compose{display:flex;flex-direction:column;gap:14px}
+.bcs-email-compose label{display:flex;flex-direction:column;gap:7px;margin:0}
+.bcs-email-compose label>span,.bcs-email-recipient>span{font-size:12px;font-weight:800;color:#344054}
+.bcs-email-compose input,.bcs-email-compose textarea{width:100%;max-width:100%;box-sizing:border-box;border:1px solid #d0d5dd;border-radius:9px;padding:10px 12px;background:#fff;box-shadow:none}
+.bcs-email-compose textarea{min-height:150px;resize:vertical;line-height:1.5}
+.bcs-email-compose input:focus,.bcs-email-compose textarea:focus{border-color:#f97316;box-shadow:0 0 0 2px rgba(249,115,22,.12);outline:0}
+.bcs-email-recipient{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:9px;background:#f8fafc;border:1px solid #e2e8f0;overflow-wrap:anywhere}
+.bcs-email-recipient strong{font-size:13px;color:#1d2939;text-align:right}
+.bcs-email-send{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;width:100%;min-height:40px!important;border-radius:9px!important}
+.bcs-email-send .dashicons{font-size:18px;width:18px;height:18px;line-height:18px}
+@media(max-width:782px){.bcs-registration-identity{display:grid;grid-template-columns:1fr;width:100%}.bcs-registration-identity>div{min-width:0}.bcs-email-recipient{align-items:flex-start;flex-direction:column}.bcs-email-recipient strong{text-align:left}}
+
+/* Poczta 0.11.4 */
+.bcs-mailbox{max-width:1440px}.bcs-mailbox-head{margin-bottom:20px}.bcs-eyebrow{font-size:11px;font-weight:800;letter-spacing:1.8px;color:#f57618;margin-bottom:5px}.bcs-mail-sync{border-radius:10px!important;min-height:42px;padding:0 18px!important}.bcs-mailbox-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:0 0 18px}.bcs-mail-stat{display:flex;align-items:center;gap:13px;padding:18px;background:#fff;border:1px solid #e4e7ec;border-radius:14px;box-shadow:0 5px 18px rgba(15,23,42,.04)}.bcs-mail-stat>.dashicons{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#fff4e8;color:#f57618;font-size:22px}.bcs-mail-stat strong{display:block;font-size:25px;line-height:1;color:#172033}.bcs-mail-stat span{display:block;margin-top:5px;color:#687386;font-size:12px;font-weight:700}.bcs-mail-sync-info{display:flex;align-items:center;gap:9px;padding:12px 15px;margin-bottom:18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:11px;color:#596579}.bcs-mail-sync-info .dashicons{color:#f57618}.bcs-mail-tabs{display:flex;gap:8px;margin:0 0 16px;padding:6px;background:#fff;border:1px solid #e4e7ec;border-radius:13px;box-shadow:0 4px 15px rgba(15,23,42,.035)}.bcs-mail-tabs a{display:inline-flex;align-items:center;gap:7px;padding:10px 14px;border-radius:9px;color:#536072;text-decoration:none;font-weight:700}.bcs-mail-tabs a:hover{background:#f8fafc;color:#172033}.bcs-mail-tabs a.is-active{background:#f57618;color:#fff}.bcs-mail-tabs em{display:inline-grid;place-items:center;min-width:21px;height:21px;padding:0 5px;border-radius:999px;background:rgba(15,23,42,.08);font-size:11px;font-style:normal}.bcs-mail-tabs a.is-active em{background:rgba(255,255,255,.22)}.bcs-mail-list{display:grid;gap:9px}.bcs-mail-row{margin:0;background:#fff;border:1px solid #e4e7ec;border-radius:14px;overflow:hidden;box-shadow:0 4px 15px rgba(15,23,42,.025);transition:.18s ease}.bcs-mail-row:hover{transform:translateY(-1px);border-color:#f8b680;box-shadow:0 8px 24px rgba(15,23,42,.07)}.bcs-mail-row.is-unread{border-left:5px solid #2563eb;background:#fbfdff}.bcs-mail-row-link{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:14px;align-items:center;padding:15px 17px;text-decoration:none;color:inherit}.bcs-mail-avatar{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;background:#fff1df;color:#e9650c;font-size:18px;font-weight:900}.bcs-mail-row.is-unread .bcs-mail-avatar{background:#eaf2ff;color:#2563eb}.bcs-mail-row-main{min-width:0}.bcs-mail-row-top{display:flex;justify-content:space-between;gap:14px;align-items:center}.bcs-mail-row-top strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#172033;font-size:14px}.bcs-mail-row-top time{flex:none;color:#8a94a5;font-size:11px}.bcs-mail-row-main h3{margin:5px 0 4px;color:#273247;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bcs-mail-row-main p{margin:0;color:#6d7888;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bcs-mail-row-main small{display:block;margin-top:5px;color:#9aa3b0}.bcs-mail-row-side{display:flex;align-items:center;gap:10px;justify-content:flex-end}.bcs-mail-status{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}.bcs-mail-status.is-new{background:#eaf2ff;color:#1d4ed8}.bcs-mail-status.is-received{background:#eef2f6;color:#596579}.bcs-mail-status.is-sent{background:#eaf8ef;color:#18733b}.bcs-mail-status.is-failed{background:#feecec;color:#b42318}.bcs-mail-linkage{display:flex;flex-direction:column;max-width:220px;padding:7px 10px;border-radius:10px;background:#f8fafc;color:#465469;font-size:11px;font-weight:800}.bcs-mail-linkage small{margin-top:2px;color:#8490a1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bcs-mail-empty{text-align:center;padding:54px 20px;background:#fff;border:1px dashed #ccd3dc;border-radius:14px}.bcs-mail-empty>.dashicons{width:48px;height:48px;font-size:48px;color:#f57618}.bcs-mail-empty h2{margin:12px 0 5px}.bcs-mail-empty p{margin:0;color:#758094}.bcs-mail-view-nav{margin:17px 0 12px}.bcs-mail-view-nav a{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:700}.bcs-mail-message-card{padding:0!important;overflow:hidden}.bcs-mail-message-head{padding:22px 24px;border-bottom:1px solid #e7eaf0;background:linear-gradient(135deg,#fff 0%,#fff9f2 100%)}.bcs-mail-message-head h2{margin:8px 0 8px;font-size:22px}.bcs-mail-message-head p{margin:0;color:#667286}.bcs-mail-message-meta{display:flex;align-items:center;gap:10px;color:#8a94a5;font-size:12px}.bcs-mail-preview-shell{background:#eef1f5;padding:18px}.bcs-mail-preview-toolbar{display:flex;align-items:center;gap:8px;padding:10px 13px;background:#fff;border:1px solid #dfe4eb;border-bottom:0;border-radius:11px 11px 0 0;color:#647083;font-size:12px}.bcs-mail-preview-toolbar strong{color:#263247}.bcs-mail-preview-toolbar span:last-child{margin-left:auto}.bcs-mail-preview-frame{display:block;width:100%;height:760px;border:1px solid #dfe4eb;border-radius:0 0 11px 11px;background:#fff}.bcs-mail-body{margin:18px;padding:22px!important;border:1px solid #e2e8f0;border-radius:12px;background:#fff;min-height:120px;overflow-wrap:anywhere}.bcs-mail-body-plain{white-space:normal}.bcs-mail-view-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:16px}.bcs-panel-heading{display:flex;gap:12px;align-items:flex-start;margin-bottom:18px}.bcs-panel-heading>.dashicons{display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:#fff1df;color:#f57618}.bcs-panel-heading h2{margin:0 0 4px}.bcs-panel-heading p{margin:0;color:#768195}.bcs-mail-form{display:grid;gap:13px}.bcs-mail-form label{margin:0!important}.bcs-mail-form input,.bcs-mail-form select,.bcs-mail-form textarea{width:100%;min-height:42px;border-radius:9px}.bcs-mail-form .button{justify-self:start;border-radius:9px;min-height:40px;padding:0 17px}.bcs-mail-current-link{display:flex;align-items:center;gap:9px;margin-bottom:15px;padding:11px 13px;background:#eefaf2;border:1px solid #ccebd6;border-radius:10px;color:#28643d}.bcs-mail-create-registration{margin-top:22px;padding-top:19px;border-top:1px solid #e6e9ee}.bcs-mail-create-registration h3{margin-top:0}
+@media(max-width:1100px){.bcs-mailbox-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.bcs-mail-view-grid{grid-template-columns:1fr}.bcs-mail-row-link{grid-template-columns:44px minmax(0,1fr)}.bcs-mail-row-side{grid-column:2;justify-content:flex-start;flex-wrap:wrap}.bcs-mail-row-side>.dashicons{display:none}}
+@media(max-width:782px){.bcs-mailbox-stats{grid-template-columns:1fr 1fr}.bcs-mail-tabs{overflow:auto}.bcs-mail-tabs a{white-space:nowrap}.bcs-mail-row-link{grid-template-columns:38px minmax(0,1fr);padding:13px}.bcs-mail-avatar{width:38px;height:38px}.bcs-mail-row-top{align-items:flex-start;flex-direction:column;gap:3px}.bcs-mail-row-main p{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.bcs-mail-preview-shell{padding:8px}.bcs-mail-preview-toolbar span:last-child{display:none}.bcs-mail-preview-frame{height:620px}.bcs-mail-message-head{padding:18px}.bcs-mailbox-stats{gap:8px}.bcs-mail-stat{padding:13px}.bcs-mail-stat>.dashicons{width:36px;height:36px}}
+
+/* CRM: sortowanie i filtrowanie na żywo */
+.bcs-live-toolbar{align-items:center;gap:10px;flex-wrap:wrap}
+.bcs-live-toolbar input[type="search"]{min-width:260px;flex:1 1 280px}
+.bcs-live-results{margin-left:auto;color:#667085;font-weight:600;white-space:nowrap}
+.bcs-sort-button{appearance:none;border:0;background:transparent;padding:0;color:inherit;font:inherit;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-align:left}
+.bcs-sort-button:hover,.bcs-sort-button:focus{color:#e9650c;outline:none}
+.bcs-sort-button span{font-size:14px;color:#98a2b3}
+.bcs-sort-button.is-sorted span{color:#e9650c}
+.bcs-table tr[hidden]{display:none!important}
+@media (max-width:782px){.bcs-live-toolbar>*{width:100%;max-width:none}.bcs-live-results{margin-left:0}.bcs-sort-button{white-space:nowrap}}
+
+/* Logi diagnostyczne */
+.bcs-log-filters{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}.bcs-log-filters label{min-width:220px}.bcs-log-error td{background:#fff4f4!important}.bcs-log-data{white-space:pre-wrap;word-break:break-word;max-width:900px;max-height:420px;overflow:auto;background:#101828;color:#f8fafc;padding:16px;border-radius:10px;font-size:12px;line-height:1.55}.bcs-log-data details summary{cursor:pointer}
+.bcs-summary-check{display:inline-grid;place-items:center;width:22px;height:22px;margin-right:5px;border-radius:50%;background:#16a34a;color:#fff;font-size:13px;font-weight:900;vertical-align:middle}
+
+/* Faktury 0.12.0 */
+.bcs-icon-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.bcs-icon-actions form{margin:0}.bcs-icon-actions .button{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px}.bcs-icon-actions .dashicons{margin:0}.bcs-delete-invoice{color:#b42318!important;border-color:#fda29b!important}.bcs-status-ok{color:#067647;font-weight:700}.bcs-invoice-modal{position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.72);padding:24px;display:flex;align-items:center;justify-content:center}.bcs-invoice-modal[hidden]{display:none}.bcs-invoice-modal__dialog{position:relative;width:min(1050px,96vw);height:min(900px,92vh);background:#fff;border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,.3);overflow:hidden}.bcs-invoice-modal iframe{width:100%;height:100%;border:0}.bcs-invoice-modal__close{position:absolute;right:12px;top:10px;z-index:2;width:42px;height:42px;border:0;border-radius:50%;background:#111827;color:#fff;font-size:28px;line-height:1;cursor:pointer}.bcs-invoices-page .bcs-table-wrap{overflow-x:auto}@media(max-width:782px){.bcs-invoice-modal{padding:8px}.bcs-invoice-modal__dialog{width:100%;height:96vh;border-radius:12px}}
+
+/* 0.12.1 — spójne statusy, zakończone zgłoszenia i szybki e-mail z listy */
+.bcs-summary-check-icon{color:#16a34a!important;font-size:22px!important;width:22px!important;height:22px!important;line-height:22px!important;margin-right:6px;vertical-align:middle}
+.bcs-registration-complete>td{background:#effaf2!important;border-top-color:#bbf7d0!important;border-bottom-color:#bbf7d0!important}
+.bcs-registration-complete>td:first-child{box-shadow:inset 4px 0 0 #16a34a}
+.bcs-registration-complete:hover>td{background:#e5f7e9!important}
+.bcs-contact-email{appearance:none;border:0;background:transparent;padding:0;color:#2271b1;text-decoration:underline;cursor:pointer;font:inherit;text-align:left}
+.bcs-contact-email:hover,.bcs-contact-email:focus{color:#135e96;outline:none}
+.bcs-contact-modal{position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.72);padding:24px;display:flex;align-items:center;justify-content:center}
+.bcs-contact-modal[hidden]{display:none}
+.bcs-contact-modal__dialog{position:relative;width:min(760px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.3)}
+.bcs-contact-modal__close{position:absolute;right:14px;top:12px;width:40px;height:40px;border:0;border-radius:50%;background:#111827;color:#fff;font-size:28px;line-height:1;cursor:pointer}
+.bcs-contact-modal .bcs-panel-head{padding-right:48px}
+.bcs-contact-modal .bcs-email-compose{margin-top:20px}
+@media(max-width:782px){.bcs-contact-modal{padding:8px}.bcs-contact-modal__dialog{width:100%;max-height:96vh;border-radius:12px;padding:20px}.bcs-registration-complete>td:first-child{box-shadow:none}}
+
+/* 0.12.2 — czytelne logi i wykonawcy zdarzeń */
+.bcs-log-code{color:#8a8f98;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11px}
+.bcs-log-actor{display:inline-flex;align-items:center;min-height:26px;padding:3px 10px;border-radius:999px;font-weight:700;font-size:12px;white-space:nowrap}
+.bcs-log-actor-system{background:#eef2f7;color:#425466}
+.bcs-log-actor-parent{background:#fff2df;color:#9a4e00}
+.bcs-log-actor-administrator{background:#e8f3ff;color:#075a9c}
+
+
+/* 0.12.5 — kategorie logów i popup szczegółów */
+.bcs-log-event{display:flex;align-items:center;gap:11px}.bcs-log-category-icon{display:inline-grid!important;place-items:center;flex:0 0 34px;width:34px!important;height:34px!important;border-radius:9px;background:#f2f4f7;color:#475467;font-size:18px!important;line-height:34px!important}.bcs-log-category-label{color:#667085;font-size:11px}.bcs-log-category-email{background:#eef4ff;color:#175cd3}.bcs-log-category-sms{background:#f0fdf4;color:#15803d}.bcs-log-category-correspondence{background:#f5f3ff;color:#6d28d9}.bcs-log-category-invoice{background:#fff7ed;color:#c2410c}.bcs-log-category-agreement{background:#fdf2f8;color:#be185d}.bcs-log-category-registration_form{background:#ecfeff;color:#0e7490}.bcs-log-category-payment{background:#ecfdf3;color:#067647}.bcs-log-category-warning{background:#fffaeb;color:#b54708}.bcs-log-category-system_error{background:#fef3f2;color:#b42318}.bcs-log-category-automatic_task{background:#f2f4f7;color:#344054}.bcs-log-details{display:inline-flex!important;align-items:center;gap:6px}.bcs-log-details .dashicons{font-size:17px;width:17px;height:17px}.bcs-log-modal{position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.72);padding:24px;display:flex;align-items:center;justify-content:center}.bcs-log-modal[hidden]{display:none}.bcs-log-modal__dialog{position:relative;width:min(850px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:18px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.3)}.bcs-log-modal__dialog h2{margin-top:0;padding-right:48px}.bcs-log-modal__close{position:absolute;right:14px;top:12px;width:40px;height:40px;border:0;border-radius:50%;background:#111827;color:#fff;cursor:pointer}.bcs-log-modal__close .dashicons{line-height:40px}@media(max-width:782px){.bcs-log-modal{padding:8px}.bcs-log-modal__dialog{width:100%;max-height:96vh;border-radius:12px;padding:20px}.bcs-log-details span:last-child{display:none}}
+
+.bcs-lock-note{display:flex;align-items:center;gap:7px;margin-top:12px;padding:9px 11px;border:1px solid #fde68a;border-radius:9px;background:#fffbeb;color:#92400e;font-size:12px;font-weight:700}.bcs-lock-note .dashicons{color:#d97706}
+
+.bcs-client-preview-wrap{display:flex;align-items:center;justify-content:space-between;gap:10px}.bcs-registration-preview{display:inline-flex!important;align-items:center;justify-content:center;min-width:34px}.bcs-registration-preview .dashicons{margin:0}.bcs-registration-preview-dialog{max-width:720px}.bcs-registration-preview-close{position:absolute;right:14px;top:12px;width:40px;height:40px;border:0;border-radius:50%;background:#111827;color:#fff;cursor:pointer;font-size:24px;line-height:1}.bcs-registration-preview-dialog{position:relative}.bcs-registration-preview-dialog .bcs-detail-grid{margin-top:18px}
+
+/* 0.14.1 */
+.bcs-registration-preview{appearance:none;border:0!important;background:transparent!important;box-shadow:none!important;padding:2px!important;min-width:0!important;color:#d95f02;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.bcs-registration-preview:hover,.bcs-registration-preview:focus{color:#a74400;background:transparent!important;outline:2px solid transparent}
+.bcs-registration-preview .dashicons{font-size:22px;width:22px;height:22px}
+.bcs-device-icon{margin-left:6px;color:#64748b;vertical-align:middle;font-size:18px;width:18px;height:18px}
+.bcs-preview-row{padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
+.bcs-preview-row b{color:#111827}.bcs-preview-row span{color:#475569}
+.bcs-new-registrations{margin:20px 0}.bcs-new-registration-list{display:grid;gap:8px}.bcs-new-registration-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px;border:1px solid #e5e7eb;border-radius:12px;text-decoration:none;background:#fff;color:#111827}.bcs-new-registration-item:hover{border-color:#f59e0b;box-shadow:0 4px 16px rgba(15,23,42,.08)}.bcs-new-registration-item>.dashicons{color:#f97316}.bcs-new-registration-item div{min-width:0}.bcs-new-registration-item strong,.bcs-new-registration-item small{display:block}.bcs-new-registration-item small{color:#64748b;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bcs-new-registration-item time{font-size:12px;color:#64748b;text-align:right}
+@media(max-width:782px){.bcs-new-registration-item{grid-template-columns:auto minmax(0,1fr)}.bcs-new-registration-item time{grid-column:2;text-align:left}}
+
+.bcs-registration-lock-icon{color:#d63638;margin-left:5px;vertical-align:middle}.bcs-registration-lock-icon:before{font-size:17px}
+
+/* 0.15.1 — jednolity wygląd wszystkich podglądów danych formularzy */
+.bcs-form-preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}.bcs-form-preview-grid>.bcs-detail-item,.bcs-form-preview-grid>.bcs-preview-row{padding:14px 16px;border:1px solid #e5e7eb;border-radius:11px;background:#fff;box-shadow:0 2px 8px rgba(15,23,42,.025)}.bcs-form-preview-grid>.bcs-detail-item span,.bcs-form-preview-grid>.bcs-preview-row b{display:block;margin:0 0 5px;color:#111827;font-size:12px;font-weight:800}.bcs-form-preview-grid>.bcs-detail-item strong,.bcs-form-preview-grid>.bcs-preview-row span{display:block;color:#475569;font-size:14px;line-height:1.5;overflow-wrap:anywhere}.bcs-form-preview-grid>.bcs-detail-wide{grid-column:1/-1}@media(max-width:782px){.bcs-form-preview-grid{grid-template-columns:1fr}.bcs-form-preview-grid>.bcs-detail-wide{grid-column:auto}}
+
+/* 0.15.3 – unified application components */
+.bcs-admin .button:has(.dashicons),
+.bcs-admin button:has(.dashicons),
+.bcs-admin a.button:has(.dashicons){display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.bcs-admin .button .dashicons,
+.bcs-admin button .dashicons,
+.bcs-admin a.button .dashicons{margin:0!important;align-self:center;line-height:1;width:18px;height:18px;font-size:18px}
+.bcs-mail-preview-template{display:none}.bcs-mail-preview-dialog{width:min(920px,96vw)}
+.bcs-mail-preview-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin:18px 0;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;color:#475467}
+.bcs-mail-preview-body{padding:22px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;overflow-wrap:anywhere;line-height:1.55}
+.bcs-important-notes{border-left:4px solid #f97316}.bcs-important-notes-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.bcs-important-note{display:flex;gap:14px;padding:16px;border:1px solid #fed7aa;border-radius:12px;background:#fff7ed}.bcs-important-note>.dashicons{flex:0 0 30px;width:30px;height:30px;font-size:26px;color:#ea580c}.bcs-important-note p{color:#475467;margin:7px 0 12px}
+.bcs-data-preview-content{white-space:pre-wrap;padding:18px;margin-top:18px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;line-height:1.6;color:#1f2937}.bcs-modal-open{overflow:hidden}
+.bcs-summary-invoice{border-color:#e2e8f0!important;background:#fff!important}
+@media(max-width:782px){.bcs-important-notes-grid{grid-template-columns:1fr}.bcs-mail-preview-meta{align-items:flex-start;flex-direction:column}}
+
+.bcs-invoice-filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}.bcs-invoice-filters input[type=search]{min-width:320px}.bcs-icon-actions .button{display:inline-flex;align-items:center;justify-content:center}.bcs-icon-actions .dashicons{margin:0}
+
+/* 0.17.0 — wewnętrzny moduł Feedback */
+.bcs-feedback-tools{display:flex;align-items:center;justify-content:flex-end;margin-left:auto}
+.bcs-feedback-open{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;min-height:40px!important;padding:8px 14px!important;border-radius:10px!important;background:#f97316!important;border-color:#f97316!important;color:#fff!important;font-weight:700!important;box-shadow:none!important}
+.bcs-feedback-open:hover,.bcs-feedback-open:focus{background:#ea580c!important;border-color:#ea580c!important;color:#fff!important}
+.bcs-feedback-open .dashicons{margin:0!important;width:18px!important;height:18px!important;font-size:18px!important;line-height:18px!important}
+body.bcs-feedback-modal-open{overflow:hidden}
+.bcs-feedback-modal[hidden]{display:none!important}
+.bcs-feedback-modal{position:fixed;z-index:100100;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}
+.bcs-feedback-backdrop{position:absolute;inset:0;background:rgba(15,23,42,.62);backdrop-filter:blur(2px)}
+.bcs-feedback-dialog{position:relative;z-index:1;width:min(560px,100%);max-height:calc(100vh - 48px);overflow:auto;border-radius:18px;background:#fff;padding:26px;box-shadow:0 28px 80px rgba(15,23,42,.28);box-sizing:border-box}
+.bcs-feedback-dialog-head{display:flex;align-items:flex-start;gap:14px;padding-right:32px;margin-bottom:22px}
+.bcs-feedback-dialog-head>.dashicons{display:flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;height:44px;border-radius:12px;background:#fff7ed;color:#ea580c;font-size:24px;line-height:44px}
+.bcs-feedback-dialog h2{margin:0 0 5px;font-size:22px;line-height:1.25;color:#111827}
+.bcs-feedback-dialog p{margin:0;color:#64748b}
+.bcs-feedback-close{position:absolute;right:15px;top:12px;border:0;background:transparent;color:#64748b;font-size:30px;line-height:1;cursor:pointer;padding:5px}
+.bcs-feedback-dialog label{display:block;margin:0 0 7px;color:#334155;font-weight:700}
+.bcs-feedback-dialog select,.bcs-feedback-dialog textarea{display:block;width:100%;max-width:none;margin:0 0 18px;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;box-sizing:border-box;background:#fff}
+.bcs-feedback-dialog textarea{min-height:130px;resize:vertical}
+.bcs-feedback-dialog select:focus,.bcs-feedback-dialog textarea:focus{border-color:#f97316;box-shadow:0 0 0 1px #f97316;outline:none}
+.bcs-feedback-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+.bcs-feedback-actions .button{min-height:40px;padding:7px 15px;border-radius:9px}
+.bcs-feedback-message{min-height:20px;margin-top:-6px;font-weight:700}
+.bcs-feedback-message.is-success{color:#15803d}.bcs-feedback-message.is-error{color:#b91c1c}
+.bcs-feedback-filters{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+.bcs-feedback-filters a{display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#475569;text-decoration:none;font-weight:700;box-shadow:none}
+.bcs-feedback-filters a:hover,.bcs-feedback-filters a.is-active{border-color:#f97316;background:#fff7ed;color:#c2410c}
+.bcs-feedback-filters span{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#f1f5f9;font-size:11px;box-sizing:border-box}
+.bcs-feedback-filters a.is-active span{background:#fed7aa;color:#9a3412}
+.bcs-feedback-list{padding:0!important;overflow:hidden}
+.bcs-feedback-table th,.bcs-feedback-table td{vertical-align:top}
+.bcs-feedback-table td small{display:block;margin-top:4px;color:#64748b}
+.bcs-feedback-description{min-width:260px;max-width:500px;white-space:normal!important;overflow-wrap:anywhere;line-height:1.5}
+.bcs-feedback-url{display:block;margin-top:5px;font-size:12px}
+.bcs-feedback-type,.bcs-feedback-status{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}
+.bcs-feedback-type.type-bug{background:#fef2f2;color:#b91c1c}.bcs-feedback-type.type-feature{background:#eff6ff;color:#1d4ed8}.bcs-feedback-type.type-improvement{background:#fff7ed;color:#c2410c}
+.bcs-feedback-status.status-new{background:#fee2e2;color:#b91c1c}.bcs-feedback-status.status-in_progress{background:#ffedd5;color:#c2410c}.bcs-feedback-status.status-resolved{background:#dcfce7;color:#15803d}.bcs-feedback-status.status-cancelled{background:#f1f5f9;color:#64748b}
+.bcs-feedback-row-actions{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:120px}
+.bcs-feedback-row-actions form{margin:0}
+.bcs-feedback-row-actions .button{width:100%;min-height:32px;height:auto;padding:4px 8px!important;white-space:normal;font-size:12px;line-height:1.2;border-radius:7px!important}
+.bcs-feedback-action.status-resolved{border-color:#16a34a!important;color:#15803d!important}.bcs-feedback-action.status-resolved:hover{background:#16a34a!important;color:#fff!important}
+.bcs-feedback-action.status-cancelled{border-color:#94a3b8!important;color:#64748b!important}.bcs-feedback-action.status-cancelled:hover{background:#64748b!important;color:#fff!important}
+.bcs-empty-state{text-align:center;padding:55px 24px;color:#64748b}.bcs-empty-state>.dashicons{width:52px;height:52px;font-size:52px;line-height:52px;color:#fdba74}.bcs-empty-state h2{margin:14px 0 4px;color:#1e293b}
+@media(max-width:782px){.bcs-feedback-tools{width:100%;margin:10px 0 0}.bcs-feedback-open{width:100%}.bcs-feedback-modal{padding:12px}.bcs-feedback-dialog{padding:22px 18px;max-height:calc(100vh - 24px)}.bcs-feedback-actions{flex-direction:column-reverse}.bcs-feedback-actions .button{width:100%}.bcs-feedback-table{min-width:980px}}

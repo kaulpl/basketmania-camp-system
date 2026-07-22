@@ -1,0 +1,15 @@
+
+/* 0.12.3 — podgląd danych i dane przelewu w Panelu Rodzica */
+.bcs-readonly-card{margin-bottom:24px}
+.bcs-readonly-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
+.bcs-readonly-grid>div{padding:15px 17px;border:1px solid #e6e8ec;border-radius:12px;background:#fafbfc}
+.bcs-readonly-grid span{display:block;margin-bottom:6px;color:#6b7280;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+.bcs-readonly-grid strong{display:block;color:#17191d;font-size:15px;line-height:1.55;overflow-wrap:anywhere}
+.bcs-readonly-grid .bcs-readonly-wide{grid-column:1/-1}
+.bcs-transfer-details{margin-top:16px;padding:18px;border:1px solid #fecaca;border-radius:12px;background:#fff7f7}
+.bcs-transfer-details h3{margin:0 0 10px;color:#991b1b;font-size:16px}
+.bcs-transfer-details p{margin:0;line-height:1.7}
+@media(max-width:640px){.bcs-readonly-grid{grid-template-columns:1fr}.bcs-readonly-grid .bcs-readonly-wide{grid-column:auto}.bcs-card-head{align-items:flex-start;gap:12px;flex-direction:column}}
+
+/* 0.15.1 — podglądy danych spójne z podglądem na liście CRM */
+.bcs-form-preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}.bcs-form-preview-grid>div{padding:14px 16px;border:1px solid #e5e7eb;border-radius:11px;background:#fff;box-shadow:0 2px 8px rgba(15,23,42,.025)}.bcs-form-preview-grid span{display:block;margin-bottom:5px;color:#111827;font-size:12px;font-weight:800}.bcs-form-preview-grid strong{display:block;color:#475569;font-size:14px;line-height:1.5;overflow-wrap:anywhere}.bcs-form-preview-grid .bcs-form-preview-wide{grid-column:1/-1}@media(max-width:640px){.bcs-form-preview-grid{grid-template-columns:1fr}.bcs-form-preview-grid .bcs-form-preview-wide{grid-column:auto}}
