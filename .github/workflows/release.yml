@@ -1,0 +1,32 @@
+name: Build plugin release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare plugin directory
+        run: |
+          mkdir -p build/basketmania-camp-system
+          rsync -av --exclude='.git' --exclude='.github' --exclude='build' ./ build/basketmania-camp-system/
+
+      - name: Create ZIP
+        run: |
+          cd build
+          zip -r "basketmania-camp-system-${GITHUB_REF_NAME#v}.zip" basketmania-camp-system
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/basketmania-camp-system-*.zip
+          generate_release_notes: true
