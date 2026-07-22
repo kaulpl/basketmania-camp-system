@@ -8,6 +8,14 @@ final class BCS_Camp_Reports {
         add_action('admin_footer', [self::class, 'admin_enhancements']);
     }
 
+    private static function action_url(string $action, int $camp_id): string {
+        return add_query_arg([
+            'action' => $action,
+            'camp_id' => $camp_id,
+            '_wpnonce' => wp_create_nonce($action . '_' . $camp_id),
+        ], admin_url('admin-post.php'));
+    }
+
     public static function admin_enhancements(): void {
         if (!current_user_can('manage_options')) return;
         $page = sanitize_key(wp_unslash($_GET['page'] ?? ''));
@@ -19,8 +27,8 @@ final class BCS_Camp_Reports {
         foreach ($camps as $camp) {
             $id = (int)$camp->id;
             $links[(string)$id] = [
-                'shirts' => wp_nonce_url(admin_url('admin-post.php?action=bcs_camp_shirts_pdf&camp_id=' . $id), 'bcs_camp_shirts_pdf_' . $id),
-                'participants' => wp_nonce_url(admin_url('admin-post.php?action=bcs_camp_participants_pdf&camp_id=' . $id), 'bcs_camp_participants_pdf_' . $id),
+                'shirts' => self::action_url('bcs_camp_shirts_pdf', $id),
+                'participants' => self::action_url('bcs_camp_participants_pdf', $id),
             ];
         }
 

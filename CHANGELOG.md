@@ -2,6 +2,23 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.18.5] - 2026-07-22
+
+### Naprawiono
+- poprawiono generowanie odnośników do raportów „Lista strojów” i „Lista uczestników”; nonce nie jest już zapisywany w adresie jako zakodowane `&amp;`, co powodowało komunikat „Wybrany odnośnik jest nieaktualny”.
+
+### Dodano
+- zaznaczanie wielu faktur na liście faktur,
+- zbiorcze pobieranie wybranych faktur w jednym pliku PDF,
+- zbiorczą wysyłkę wybranych faktur do organizatorów; dokumenty są automatycznie grupowane według organizatora,
+- ustawienie dnia miesiąca od 1 do 28 dla automatycznej wysyłki faktur z poprzedniego miesiąca,
+- ręczny przycisk wysyłki faktur za poprzedni miesiąc,
+- generowanie osobnego zbiorczego PDF dla każdego organizatora i wysyłkę na adres e-mail zapisany w danych organizatora.
+
+### Zmieniono
+- mechanizm przed wysyłką weryfikuje liczbę zaznaczonych lub miesięcznych faktur,
+- istniejące pole e-mail organizatora jest wykorzystywane jako adres odbiorcy zestawień faktur.
+
 ## [0.18.4] - 2026-07-22
 
 ### Dodano
