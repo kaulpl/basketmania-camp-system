@@ -3,7 +3,7 @@
 if (!defined('ABSPATH')) exit;
 
 final class BCS_Updater {
-    private const API_URL = 'https://api.github.com/repos/kaulpl/basketmania-camp-system/releases/latest';
+    private const LATEST_RELEASE_URL = 'https://github.com/kaulpl/basketmania-camp-system/releases/latest';
     private const REPOSITORY_URL = 'https://github.com/kaulpl/basketmania-camp-system';
     private const PLUGIN_SLUG = 'basketmania-camp-system';
     private const CACHE_KEY = 'bcs_github_release';
@@ -27,8 +27,6 @@ final class BCS_Updater {
             $transient->no_update = [];
         }
 
-        // Ten filtr jest uruchamiany, gdy WordPress faktycznie odświeża listę aktualizacji.
-        // Pomijamy wtedy własny cache, aby „Sprawdź ponownie” zawsze pytało GitHub o świeży release.
         $release = self::get_release(true);
         $plugin = plugin_basename(BCS_FILE);
 
@@ -79,7 +77,7 @@ final class BCS_Updater {
             'download_link' => esc_url_raw((string) ($release['download_url'] ?? '')),
             'sections' => [
                 'description' => 'System zapisów, CRM, umów, płatności i dokumentów dla Basketmania Camp.',
-                'changelog' => wpautop(esc_html((string) ($release['changelog'] ?? ''))),
+                'changelog' => 'Szczegóły wydania są dostępne na stronie GitHub Releases.',
             ],
         ];
     }
@@ -93,84 +91,66 @@ final class BCS_Updater {
         }
 
         $checked_at = current_time('mysql');
-        $response = wp_remote_get(self::API_URL, [
+        $response = wp_remote_head(self::LATEST_RELEASE_URL, [
             'timeout' => 20,
+            'redirection' => 0,
             'headers' => [
-                'Accept' => 'application/vnd.github+json',
                 'User-Agent' => 'Basketmania-Camp-System/' . BCS_VERSION,
-                'X-GitHub-Api-Version' => '2022-11-28',
+                'Accept' => 'text/html,application/xhtml+xml',
             ],
         ]);
 
         if (is_wp_error($response)) {
-            update_site_option(self::LAST_CHECK_KEY, [
-                'checked_at' => $checked_at,
-                'ok' => false,
-                'error' => $response->get_error_message(),
-            ]);
+            self::save_error($checked_at, $response->get_error_message());
             return $response;
         }
 
         $code = (int) wp_remote_retrieve_response_code($response);
-        $body = json_decode((string) wp_remote_retrieve_body($response), true);
+        $location = (string) wp_remote_retrieve_header($response, 'location');
 
-        if ($code < 200 || $code >= 300 || !is_array($body)) {
-            update_site_option(self::LAST_CHECK_KEY, [
-                'checked_at' => $checked_at,
-                'ok' => false,
-                'error' => 'HTTP ' . $code,
-            ]);
-            return new WP_Error('bcs_github_update', 'Nie udało się pobrać informacji o aktualizacji z GitHuba.');
+        if (!in_array($code, [301, 302, 303, 307, 308], true) || $location === '') {
+            $error = 'Nie udało się odczytać przekierowania do najnowszego wydania (HTTP ' . $code . ').';
+            self::save_error($checked_at, $error);
+            return new WP_Error('bcs_github_update', $error);
         }
 
-        $tag = isset($body['tag_name']) ? ltrim((string) $body['tag_name'], 'vV') : '';
-        $download_url = self::find_zip_asset($body['assets'] ?? [], $tag);
-
-        if ($download_url === '' && !empty($body['zipball_url'])) {
-            $download_url = (string) $body['zipball_url'];
+        if (!preg_match('~/releases/tag/v?([^/?#]+)~', $location, $matches)) {
+            $error = 'GitHub nie zwrócił poprawnego numeru wersji w adresie wydania.';
+            self::save_error($checked_at, $error);
+            return new WP_Error('bcs_github_update', $error);
         }
+
+        $tag = sanitize_text_field((string) $matches[1]);
+        $download_url = self::REPOSITORY_URL . '/releases/download/v' . rawurlencode($tag) . '/' . self::PLUGIN_SLUG . '-' . rawurlencode($tag) . '.zip';
 
         $release = [
             'version' => $tag,
             'download_url' => $download_url,
-            'changelog' => isset($body['body']) ? (string) $body['body'] : '',
+            'changelog' => '',
         ];
 
         set_site_transient(self::CACHE_KEY, $release, 30 * MINUTE_IN_SECONDS);
         update_site_option(self::LAST_CHECK_KEY, [
             'checked_at' => $checked_at,
-            'ok' => $tag !== '' && $download_url !== '',
+            'ok' => true,
+            'source' => 'GitHub Releases redirect',
+            'http_code' => $code,
             'version' => $tag,
             'download_url' => $download_url,
-            'update_available' => $tag !== '' && version_compare(BCS_VERSION, $tag, '<'),
-            'error' => ($tag === '' || $download_url === '') ? 'Release nie zawiera wersji lub adresu paczki.' : '',
+            'update_available' => version_compare(BCS_VERSION, $tag, '<'),
+            'error' => '',
         ]);
 
         return $release;
     }
 
-    private static function find_zip_asset(array $assets, string $version): string {
-        $preferred_name = self::PLUGIN_SLUG . '-' . $version . '.zip';
-
-        foreach ($assets as $asset) {
-            if (!is_array($asset)) continue;
-            $name = isset($asset['name']) ? (string) $asset['name'] : '';
-            $url = isset($asset['browser_download_url']) ? (string) $asset['browser_download_url'] : '';
-            if ($name === $preferred_name && $url !== '') {
-                return $url;
-            }
-        }
-
-        foreach ($assets as $asset) {
-            if (!is_array($asset)) continue;
-            $name = isset($asset['name']) ? (string) $asset['name'] : '';
-            $url = isset($asset['browser_download_url']) ? (string) $asset['browser_download_url'] : '';
-            if ($url !== '' && str_ends_with(strtolower($name), '.zip')) {
-                return $url;
-            }
-        }
-
-        return '';
+    private static function save_error(string $checked_at, string $error): void {
+        update_site_option(self::LAST_CHECK_KEY, [
+            'checked_at' => $checked_at,
+            'ok' => false,
+            'source' => 'GitHub Releases redirect',
+            'error' => $error,
+        ]);
     }
 
     public static function force_refresh(): array {
