@@ -2,6 +2,24 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.18.7] - 2026-07-22
+
+### Dodano
+- rozwijane sekcje na ekranie Ustawienia dla ustawień wtyczki, powiadomień oraz dokumentów i automatyzacji,
+- zapamiętywanie stanu rozwinięcia sekcji ustawień w przeglądarce,
+- dwukolorowy pasek zapełnienia turnusu: pomarańczowy dla zgłoszeń z potwierdzoną pełną wpłatą i szary dla pozostałych rozpoczętych, nieanulowanych zgłoszeń,
+- czytelną legendę liczbową przy paskach zapełnienia turnusów.
+
+### Zmieniono
+- limit miejsc turnusu ma charakter informacyjny i nie blokuje formularza zapisów,
+- otwarte turnusy pozostają dostępne w formularzu także po przekroczeniu ustawionego limitu,
+- wszystkie nowe zgłoszenia rodziców są przyjmowane niezależnie od liczby dotychczasowych uczestników,
+- ustawienia wtyczki są domyślnie zwinięte po pierwszym wejściu na ekran.
+
+### Naprawiono
+- usunięto z karty zgłoszenia zbędny przycisk „Rejestracja – potwierdzono”, pozostawiony po uproszczeniu workflow,
+- ujednolicono interpretację zapełnienia turnusu na Dashboardzie i w module Turnusy.
+
 ## [0.18.6] - 2026-07-22
 
 ### Dodano
