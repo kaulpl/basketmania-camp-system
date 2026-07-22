@@ -2,6 +2,18 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.18.4] - 2026-07-22
+
+### Dodano
+- przyciski „Lista strojów” przy kafelkach turnusów na Dashboardzie i ekranie Turnusy,
+- PDF z listą strojów posortowaną od najmniejszego do największego rozmiaru, zawierający numer koszulki z prefiksem `#`, rozmiar oraz imię i nazwisko uczestnika,
+- przyciski „Lista uczestników” przy kafelkach turnusów,
+- PDF z aktualną listą uczestników posortowaną według daty urodzenia, zawierający numer kolejny, imię, nazwisko, alergie, potrzeby specjalne, inne informacje od rodzica oraz wiek obliczony na dzień rozpoczęcia turnusu,
+- roczny wykres zgłoszeń na Dashboardzie z podziałem na wszystkie miesiące i łączną liczbą zgłoszeń.
+
+### Zmieniono
+- moduł „Nowe zgłoszenia” na Dashboardzie zastąpiono czytelnym wykresem zgłoszeń dla bieżącego roku.
+
 ## [0.18.3] - 2026-07-22
 
 ### Naprawiono
