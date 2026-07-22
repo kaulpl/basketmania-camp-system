@@ -16,56 +16,36 @@ define('BCS_FILE', __FILE__);
 define('BCS_DIR', plugin_dir_path(__FILE__));
 define('BCS_URL', plugin_dir_url(__FILE__));
 
-require_once BCS_DIR . 'includes/class-bcs-license.php';
 require_once BCS_DIR . 'includes/class-bcs-updater.php';
-
-BCS_License::init();
 BCS_Updater::init();
 
-add_action('admin_menu', function () {
-    if (!current_user_can('manage_options') || BCS_License::is_valid()) {
-        return;
-    }
-    add_menu_page(
-        'Basketmania Camp – licencja',
-        'Basketmania Camp',
-        'manage_options',
-        'bcs-license',
-        ['BCS_License', 'render_page'],
-        'dashicons-lock',
-        58
-    );
-}, 1);
+require_once BCS_DIR . 'includes/class-bcs-db.php';
+require_once BCS_DIR . 'includes/class-bcs-utils.php';
+require_once BCS_DIR . 'includes/class-bcs-locks.php';
+require_once BCS_DIR . 'includes/class-bcs-sms.php';
+require_once BCS_DIR . 'includes/class-bcs-mailer.php';
+require_once BCS_DIR . 'includes/class-bcs-mailbox.php';
+require_once BCS_DIR . 'includes/class-bcs-agreements.php';
+require_once BCS_DIR . 'includes/class-bcs-payments.php';
+require_once BCS_DIR . 'includes/class-bcs-admin.php';
+require_once BCS_DIR . 'includes/class-bcs-feedback.php';
+require_once BCS_DIR . 'includes/class-bcs-frontend.php';
+require_once BCS_DIR . 'includes/class-bcs-documents.php';
+require_once BCS_DIR . 'includes/class-bcs-invoices.php';
+require_once BCS_DIR . 'includes/class-bcs-communications.php';
+require_once BCS_DIR . 'includes/class-bcs-templates.php';
+require_once BCS_DIR . 'includes/class-bcs-pdf.php';
+require_once BCS_DIR . 'includes/class-bcs-workflow.php';
+require_once BCS_DIR . 'includes/class-bcs-workflow-engine.php';
+require_once BCS_DIR . 'includes/class-bcs-template-engine.php';
+require_once BCS_DIR . 'includes/class-bcs-document-engine.php';
+require_once BCS_DIR . 'includes/class-bcs-communication-engine.php';
+require_once BCS_DIR . 'includes/class-bcs-core.php';
+require_once BCS_DIR . 'includes/class-bcs-crm.php';
+
+register_activation_hook(__FILE__, ['BCS_DB', 'activate']);
 
 add_action('plugins_loaded', function () {
-    if (!BCS_License::is_valid()) {
-        return;
-    }
-
-    require_once BCS_DIR . 'includes/class-bcs-db.php';
-    require_once BCS_DIR . 'includes/class-bcs-utils.php';
-    require_once BCS_DIR . 'includes/class-bcs-locks.php';
-    require_once BCS_DIR . 'includes/class-bcs-sms.php';
-    require_once BCS_DIR . 'includes/class-bcs-mailer.php';
-    require_once BCS_DIR . 'includes/class-bcs-mailbox.php';
-    require_once BCS_DIR . 'includes/class-bcs-agreements.php';
-    require_once BCS_DIR . 'includes/class-bcs-payments.php';
-    require_once BCS_DIR . 'includes/class-bcs-admin.php';
-    require_once BCS_DIR . 'includes/class-bcs-feedback.php';
-    require_once BCS_DIR . 'includes/class-bcs-frontend.php';
-    require_once BCS_DIR . 'includes/class-bcs-documents.php';
-    require_once BCS_DIR . 'includes/class-bcs-invoices.php';
-    require_once BCS_DIR . 'includes/class-bcs-communications.php';
-    require_once BCS_DIR . 'includes/class-bcs-templates.php';
-    require_once BCS_DIR . 'includes/class-bcs-pdf.php';
-    require_once BCS_DIR . 'includes/class-bcs-workflow.php';
-    require_once BCS_DIR . 'includes/class-bcs-workflow-engine.php';
-    require_once BCS_DIR . 'includes/class-bcs-template-engine.php';
-    require_once BCS_DIR . 'includes/class-bcs-document-engine.php';
-    require_once BCS_DIR . 'includes/class-bcs-communication-engine.php';
-    require_once BCS_DIR . 'includes/class-bcs-core.php';
-    require_once BCS_DIR . 'includes/class-bcs-crm.php';
-
     BCS_DB::maybe_upgrade();
     BCS_DB::init();
     BCS_Locks::init();
@@ -84,12 +64,4 @@ add_action('plugins_loaded', function () {
     BCS_Workflow::init();
     BCS_Core::init();
     BCS_CRM::init();
-});
-
-register_activation_hook(__FILE__, function () {
-    if (!BCS_License::is_valid()) {
-        return;
-    }
-    require_once BCS_DIR . 'includes/class-bcs-db.php';
-    BCS_DB::activate();
 });
