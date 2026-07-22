@@ -5,9 +5,14 @@ final class BCS_Service_Center {
     private const RELEASE_API = 'https://api.github.com/repos/kaulpl/basketmania-camp-system/releases/latest';
 
     public static function init(): void {
+        add_action('admin_menu', [self::class, 'menu'], 30);
         add_action('admin_post_bcs_service_clear_cache', [self::class, 'clear_cache']);
         add_action('admin_post_bcs_service_run_migrations', [self::class, 'run_migrations']);
         add_action('admin_post_bcs_service_test_pdf', [self::class, 'test_pdf']);
+    }
+
+    public static function menu(): void {
+        add_submenu_page('bcs-dashboard', 'Centrum serwisowe', 'Centrum serwisowe', 'manage_options', 'bcs-service-center', [self::class, 'page']);
     }
 
     public static function page(): void {
@@ -18,9 +23,7 @@ final class BCS_Service_Center {
         echo '<div class="wrap bcs-admin"><div class="bcs-page-head"><div><h1>Centrum serwisowe</h1><p>Diagnostyka, aktualizacje i narzędzia administracyjne Basketmania Camp System.</p></div><span class="bcs-count">'.(int)$ok.' / '.(int)$total.' testów OK</span></div>';
         if (isset($_GET['service_done'])) echo '<div class="notice notice-success is-dismissible"><p>'.esc_html(sanitize_text_field(wp_unslash($_GET['service_done']))).'</p></div>';
         echo '<div class="bcs-panel"><h2>Stan systemu</h2><table class="widefat striped"><thead><tr><th>Obszar</th><th>Test</th><th>Wynik</th><th>Szczegóły</th></tr></thead><tbody>';
-        foreach ($report as $row) {
-            echo '<tr><td><strong>'.esc_html($row['group']).'</strong></td><td>'.esc_html($row['label']).'</td><td>'.($row['ok'] ? '<span style="color:#16803c;font-weight:700">✓ OK</span>' : '<span style="color:#b32d2e;font-weight:700">✕ Błąd</span>').'</td><td>'.esc_html($row['detail']).'</td></tr>';
-        }
+        foreach ($report as $row) echo '<tr><td><strong>'.esc_html($row['group']).'</strong></td><td>'.esc_html($row['label']).'</td><td>'.($row['ok'] ? '<span style="color:#16803c;font-weight:700">✓ OK</span>' : '<span style="color:#b32d2e;font-weight:700">✕ Błąd</span>').'</td><td>'.esc_html($row['detail']).'</td></tr>';
         echo '</tbody></table></div>';
         echo '<div class="bcs-panel" style="margin-top:20px"><h2>Narzędzia serwisowe</h2><div style="display:flex;gap:12px;flex-wrap:wrap">';
         self::action_form('bcs_service_clear_cache', 'Wyczyść cache aktualizacji', 'dashicons-update');
