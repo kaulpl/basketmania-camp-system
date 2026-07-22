@@ -1,4 +1,4 @@
-name: Build plugin release
+name: Build and publish plugin release
 
 on:
   push:
@@ -9,12 +9,33 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout tagged version
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release tag: ${GITHUB_REF_NAME}" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "zip_name=basketmania-camp-system-$VERSION.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Verify plugin version matches tag
+        shell: bash
+        run: |
+          VERSION='${{ steps.version.outputs.version }}'
+          grep -Eq "^[[:space:]]*\*[[:space:]]+Version:[[:space:]]+$VERSION[[:space:]]*$" basketmania-camp-system.php
+          grep -Fq "define('BCS_VERSION', '$VERSION');" basketmania-camp-system.php
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -40,16 +61,20 @@ jobs:
 
       - name: Verify release package contents
         run: |
+          test -f build/basketmania-camp-system/basketmania-camp-system.php
           test -f build/basketmania-camp-system/vendor/autoload.php
           test -d build/basketmania-camp-system/vendor/dompdf/dompdf
 
       - name: Create ZIP
-        run: |
-          cd build
-          zip -r "basketmania-camp-system-${GITHUB_REF_NAME#v}.zip" basketmania-camp-system
+        working-directory: build
+        run: zip -r '${{ steps.version.outputs.zip_name }}' basketmania-camp-system
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/basketmania-camp-system-*.zip
+          name: Basketmania Camp System ${{ steps.version.outputs.version }}
+          files: build/${{ steps.version.outputs.zip_name }}
           generate_release_notes: true
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: true

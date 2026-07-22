@@ -2,8 +2,6 @@
 if (!defined('ABSPATH')) exit;
 
 final class BCS_Service_Center {
-    private const RELEASE_API = 'https://api.github.com/repos/kaulpl/basketmania-camp-system/releases/latest';
-
     public static function init(): void {
         add_action('admin_menu', [self::class, 'menu'], 30);
         add_action('admin_post_bcs_service_clear_cache', [self::class, 'clear_cache']);
@@ -32,7 +30,7 @@ final class BCS_Service_Center {
         self::action_form('bcs_service_clear_cache', 'Wyczyść cache aktualizacji', 'dashicons-update');
         self::action_form('bcs_service_run_migrations', 'Uruchom migracje bazy', 'dashicons-database');
         self::action_form('bcs_service_test_pdf', 'Wygeneruj testowy PDF', 'dashicons-media-document', true);
-        echo '</div><p class="description">Narzędzia są dostępne wyłącznie dla administratora i zabezpieczone nonce.</p></div></div>';
+        echo '</div><p class="description">Sprawdzanie aktualizacji korzysta z publicznego przekierowania GitHub Releases i nie zużywa limitu GitHub API.</p></div></div>';
     }
 
     private static function action_form(string $action, string $label, string $icon, bool $new_tab = false): void {
@@ -47,13 +45,14 @@ final class BCS_Service_Center {
         $upload = wp_upload_dir();
         $autoload = BCS_DIR . 'vendor/autoload.php';
         if (file_exists($autoload) && !class_exists('Dompdf\\Dompdf')) require_once $autoload;
-        $release = self::release_info();
         $diagnostics = BCS_Updater::diagnostics();
         $tables = ['organizers','camps','registrations','agreements','payments','feedback'];
-        $remote_version = (string)($diagnostics['version'] ?? $release['version'] ?? '');
+        $remote_version = (string)($diagnostics['version'] ?? '');
         $package_url = (string)($diagnostics['download_url'] ?? '');
         $last_check = (string)($diagnostics['checked_at'] ?? 'Jeszcze nie wykonano');
+        $source = (string)($diagnostics['source'] ?? 'GitHub Releases redirect');
         $update_available = $remote_version !== '' && version_compare(BCS_VERSION, $remote_version, '<');
+        $connection_ok = !empty($diagnostics['ok']);
         $rows = [
             ['group'=>'System','label'=>'Wersja wtyczki','ok'=>defined('BCS_VERSION'),'detail'=>defined('BCS_VERSION') ? BCS_VERSION : 'Brak'],
             ['group'=>'System','label'=>'WordPress','ok'=>version_compare(get_bloginfo('version'), '6.5', '>='),'detail'=>get_bloginfo('version')],
@@ -62,11 +61,11 @@ final class BCS_Service_Center {
             ['group'=>'Pliki','label'=>'Katalog uploads zapisywalny','ok'=>empty($upload['error']) && is_writable($upload['basedir']),'detail'=>empty($upload['error']) ? $upload['basedir'] : (string)$upload['error']],
             ['group'=>'Composer','label'=>'vendor/autoload.php','ok'=>file_exists($autoload),'detail'=>file_exists($autoload) ? 'Znaleziony' : 'Brak w paczce'],
             ['group'=>'PDF','label'=>'DOMPDF','ok'=>class_exists('Dompdf\\Dompdf'),'detail'=>class_exists('Dompdf\\Dompdf') ? 'Silnik dostępny' : 'Klasa niedostępna'],
-            ['group'=>'Aktualizacje','label'=>'GitHub API','ok'=>$release['ok'],'detail'=>$release['detail']],
+            ['group'=>'Aktualizacje','label'=>'Połączenie z GitHub Releases','ok'=>$connection_ok,'detail'=>$connection_ok ? $source : (string)($diagnostics['error'] ?? 'Uruchom sprawdzenie aktualizacji')],
             ['group'=>'Aktualizacje','label'=>'Najnowszy release','ok'=>$remote_version !== '','detail'=>$remote_version ?: 'Brak danych'],
-            ['group'=>'Aktualizacje','label'=>'Adres paczki ZIP','ok'=>$package_url !== '' || $release['ok'],'detail'=>$package_url !== '' ? 'Paczka została odnaleziona' : 'Sprawdź aktualizacje, aby zapisać wynik'],
+            ['group'=>'Aktualizacje','label'=>'Adres paczki ZIP','ok'=>$package_url !== '','detail'=>$package_url !== '' ? 'Paczka została odnaleziona' : 'Brak danych'],
             ['group'=>'Aktualizacje','label'=>'Porównanie wersji','ok'=>$remote_version !== '','detail'=>$remote_version === '' ? 'Brak danych' : ($update_available ? 'Dostępna aktualizacja '.$remote_version : 'Wtyczka jest aktualna')],
-            ['group'=>'Aktualizacje','label'=>'Ostatnie pełne sprawdzenie','ok'=>!empty($diagnostics['ok']),'detail'=>$last_check.(!empty($diagnostics['error']) ? ' — '.$diagnostics['error'] : '')],
+            ['group'=>'Aktualizacje','label'=>'Ostatnie pełne sprawdzenie','ok'=>$connection_ok,'detail'=>$last_check.(!empty($diagnostics['error']) ? ' — '.$diagnostics['error'] : '')],
         ];
         foreach ($tables as $table) {
             $name = BCS_DB::table($table);
@@ -77,16 +76,6 @@ final class BCS_Service_Center {
         $rows[] = ['group'=>'Konfiguracja','label'=>'E-mail nadawcy','ok'=>!empty($settings['mail_from_email']) || is_email(get_option('admin_email')),'detail'=>(string)($settings['mail_from_email'] ?? get_option('admin_email'))];
         $rows[] = ['group'=>'Konfiguracja','label'=>'Bramka SMS','ok'=>!empty($settings['sms_provider']),'detail'=>(string)($settings['sms_provider'] ?? 'Nie skonfigurowano')];
         return $rows;
-    }
-
-    private static function release_info(): array {
-        $response = wp_remote_get(self::RELEASE_API, ['timeout'=>12,'headers'=>['Accept'=>'application/vnd.github+json','User-Agent'=>'Basketmania-Camp-System/'.BCS_VERSION]]);
-        if (is_wp_error($response)) return ['ok'=>false,'version'=>'','detail'=>$response->get_error_message()];
-        $code = (int)wp_remote_retrieve_response_code($response);
-        $body = json_decode((string)wp_remote_retrieve_body($response), true);
-        if ($code < 200 || $code >= 300 || !is_array($body)) return ['ok'=>false,'version'=>'','detail'=>'HTTP '.$code];
-        $version = ltrim((string)($body['tag_name'] ?? ''), 'vV');
-        return ['ok'=>true,'version'=>$version,'detail'=>$version ? 'GitHub odpowiada; release '.$version : 'GitHub odpowiada'];
     }
 
     public static function check_updates(): void {

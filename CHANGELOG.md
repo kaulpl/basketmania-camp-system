@@ -2,6 +2,18 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.18.3] - 2026-07-22
+
+### Naprawiono
+- usunięto zależność mechanizmu aktualizacji od limitowanego endpointu GitHub API,
+- sprawdzanie najnowszej wersji korzysta teraz z publicznego przekierowania strony GitHub Releases,
+- wyeliminowano błędy HTTP 403 powodowane wyczerpaniem limitu 60 anonimowych zapytań na godzinę,
+- adres paczki ZIP jest budowany na podstawie numeru najnowszego taga i nazwy pliku generowanego przez workflow.
+
+### Zmieniono
+- Centrum serwisowe pokazuje stan połączenia z GitHub Releases zamiast testu GitHub API,
+- diagnostyka informuje, że sprawdzanie aktualizacji nie zużywa limitu GitHub API.
+
 ## [0.18.2] - 2026-07-22
 
 ### Naprawiono
