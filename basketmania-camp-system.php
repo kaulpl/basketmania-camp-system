@@ -35,6 +35,7 @@ require_once BCS_DIR . 'includes/class-bcs-invoices.php';
 require_once BCS_DIR . 'includes/class-bcs-invoice-batches.php';
 require_once BCS_DIR . 'includes/class-bcs-communications.php';
 require_once BCS_DIR . 'includes/class-bcs-notification-settings.php';
+require_once BCS_DIR . 'includes/class-bcs-workflow-modernization.php';
 require_once BCS_DIR . 'includes/class-bcs-templates.php';
 require_once BCS_DIR . 'includes/class-bcs-pdf.php';
 require_once BCS_DIR . 'includes/class-bcs-camp-reports.php';
@@ -65,6 +66,7 @@ add_action('plugins_loaded', function () {
     BCS_Invoice_Batches::init();
     BCS_Communications::init();
     BCS_Notification_Settings::init();
+    BCS_Workflow_Modernization::init();
     BCS_Templates::init();
     BCS_PDF::init();
     BCS_Camp_Reports::init();
