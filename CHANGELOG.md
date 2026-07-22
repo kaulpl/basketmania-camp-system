@@ -2,6 +2,24 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.18.8] - 2026-07-23
+
+### Przywrócono i skonsolidowano
+- kompletne ustawienia kanałów powiadomień dla każdego etapu workflow: brak, e-mail, SMS albo oba kanały,
+- edytowalne szablony e-mail i SMS dla wszystkich zdarzeń workflow,
+- walidację kompletności szablonów przed zapisaniem aktywnego kanału,
+- automatyczne uzupełnianie brakujących domyślnych treści SMS bez nadpisywania zmian administratora,
+- bezpośrednie odnośniki z ustawień powiadomień do właściwego szablonu,
+- status kompletności e-mail/SMS w module Szablony,
+- zabezpieczenie przed ponowną wysyłką komunikatów jednorazowych.
+
+### Zawiera również
+- uproszczony workflow bez ręcznego potwierdzania wstępnej rejestracji,
+- rozwijane i zapamiętywane sekcje na ekranie Ustawienia,
+- usunięcie zbędnego przycisku „Rejestracja – potwierdzono”,
+- dwukolorowy pasek zapełnienia turnusu: pomarańczowy dla zgłoszeń podpisanych i w pełni opłaconych, szary dla pozostałych rozpoczętych i nieanulowanych,
+- informacyjny limit uczestników, który nigdy nie blokuje kolejnych rejestracji.
+
 ## [0.18.7] - 2026-07-22
 
 ### Dodano
