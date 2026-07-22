@@ -2,6 +2,19 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.18.2] - 2026-07-22
+
+### Naprawiono
+- ręczne użycie opcji „Sprawdź ponownie” w WordPressie zawsze pobiera świeże dane najnowszego Release z GitHuba,
+- własny cache aktualizatora nie blokuje już wykrycia nowej wersji przez kilka godzin,
+- aktualizator poprawnie obsługuje pusty lub niepełny obiekt transientu WordPressa,
+- wpis aktualizacji i wpis „brak aktualizacji” są poprawnie porządkowane w transientach WordPressa.
+
+### Zmieniono
+- czas przechowywania danych Release w cache skrócono z 6 godzin do 30 minut,
+- Centrum serwisowe pokazuje ostatni wynik sprawdzenia, wersję z GitHuba, dostępność paczki oraz wynik porównania wersji,
+- dodano przycisk „Sprawdź aktualizacje GitHub teraz”, który czyści cache i wykonuje pełne sprawdzenie.
+
 ## [0.18.1] - 2026-07-22
 
 ### Dodano
