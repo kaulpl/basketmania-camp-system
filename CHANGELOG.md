@@ -2,6 +2,21 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.18.1] - 2026-07-22
+
+### Dodano
+- Centrum serwisowe dostępne z menu Basketmania Camp,
+- diagnostykę wersji wtyczki, WordPressa i PHP,
+- kontrolę wersji schematu bazy danych i obecności najważniejszych tabel,
+- kontrolę katalogu uploads, autoloadera Composer i silnika DOMPDF,
+- kontrolę połączenia z GitHub API i numeru najnowszego wydania,
+- narzędzia do czyszczenia cache aktualizacji, ręcznego uruchamiania migracji oraz generowania testowego PDF,
+- ikonę kopiowania pełnej treści opisu bezpośrednio na liście zgłoszeń Feedback.
+
+### Zmieniono
+- numer wersji wtyczki z `0.18.0` na `0.18.1`,
+- lista Feedback nadal wyświetla pełny opis, a obok niego udostępnia szybkie kopiowanie do schowka.
+
 ## [0.18.0] - 2026-07-22
 
 ### Dodano
