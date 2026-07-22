@@ -2,6 +2,26 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.18.6] - 2026-07-22
+
+### Dodano
+- sekcję „Powiadomienia workflow” w ustawieniach wtyczki,
+- możliwość wyboru osobno dla każdego etapu: brak powiadomienia, e-mail, SMS albo e-mail i SMS,
+- bezpośredni odnośnik z ustawień powiadomień do edycji właściwego szablonu e-mail i SMS,
+- kontrolę kompletności szablonów dla wszystkich zdarzeń workflow,
+- oznaczenie komunikatów jednorazowych i automatyczną blokadę ponownej wysyłki tego samego skutecznego powiadomienia.
+
+### Zmieniono
+- po wstępnej rejestracji Formularz Obozowy jest dostępny od razu, bez ręcznej akceptacji administratora,
+- pierwszy e-mail jednocześnie dziękuje za zgłoszenie i zawiera przycisk prowadzący do Formularza Obozowego,
+- usunięto z interfejsu akcje „Potwierdź rejestrację”, „Zaakceptuj rejestrację” i „Wyślij formularz po akceptacji”,
+- ustawienia powiadomień są połączone z edytowalnym systemem szablonów,
+- rozwiązane zgłoszenia Feedback nie udostępniają żadnych dalszych akcji.
+
+### Naprawiono
+- zabezpieczono potwierdzenie podpisania umowy przed wysłaniem zdublowanej wiadomości e-mail,
+- centralny silnik komunikacji respektuje ustawienia kanałów niezależnie od miejsca wywołania powiadomienia.
+
 ## [0.18.5] - 2026-07-22
 
 ### Naprawiono
