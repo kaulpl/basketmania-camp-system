@@ -7,6 +7,7 @@ final class BCS_Service_Center {
     public static function init(): void {
         add_action('admin_menu', [self::class, 'menu'], 30);
         add_action('admin_post_bcs_service_clear_cache', [self::class, 'clear_cache']);
+        add_action('admin_post_bcs_service_check_updates', [self::class, 'check_updates']);
         add_action('admin_post_bcs_service_run_migrations', [self::class, 'run_migrations']);
         add_action('admin_post_bcs_service_test_pdf', [self::class, 'test_pdf']);
     }
@@ -22,10 +23,12 @@ final class BCS_Service_Center {
         $total = count($report);
         echo '<div class="wrap bcs-admin"><div class="bcs-page-head"><div><h1>Centrum serwisowe</h1><p>Diagnostyka, aktualizacje i narzędzia administracyjne Basketmania Camp System.</p></div><span class="bcs-count">'.(int)$ok.' / '.(int)$total.' testów OK</span></div>';
         if (isset($_GET['service_done'])) echo '<div class="notice notice-success is-dismissible"><p>'.esc_html(sanitize_text_field(wp_unslash($_GET['service_done']))).'</p></div>';
+        if (isset($_GET['service_error'])) echo '<div class="notice notice-error is-dismissible"><p>'.esc_html(sanitize_text_field(wp_unslash($_GET['service_error']))).'</p></div>';
         echo '<div class="bcs-panel"><h2>Stan systemu</h2><table class="widefat striped"><thead><tr><th>Obszar</th><th>Test</th><th>Wynik</th><th>Szczegóły</th></tr></thead><tbody>';
         foreach ($report as $row) echo '<tr><td><strong>'.esc_html($row['group']).'</strong></td><td>'.esc_html($row['label']).'</td><td>'.($row['ok'] ? '<span style="color:#16803c;font-weight:700">✓ OK</span>' : '<span style="color:#b32d2e;font-weight:700">✕ Błąd</span>').'</td><td>'.esc_html($row['detail']).'</td></tr>';
         echo '</tbody></table></div>';
         echo '<div class="bcs-panel" style="margin-top:20px"><h2>Narzędzia serwisowe</h2><div style="display:flex;gap:12px;flex-wrap:wrap">';
+        self::action_form('bcs_service_check_updates', 'Sprawdź aktualizacje GitHub teraz', 'dashicons-update-alt');
         self::action_form('bcs_service_clear_cache', 'Wyczyść cache aktualizacji', 'dashicons-update');
         self::action_form('bcs_service_run_migrations', 'Uruchom migracje bazy', 'dashicons-database');
         self::action_form('bcs_service_test_pdf', 'Wygeneruj testowy PDF', 'dashicons-media-document', true);
@@ -45,7 +48,12 @@ final class BCS_Service_Center {
         $autoload = BCS_DIR . 'vendor/autoload.php';
         if (file_exists($autoload) && !class_exists('Dompdf\\Dompdf')) require_once $autoload;
         $release = self::release_info();
+        $diagnostics = BCS_Updater::diagnostics();
         $tables = ['organizers','camps','registrations','agreements','payments','feedback'];
+        $remote_version = (string)($diagnostics['version'] ?? $release['version'] ?? '');
+        $package_url = (string)($diagnostics['download_url'] ?? '');
+        $last_check = (string)($diagnostics['checked_at'] ?? 'Jeszcze nie wykonano');
+        $update_available = $remote_version !== '' && version_compare(BCS_VERSION, $remote_version, '<');
         $rows = [
             ['group'=>'System','label'=>'Wersja wtyczki','ok'=>defined('BCS_VERSION'),'detail'=>defined('BCS_VERSION') ? BCS_VERSION : 'Brak'],
             ['group'=>'System','label'=>'WordPress','ok'=>version_compare(get_bloginfo('version'), '6.5', '>='),'detail'=>get_bloginfo('version')],
@@ -55,7 +63,10 @@ final class BCS_Service_Center {
             ['group'=>'Composer','label'=>'vendor/autoload.php','ok'=>file_exists($autoload),'detail'=>file_exists($autoload) ? 'Znaleziony' : 'Brak w paczce'],
             ['group'=>'PDF','label'=>'DOMPDF','ok'=>class_exists('Dompdf\\Dompdf'),'detail'=>class_exists('Dompdf\\Dompdf') ? 'Silnik dostępny' : 'Klasa niedostępna'],
             ['group'=>'Aktualizacje','label'=>'GitHub API','ok'=>$release['ok'],'detail'=>$release['detail']],
-            ['group'=>'Aktualizacje','label'=>'Najnowszy release','ok'=>$release['ok'] && $release['version'] !== '','detail'=>$release['version'] ?: 'Brak danych'],
+            ['group'=>'Aktualizacje','label'=>'Najnowszy release','ok'=>$remote_version !== '','detail'=>$remote_version ?: 'Brak danych'],
+            ['group'=>'Aktualizacje','label'=>'Adres paczki ZIP','ok'=>$package_url !== '' || $release['ok'],'detail'=>$package_url !== '' ? 'Paczka została odnaleziona' : 'Sprawdź aktualizacje, aby zapisać wynik'],
+            ['group'=>'Aktualizacje','label'=>'Porównanie wersji','ok'=>$remote_version !== '','detail'=>$remote_version === '' ? 'Brak danych' : ($update_available ? 'Dostępna aktualizacja '.$remote_version : 'Wtyczka jest aktualna')],
+            ['group'=>'Aktualizacje','label'=>'Ostatnie pełne sprawdzenie','ok'=>!empty($diagnostics['ok']),'detail'=>$last_check.(!empty($diagnostics['error']) ? ' — '.$diagnostics['error'] : '')],
         ];
         foreach ($tables as $table) {
             $name = BCS_DB::table($table);
@@ -78,10 +89,22 @@ final class BCS_Service_Center {
         return ['ok'=>true,'version'=>$version,'detail'=>$version ? 'GitHub odpowiada; release '.$version : 'GitHub odpowiada'];
     }
 
+    public static function check_updates(): void {
+        self::guard('bcs_service_check_updates');
+        $result = BCS_Updater::force_refresh();
+        if (empty($result['ok'])) {
+            $error = (string)($result['error'] ?? 'Nie udało się pobrać poprawnych danych wydania.');
+            wp_safe_redirect(add_query_arg(['page'=>'bcs-service-center','service_error'=>$error], admin_url('admin.php'))); exit;
+        }
+        $message = !empty($result['update_available'])
+            ? 'GitHub zwrócił wersję '.$result['version'].'. Aktualizacja jest dostępna.'
+            : 'GitHub zwrócił wersję '.$result['version'].'. Wtyczka jest aktualna.';
+        wp_safe_redirect(add_query_arg(['page'=>'bcs-service-center','service_done'=>$message], admin_url('admin.php'))); exit;
+    }
+
     public static function clear_cache(): void {
         self::guard('bcs_service_clear_cache');
-        delete_site_transient('bcs_github_release');
-        delete_site_transient('update_plugins');
+        BCS_Updater::clear_cache();
         wp_safe_redirect(add_query_arg(['page'=>'bcs-service-center','service_done'=>'Cache aktualizacji został wyczyszczony.'], admin_url('admin.php'))); exit;
     }
 
