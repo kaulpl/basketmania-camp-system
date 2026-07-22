@@ -11,14 +11,37 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer:v2
+          coverage: none
+
+      - name: Install production dependencies
+        run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
+
+      - name: Verify DOMPDF
+        run: php -r "require 'vendor/autoload.php'; if (!class_exists('Dompdf\\Dompdf')) { fwrite(STDERR, 'DOMPDF is missing from the release build.'); exit(1); }"
+
       - name: Prepare plugin directory
         run: |
           mkdir -p build/basketmania-camp-system
-          rsync -av --exclude='.git' --exclude='.github' --exclude='build' ./ build/basketmania-camp-system/
+          rsync -av \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='build' \
+            ./ build/basketmania-camp-system/
+
+      - name: Verify release package contents
+        run: |
+          test -f build/basketmania-camp-system/vendor/autoload.php
+          test -d build/basketmania-camp-system/vendor/dompdf/dompdf
 
       - name: Create ZIP
         run: |
