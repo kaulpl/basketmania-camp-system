@@ -45,6 +45,10 @@ final class BCS_Release_0192 {
 
             const timeline = document.querySelector('.bcs-timeline');
             if (!timeline) return;
+            timeline.querySelectorAll('.bcs-timeline-item').forEach(function (item) {
+                const title = item.querySelector('strong');
+                if (title && title.textContent.trim() === '') item.remove();
+            });
             const existing = timeline.textContent || '';
             const events = <?php echo wp_json_encode($events, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
             events.forEach(function (event) {
