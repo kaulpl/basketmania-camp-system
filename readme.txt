@@ -2,11 +2,18 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.19.4.4
+Stable tag: 0.20.0
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.0 =
+* Naprawiono generowanie, zapis i weryfikację faktur z listy oraz karty zgłoszenia.
+* Po wygenerowaniu faktury interfejs AJAX pokazuje zielone „Wykonano” i udostępnia podgląd oraz PDF.
+* Wycofanie niepodpisanej umowy jest dostępne wyłącznie w Szybkich czynnościach otwartej karty.
+* Uproszczono blok Dane i formularze w Panelu Rodzica.
+* Ujednolicono rozwijane sekcje Ustawień, ich ikony, tytuły, kolejność i wyrównanie opisów.
 
 = 0.19.4.4 =
 * Naprawiono wyświetlanie pustych pól Formularza Obozowego w Panelu Rodzica na PHP 8.1+.
