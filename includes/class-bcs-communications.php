@@ -274,12 +274,16 @@ class BCS_Communications {
                 if ($agreement_trigger->modify('+'.$agreement_after.' days') <= $today) {
                     self::send_once((int)$r->id, 'auto_agreement_reminder', 'agreement_reminder');
                 }
+            } elseif ($r->agreement_status === 'pending' && !empty($r->agreement_id) && empty($r->agreement_sent_at)) {
+                self::log_automation_skip_once((int)$r->id, (int)$r->agreement_id, 'auto_agreement_reminder', 'missing_agreement_sent_at');
             }
             if ($r->agreement_status === 'accepted' && (float)$r->paid_amount < (float)$r->total_amount && !empty($r->payment_due_date)) {
                 $payment_trigger = new DateTimeImmutable($r->payment_due_date, BCS_Utils::timezone());
                 if ($payment_trigger->modify('+'.$payment_after.' days') <= $today) {
                     self::send_once((int)$r->id, 'auto_payment', 'payment');
                 }
+            } elseif ($r->agreement_status === 'accepted' && (float)$r->paid_amount < (float)$r->total_amount && empty($r->payment_due_date)) {
+                self::log_automation_skip_once((int)$r->id, (int)$r->agreement_id, 'auto_payment', 'missing_payment_due_date');
             }
             if (!empty($r->start_date)) {
                 $camp_start = new DateTimeImmutable($r->start_date, BCS_Utils::timezone());
@@ -287,6 +291,8 @@ class BCS_Communications {
                 if ($days_to >= 0 && $days_to <= $pre_days) {
                     self::send_once((int)$r->id, 'auto_pre_camp', 'pre_camp');
                 }
+            } else {
+                self::log_automation_skip_once((int)$r->id, (int)$r->agreement_id, 'auto_pre_camp', 'missing_camp_start_date');
             }
         }
     }
@@ -295,13 +301,48 @@ class BCS_Communications {
         global $wpdb;
         $exists = (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM ".BCS_DB::table('logs')." WHERE registration_id=%d AND event_type=%s", $registration_id, $event));
         if ($exists) return;
+        $agreement_id = (int)$wpdb->get_var($wpdb->prepare(
+            "SELECT agreement_id FROM ".BCS_DB::table('registrations')." WHERE id=%d",
+            $registration_id
+        ));
         $channel = class_exists('BCS_Notification_Settings')
             ? BCS_Notification_Settings::channels_for($template, 'email')
             : 'email';
-        if ($channel === 'off') return;
-        if (self::send_to_registration($registration_id, $template, $channel)) {
-            BCS_Utils::log($event, ['template'=>$template,'channel'=>$channel], $registration_id, null);
+        if ($channel === 'off') {
+            self::log_automation_skip_once($registration_id, $agreement_id, $event, 'channel_disabled', $template);
+            return;
         }
+        if (self::send_to_registration($registration_id, $template, $channel)) {
+            BCS_Utils::log($event, ['template'=>$template,'channel'=>$channel,'result'=>'success'], $registration_id, $agreement_id ?: null);
+            return;
+        }
+        $result = self::last_send_result();
+        BCS_Utils::log($event.'_failed', [
+            'template'=>$template,
+            'channel'=>$channel,
+            'result'=>'failed',
+            'email_error'=>(string)($result['email_error'] ?? ''),
+            'sms_error'=>(string)($result['sms_error'] ?? ''),
+        ], $registration_id, $agreement_id ?: null);
+    }
+
+    private static function log_automation_skip_once(int $registration_id, int $agreement_id, string $event, string $reason, string $template=''): void {
+        global $wpdb;
+        $skip_event = $event.'_skipped';
+        $exists = (int)$wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM ".BCS_DB::table('logs')."
+             WHERE registration_id=%d AND event_type=%s
+             AND event_data LIKE %s",
+            $registration_id,
+            $skip_event,
+            '%"reason":"'.$wpdb->esc_like($reason).'"%'
+        ));
+        if ($exists) return;
+        BCS_Utils::log($skip_event, [
+            'template'=>$template,
+            'result'=>'skipped',
+            'reason'=>$reason,
+        ], $registration_id, $agreement_id ?: null);
     }
 
     public static function page(): void {
