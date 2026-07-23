@@ -2,11 +2,16 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.3
+Stable tag: 0.20.4
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.4 =
+* Umowy mają format [prefiks umów z Ustawień]/[prefiks organizatora]/[rok]/[numer].
+* Faktury korzystają z prefiksu faktur ustawionego w module Ustawienia zamiast sztywnego FV.
+* Prefiks organizatora jest wspólny dla numeracji umów i faktur.
 
 = 0.20.3 =
 * Dodano osobny prefiks faktur w ustawieniach każdego organizatora.
