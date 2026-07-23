@@ -81,17 +81,24 @@ class BCS_Invoices {
         $dir=BCS_Document_Engine::uploads_dir().'/registration-'.$registration_id;if(!is_dir($dir))wp_mkdir_p($dir);
         $base='03-faktura-'.sanitize_file_name(str_replace('/','-',$number));$pdf=$dir.'/'.$base.'.pdf';$html_path=$dir.'/'.$base.'.html';
         $path=BCS_PDF::generate($html,$pdf,'Faktura '.$number)?$pdf:$html_path;if($path===$html_path)file_put_contents($path,$html);
-        $wpdb->insert(BCS_DB::table('invoices'),['registration_id'=>$registration_id,'organizer_id'=>$r->organizer_id,'invoice_number'=>$number,'issue_date'=>BCS_Utils::today('Y-m-d'),'gross_amount'=>$gross,'net_amount'=>$net,'vat_amount'=>$vat,'vat_rate'=>$vat_rate,'status'=>'generated','file_path'=>$path,'ksef_status'=>'not_sent','created_at'=>BCS_Utils::now()]);
-        BCS_Utils::log('invoice_created',['invoice_id'=>(int)$wpdb->insert_id,'invoice_number'=>$number,'path'=>$path],$registration_id,null);
+        $inserted=$wpdb->insert(BCS_DB::table('invoices'),['registration_id'=>$registration_id,'organizer_id'=>$r->organizer_id,'invoice_number'=>$number,'issue_date'=>BCS_Utils::today('Y-m-d'),'gross_amount'=>$gross,'net_amount'=>$net,'vat_amount'=>$vat,'vat_rate'=>$vat_rate,'status'=>'generated','file_path'=>$path,'ksef_status'=>'not_sent','created_at'=>BCS_Utils::now()]);
+        if($inserted===false || !(int)$wpdb->insert_id){
+            BCS_Utils::log('invoice_create_failed',['invoice_number'=>$number,'database_error'=>(string)$wpdb->last_error],$registration_id,null);
+            return '';
+        }
+        $invoice_id=(int)$wpdb->insert_id;
+        $wpdb->update(BCS_DB::table('registrations'),['invoice_status'=>'generated','updated_at'=>BCS_Utils::now()],['id'=>$registration_id]);
+        BCS_Utils::log('invoice_created',['invoice_id'=>$invoice_id,'invoice_number'=>$number,'path'=>$path],$registration_id,null);
         return $path;
     }
 
     public static function generate_and_send(int $registration_id): bool {
         global $wpdb;
         $lock_name='bcs_invoice_registration_'.$registration_id;
-        $locked=(int)$wpdb->get_var($wpdb->prepare("SELECT GET_LOCK(%s, 5)",$lock_name));
-        if($locked!==1){
-            BCS_Utils::log('invoice_duplicate_generation_blocked',['reason'=>'Nie udało się uzyskać blokady generowania faktury.'],$registration_id,null);
+        $lock_result=$wpdb->get_var($wpdb->prepare("SELECT GET_LOCK(%s, 5)",$lock_name));
+        $locked=(int)$lock_result===1;
+        if($lock_result!==null && !$locked){
+            BCS_Utils::log('invoice_duplicate_generation_blocked',['reason'=>'Inny proces generuje już fakturę.'],$registration_id,null);
             return false;
         }
         try {
@@ -117,7 +124,7 @@ class BCS_Invoices {
             BCS_Utils::log('invoice_delivery',['invoice_id'=>(int)$invoice->id,'invoice_number'=>$invoice->invoice_number,'email_success'=>$email_ok,'email_error'=>$email_ok?'':BCS_Mailer::last_error(),'sms_success'=>$sms_ok,'sms_error'=>$sms_ok?'':(string)($sms_result['error']??''),'email_body'=>$body,'sms_body'=>$sms],$registration_id,null);
             return true;
         } finally {
-            $wpdb->get_var($wpdb->prepare("SELECT RELEASE_LOCK(%s)",$lock_name));
+            if($locked)$wpdb->get_var($wpdb->prepare("SELECT RELEASE_LOCK(%s)",$lock_name));
         }
     }
 
