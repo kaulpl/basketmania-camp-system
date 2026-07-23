@@ -179,7 +179,8 @@ class BCS_CRM {
                 : '';
             return '<br><span class="bcs-id bcs-payment-date">Płatność '.esc_html(BCS_Utils::format_datetime($r->payment_paid_at)).$stripe_icon.'</span>';
         }
-        return '<br><span class="bcs-id">Płatność #'.esc_html($r->payment_external_id ?: $r->payment_real_id).'</span>';
+        if($r->payment_provider==='stripe') return '<br><span class="bcs-id">Oczekuje na płatność Stripe</span>';
+        return '<br><span class="bcs-id">Płatność #'.esc_html($r->payment_real_id).'</span>';
     }
 
     public static function page(): void {

@@ -54,6 +54,7 @@
  .bcs-progress-card .bcs-steps-five .bcs-step.current .bcs-step-marker{top:15px}
  .bcs-progress-card .bcs-steps-five .bcs-step.current:after{top:12px;right:12px}
 }
+.bcs-signature-button-note{display:block;max-width:520px;margin-top:7px;color:#64748b;font-size:11px;line-height:1.4}
 
 /* 0.16.3 — korekta znaczników i opisów osi procesu */
 .bcs-progress-card .bcs-step > .bcs-step-copy{
