@@ -2,6 +2,16 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.0] - 2026-07-23
+
+### Naprawiono
+- generowanie faktury z listy i karty zgłoszenia zapisuje oraz weryfikuje rekord w module Faktury,
+- brak obsługi MySQL `GET_LOCK` nie blokuje generowania, a błąd zapisu faktury nie jest już zgłaszany jako sukces,
+- karta zgłoszenia aktualizuje stan akcji faktury przez AJAX i udostępnia podgląd oraz pobranie PDF,
+- blok obsługi zgłoszenia nie pojawia się na liście, a wycofanie niepodpisanej umowy pozostaje w Szybkich czynnościach karty,
+- blok Dane i formularze w Panelu Rodzica zawiera jedną właściwą akcję formularza osobowego,
+- sekcje Ustawień mają pojedyncze tytuły, ikony, poprawną kolejność i wyrównanie opisów do lewej.
+
 ## [0.19.4.4] - 2026-07-23
 
 ### Naprawiono
