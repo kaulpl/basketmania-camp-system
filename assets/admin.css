@@ -45,6 +45,7 @@
 .bcs-stage-agreement_accepted{background:#eef4ff!important;color:#3538cd!important;border-color:#c7d7fe!important}
 .bcs-stage-awaiting_bank_payment{background:#fef3f2!important;color:#b42318!important;border-color:#fecdca!important}
 .bcs-stage-stripe_link_sent{background:#f4f3ff!important;color:#5925dc!important;border-color:#d9d6fe!important}
+.bcs-payment-date{display:inline-flex;align-items:center;gap:5px}.bcs-stripe-icon{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:middle}
 .bcs-stage-partially_paid{background:#fff6ed!important;color:#c4320a!important;border-color:#ff9c66!important}
 .bcs-stage-paid{background:#ecfdf3!important;color:#027a48!important;border-color:#75e0a7!important}
 .bcs-stage-cancelled{background:#f2f4f7!important;color:#344054!important;border-color:#d0d5dd!important}
