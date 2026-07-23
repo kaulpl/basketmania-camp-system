@@ -2,7 +2,7 @@
 if (!defined('ABSPATH')) exit;
 
 class BCS_DB {
-    public const DB_VERSION = '0.20.5';
+    public const DB_VERSION = '0.20.14';
     public static function init(): void {}
 
     public static function maybe_upgrade(): void {
@@ -136,6 +136,7 @@ class BCS_DB {
         $sql[] = "CREATE TABLE " . self::table('agreements') . " (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             registration_id BIGINT UNSIGNED NOT NULL,
+            organizer_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
             agreement_number VARCHAR(80) NOT NULL,
             version VARCHAR(30) NOT NULL DEFAULT '1.0',
             html LONGTEXT NOT NULL,
@@ -149,7 +150,8 @@ class BCS_DB {
             declaration_text TEXT NULL,
             created_at DATETIME NOT NULL,
             PRIMARY KEY (id),
-            UNIQUE KEY agreement_number (agreement_number),
+            UNIQUE KEY organizer_agreement_number (organizer_id, agreement_number),
+            KEY organizer_id (organizer_id),
             KEY registration_id (registration_id)
         ) $charset;";
 
@@ -330,6 +332,23 @@ class BCS_DB {
         $legacy_invoice_index = $wpdb->get_var("SHOW INDEX FROM {$invoices_table} WHERE Key_name = 'invoice_number'");
         if ($legacy_invoice_index !== null) {
             $wpdb->query("ALTER TABLE {$invoices_table} DROP INDEX invoice_number");
+        }
+
+        // Od 0.20.14 umowy, podobnie jak faktury, mają niezależną numerację
+        // w ramach organizatora. Istniejące dokumenty zachowują swoje numery.
+        $agreements_table = self::table('agreements');
+        $registrations_table = self::table('registrations');
+        $camps_table = self::table('camps');
+        $wpdb->query(
+            "UPDATE {$agreements_table} a
+             JOIN {$registrations_table} r ON r.id=a.registration_id
+             JOIN {$camps_table} c ON c.id=r.camp_id
+             SET a.organizer_id=c.organizer_id
+             WHERE a.organizer_id=0"
+        );
+        $legacy_agreement_index = $wpdb->get_var("SHOW INDEX FROM {$agreements_table} WHERE Key_name = 'agreement_number'");
+        if ($legacy_agreement_index !== null) {
+            $wpdb->query("ALTER TABLE {$agreements_table} DROP INDEX agreement_number");
         }
 
         // Migracja starego, fabrycznego wzoru faktury do nowego szablonu 0.12.0.
