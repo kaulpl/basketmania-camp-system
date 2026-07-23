@@ -2,6 +2,19 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.19] - 2026-07-23
+
+### Zmieniono
+- przypomnienie o podpisaniu umowy jest liczone od faktycznego wysłania bieżącej umowy i korzysta z własnego szablonu,
+- przypomnienie o płatności jest liczone od terminu płatności, a nie od utworzenia zgłoszenia,
+- informacje przed obozem są wysyłane wszystkim aktywnym uczestnikom, niezależnie od statusu płatności,
+- każda automatyzacja respektuje osobny kanał wybrany w ustawieniach powiadomień.
+
+### Naprawiono
+- usunięto użycie szablonu potwierdzenia rezerwacji jako przypomnienia o umowie,
+- dodano czytelne nazwy automatycznych zdarzeń w Historii klienta,
+- doprecyzowano opisy terminów automatyzacji w module Ustawienia.
+
 ## [0.20.18] - 2026-07-23
 
 ### Zmieniono

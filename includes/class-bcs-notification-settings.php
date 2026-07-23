@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit;
 /** Konfiguracja kanałów i kontrola kompletności szablonów powiadomień workflow. */
 final class BCS_Notification_Settings {
     private const OPTION = 'bcs_notification_channels';
-    private const TEMPLATE_MIGRATION = 'bcs_notification_templates_migrated_0186';
+    private const TEMPLATE_MIGRATION = 'bcs_notification_templates_migrated_02019';
 
     public static function init(): void {
         self::ensure_complete_templates();
@@ -18,6 +18,7 @@ final class BCS_Notification_Settings {
             'camp_form_request' => ['label'=>'Ponowienie prośby o Formularz Obozowy','description'=>'Ręczne lub automatyczne przypomnienie, gdy formularz nadal nie został uzupełniony.','default'=>'off','once'=>false],
             'camp_form_verified' => ['label'=>'Formularz Obozowy sprawdzony','description'=>'Informacja o zakończeniu weryfikacji pełnych danych uczestnika.','default'=>'email','once'=>true],
             'agreement_sent' => ['label'=>'Umowa gotowa do podpisania','description'=>'Powiadomienie z dostępem do podpisu umowy kodem SMS.','default'=>'both','once'=>false],
+            'agreement_reminder' => ['label'=>'Przypomnienie o podpisaniu umowy','description'=>'Automatyczne przypomnienie liczone od wysłania bieżącej umowy.','default'=>'both','once'=>false],
             'agreement_signed' => ['label'=>'Umowa podpisana','description'=>'Potwierdzenie podpisania oraz dane do płatności.','default'=>'email','once'=>true],
             'stripe_link' => ['label'=>'Link do płatności Stripe','description'=>'Indywidualny link do płatności internetowej.','default'=>'email','once'=>false],
             'payment' => ['label'=>'Przypomnienie o płatności','description'=>'Automatyczne lub ręczne przypomnienie o zaległej wpłacie.','default'=>'both','once'=>false],
@@ -33,6 +34,7 @@ final class BCS_Notification_Settings {
             'camp_form_request'=>'Basketmania Camp: prosimy o uzupelnienie Formularza Obozowego dla {{CHILD_NAME}}. Szczegoly i dostep do panelu znajduja sie w e-mailu.',
             'camp_form_verified'=>'Basketmania Camp: Formularz Obozowy uczestnika {{CHILD_NAME}} zostal sprawdzony. Kolejne informacje przeslemy zgodnie z procesem rejestracji.',
             'agreement_sent'=>'Basketmania Camp: umowa {{AGREEMENT_NUMBER}} jest gotowa do podpisu. Otworz Panel Rodzica i potwierdz umowe kodem SMS.',
+            'agreement_reminder'=>'Basketmania Camp: przypominamy, ze umowa {{AGREEMENT_NUMBER}} nadal oczekuje na podpis. Otworz Panel Rodzica i potwierdz umowe kodem SMS.',
             'agreement_signed'=>'Basketmania Camp: umowa {{AGREEMENT_NUMBER}} zostala podpisana. Dane do platnosci i potwierdzenie wyslalismy e-mailem.',
             'stripe_link'=>'Basketmania Camp: przygotowalismy indywidualny link do platnosci za {{CAMP_NAME}}. Link zostal wyslany w wiadomosci e-mail.',
             'payment'=>'Basketmania Camp: przypominamy o platnosci za udzial {{CHILD_NAME}} w {{CAMP_NAME}}. Kwota: {{AMOUNT_DUE}} zl. Dane do przelewu wyslalismy e-mailem.',
