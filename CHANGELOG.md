@@ -2,6 +2,18 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.10] - 2026-07-23
+
+### Zmieniono
+- po przesłaniu Formularza Obozowego rodzic może otworzyć jego podgląd w trybie edycji aż do akceptacji przez administratora,
+- blok Umowa pokazuje komunikat „Wzór umowy będzie dostępny po zaakceptowaniu Formularza Obozowego”,
+- nazwa „Formularz Obozowy” jest stosowana spójnie w elementach interfejsu objętych zmianą.
+
+### Naprawiono
+- Panel Rodzica cyklicznie sprawdza blokadę i odświeża widok, gdy administrator otworzy Kartę Zgłoszenia,
+- zapis Formularza Obozowego nadal jest chroniony serwerowo przed równoczesną edycją,
+- szybkie akcje listy zgłoszeń są wykonywane przez AJAX, bez przejścia do Karty Zgłoszenia, z dwusekundowym zielonym potwierdzeniem.
+
 ## [0.20.9] - 2026-07-23
 
 ### Zmieniono
@@ -82,7 +94,7 @@ Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku
 - brak obsługi MySQL `GET_LOCK` nie blokuje generowania, a błąd zapisu faktury nie jest już zgłaszany jako sukces,
 - karta zgłoszenia aktualizuje stan akcji faktury przez AJAX i udostępnia podgląd oraz pobranie PDF,
 - blok obsługi zgłoszenia nie pojawia się na liście, a wycofanie niepodpisanej umowy pozostaje w Szybkich czynnościach karty,
-- blok Dane i formularze w Panelu Rodzica zawiera jedną właściwą akcję formularza osobowego,
+- blok Dane i formularze w Panelu Rodzica zawiera jedną właściwą akcję Formularza Obozowego,
 - sekcje Ustawień mają pojedyncze tytuły, ikony, poprawną kolejność i wyrównanie opisów do lewej.
 
 ## [0.19.4.4] - 2026-07-23
