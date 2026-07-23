@@ -151,7 +151,22 @@ class BCS_CRM {
             EXISTS(SELECT 1 FROM ".BCS_DB::table('agreements')." au WHERE au.id=r.agreement_id AND au.status='accepted') has_signed_agreement,
             EXISTS(SELECT 1 FROM ".BCS_DB::table('payments')." pp WHERE pp.registration_id=r.id AND pp.status='paid') has_paid_payment,
             EXISTS(SELECT 1 FROM ".BCS_DB::table('invoices')." fi WHERE fi.registration_id=r.id AND fi.status='sent') has_sent_invoice
-            FROM ".BCS_DB::table('registrations')." r JOIN ".BCS_DB::table('camps')." c ON c.id=r.camp_id LEFT JOIN ".BCS_DB::table('agreements')." a ON a.id=r.agreement_id LEFT JOIN ".BCS_DB::table('payments')." p ON p.id=r.payment_id WHERE ".implode(' AND ',$where)." ORDER BY requires_action DESC, r.updated_at DESC";
+            FROM ".BCS_DB::table('registrations')." r JOIN ".BCS_DB::table('camps')." c ON c.id=r.camp_id LEFT JOIN ".BCS_DB::table('agreements')." a ON a.id=r.agreement_id LEFT JOIN ".BCS_DB::table('payments')." p ON p.id=r.payment_id WHERE ".implode(' AND ',$where)." ORDER BY
+            CASE r.status
+                WHEN 'new' THEN 10
+                WHEN 'admin_confirmed' THEN 10
+                WHEN 'form_complete' THEN 30
+                WHEN 'draft_sent' THEN 40
+                WHEN 'agreement_sent' THEN 50
+                WHEN 'awaiting_bank_payment' THEN 60
+                WHEN 'stripe_link_sent' THEN 70
+                WHEN 'partially_paid' THEN 80
+                WHEN 'paid' THEN 90
+                WHEN 'cancelled' THEN 100
+                ELSE 85
+            END ASC,
+            r.created_at DESC,
+            r.id DESC";
         $rows=$args?$wpdb->get_results($wpdb->prepare($sql,...$args)):$wpdb->get_results($sql);
         $camps=$wpdb->get_results("SELECT id,name FROM ".BCS_DB::table('camps')." ORDER BY start_date DESC");
         $labels=BCS_Workflow_Engine::statuses();

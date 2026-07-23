@@ -2,6 +2,13 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.7] - 2026-07-23
+
+### Zmieniono
+- lista zgłoszeń jest domyślnie sortowana zgodnie z kolejnością etapów procesu,
+- najnowsze i oczekujące na Formularz Obozowy zgłoszenia są na górze, a zakończone „Opłacone” i „Anulowane” na dole,
+- w obrębie każdego etapu nowsze zgłoszenia są wyświetlane wyżej.
+
 ## [0.20.6] - 2026-07-23
 
 ### Zmieniono
