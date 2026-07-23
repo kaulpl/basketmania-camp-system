@@ -58,7 +58,11 @@ final class BCS_Release_0191 {
                     const json=await response.json();
                     if(!response.ok||!json.success)throw new Error(json?.data?.message||'Nie udało się wycofać umowy.');
                     showResult(json.data.message||'Umowa została wycofana.',true);
-                    setTimeout(()=>window.location.reload(),900);
+                    if(typeof window.bcsRefreshRegistrationCard02017==='function'){
+                        await window.bcsRefreshRegistrationCard02017();
+                    }else{
+                        button.remove();
+                    }
                 }catch(error){showResult(error.message||'Nie udało się wycofać umowy.',false);button.disabled=false;}
             }
 
@@ -103,6 +107,7 @@ final class BCS_Release_0191 {
             }
 
             restoreQuickActions();
+            window.bcsRestoreQuickActions0191=restoreQuickActions;
             setTimeout(restoreQuickActions,100);
         })();
         </script>
