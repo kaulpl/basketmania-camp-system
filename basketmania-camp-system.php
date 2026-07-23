@@ -39,6 +39,7 @@ require_once BCS_DIR . 'includes/class-bcs-workflow-modernization.php';
 require_once BCS_DIR . 'includes/class-bcs-release-0187.php';
 require_once BCS_DIR . 'includes/class-bcs-release-0189.php';
 require_once BCS_DIR . 'includes/class-bcs-release-0190.php';
+require_once BCS_DIR . 'includes/class-bcs-release-0190-hardening.php';
 require_once BCS_DIR . 'includes/class-bcs-templates.php';
 require_once BCS_DIR . 'includes/class-bcs-pdf.php';
 require_once BCS_DIR . 'includes/class-bcs-camp-reports.php';
@@ -73,6 +74,7 @@ add_action('plugins_loaded', function () {
     BCS_Release_0187::init();
     BCS_Release_0189::init();
     BCS_Release_0190::init();
+    BCS_Release_0190_Hardening::init();
     BCS_Templates::init();
     BCS_PDF::init();
     BCS_Camp_Reports::init();
