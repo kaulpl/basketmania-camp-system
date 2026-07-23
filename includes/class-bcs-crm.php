@@ -154,7 +154,7 @@ class BCS_CRM {
             FROM ".BCS_DB::table('registrations')." r JOIN ".BCS_DB::table('camps')." c ON c.id=r.camp_id LEFT JOIN ".BCS_DB::table('agreements')." a ON a.id=r.agreement_id LEFT JOIN ".BCS_DB::table('payments')." p ON p.id=r.payment_id WHERE ".implode(' AND ',$where)." ORDER BY
             CASE r.status
                 WHEN 'new' THEN 10
-                WHEN 'admin_confirmed' THEN 20
+                WHEN 'admin_confirmed' THEN 10
                 WHEN 'form_complete' THEN 30
                 WHEN 'draft_sent' THEN 40
                 WHEN 'agreement_sent' THEN 50
