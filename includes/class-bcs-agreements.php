@@ -13,11 +13,13 @@ class BCS_Agreements {
 
     public static function build_for_registration(int $registration_id, string $status='pending', bool $include_date=true): int {
         global $wpdb;
-        $reg=$wpdb->get_row($wpdb->prepare("SELECT r.*,c.name camp_name,c.start_date,c.end_date,c.location,o.name organizer_name,o.legal_form organizer_legal_form,o.address organizer_address,o.nip organizer_nip,o.regon organizer_regon,o.krs organizer_krs,o.email organizer_email,o.phone organizer_phone,o.bank_name,o.bank_account,o.representative organizer_representative,o.transfer_title_template FROM ".BCS_DB::table('registrations')." r JOIN ".BCS_DB::table('camps')." c ON c.id=r.camp_id LEFT JOIN ".BCS_DB::table('organizers')." o ON o.id=c.organizer_id WHERE r.id=%d",$registration_id));
+        $reg=$wpdb->get_row($wpdb->prepare("SELECT r.*,c.name camp_name,c.start_date,c.end_date,c.location,c.organizer_id,o.name organizer_name,o.legal_form organizer_legal_form,o.address organizer_address,o.nip organizer_nip,o.regon organizer_regon,o.krs organizer_krs,o.email organizer_email,o.phone organizer_phone,o.bank_name,o.bank_account,o.representative organizer_representative,o.transfer_title_template,o.invoice_prefix organizer_prefix FROM ".BCS_DB::table('registrations')." r JOIN ".BCS_DB::table('camps')." c ON c.id=r.camp_id LEFT JOIN ".BCS_DB::table('organizers')." o ON o.id=c.organizer_id WHERE r.id=%d",$registration_id));
         if(!$reg)return 0;
-        $settings=get_option('bcs_settings',[]);$prefix=sanitize_key($settings['agreement_prefix']??'BC');
+        $settings=get_option('bcs_settings',[]);
+        $base_prefix=strtoupper(preg_replace('/[^A-Za-z0-9_-]/','',(string)($settings['agreement_prefix']??'BC'))) ?: 'BC';
+        $organizer_prefix=strtoupper(preg_replace('/[^A-Za-z0-9_-]/','',(string)($reg->organizer_prefix??''))) ?: 'ORG'.(int)$reg->organizer_id;
         $year=$reg->start_date?substr($reg->start_date,0,4):gmdate('Y');
-        $number=strtoupper($prefix).'/'.$year.'/'.str_pad((string)$registration_id,5,'0',STR_PAD_LEFT);
+        $number=$base_prefix.'/'.$organizer_prefix.'/'.$year.'/'.str_pad((string)$registration_id,5,'0',STR_PAD_LEFT);
         $template=BCS_Template_Engine::get('documents','agreement',self::default_template());
         $agreement_date=$include_date?BCS_Utils::today('d.m.Y'):'';
         $replace=[
