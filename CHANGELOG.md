@@ -2,6 +2,13 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.19.4.4] - 2026-07-23
+
+### Naprawiono
+- puste dane opcjonalne Formularza Obozowego są zamieniane na pusty tekst przed przekazaniem do funkcji WordPressa `esc_attr()` i `esc_textarea()`,
+- usunięto ostrzeżenia PHP 8.1+ `htmlspecialchars(): Passing null to parameter #1`, które mogły pojawiać się wewnątrz pól formularza w Panelu Rodzica,
+- ujednolicono szybkie akcje, obsługę generowania faktur, sekcje ustawień i komunikaty blokady Formularza Obozowego zgodnie z poprawkami zebranymi po wersji 0.19.4.3.
+
 ## [0.19.4.2] - 2026-07-23
 
 ### Naprawiono
