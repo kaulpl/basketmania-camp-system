@@ -175,6 +175,7 @@ final class BCS_Release_0187 {
                 if (page !== 'bcs-settings') return;
                 const wrap = document.querySelector('.wrap.bcs-admin');
                 if (!wrap) return;
+                if (wrap.dataset.bcsSettingsNative === '0209') return;
 
                 const mainForm = Array.from(wrap.querySelectorAll('form')).find(function(form){
                     return form.querySelector('[name="bcs_save_settings"]');
