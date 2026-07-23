@@ -11,6 +11,7 @@ class BCS_Templates {
         self::migrate_0152_templates();
         self::migrate_0208_templates();
         self::migrate_02013_templates();
+        self::migrate_02016_templates();
     }
 
 
@@ -85,6 +86,41 @@ class BCS_Templates {
             update_option('bcs_content_templates', $saved, false);
         }
         update_option('bcs_templates_migrated_02013', 1, false);
+    }
+
+    private static function migrate_02016_templates(): void {
+        if (get_option('bcs_templates_migrated_02016')) return;
+        $saved = get_option('bcs_content_templates', []);
+        if (!is_array($saved)) $saved = [];
+        $body = (string)($saved['emails']['camp_form_verified']['body'] ?? '');
+        if ($body !== '') {
+            $updated = str_replace(
+                [
+                    'informujemy, że dane',
+                    'Draft umowy jest już dostępny',
+                    'draft umowy jest już dostępny',
+                    'wzór umowy jest już dostępny',
+                    '<br><br>Pozdrawiamy<br>Basketmania Camp',
+                    '<p>Pozdrawiamy<br>Basketmania Camp</p>',
+                    '<p>Pozdrawiamy</p><p>Basketmania Camp</p>',
+                ],
+                [
+                    'Informujemy, że dane',
+                    'Wzór umowy jest już dostępny',
+                    'Wzór umowy jest już dostępny',
+                    'Wzór umowy jest już dostępny',
+                    '',
+                    '',
+                    '',
+                ],
+                $body
+            );
+            if ($updated !== $body) {
+                $saved['emails']['camp_form_verified']['body'] = $updated;
+                update_option('bcs_content_templates', $saved, false);
+            }
+        }
+        update_option('bcs_templates_migrated_02016', 1, false);
     }
 
     public static function menu(): void {

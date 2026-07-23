@@ -34,7 +34,7 @@ class BCS_Communications {
             'camp_form_verified' => [
                 'name'=>'Potwierdzenie poprawności formularza obozowego',
                 'subject'=>'Formularz obozowy został potwierdzony – {{CAMP_NAME}}',
-                'body'=>'Dzień dobry {{PARENT_NAME}},<br><br>informujemy, że dane w formularzu obozowym uczestnika <strong>{{CHILD_NAME}}</strong> zostały sprawdzone i potwierdzone przez Organizatora Basketmania Camp.<br><br>Draft umowy jest już dostępny w panelu rodzica. Kolejne informacje dotyczące podpisania umowy otrzymają Państwo w następnym etapie.<br><br><a href="{{PORTAL_URL}}" style="display:inline-block;background:#f97316;color:#ffffff;padding:13px 20px;border-radius:8px;text-decoration:none;font-weight:700">Otwórz panel rodzica</a><br><br>Turnus: {{CAMP_NAME}}<br>Termin: {{CAMP_DATES}}<br>Miejsce: {{CAMP_LOCATION}}<br><br>Pozdrawiamy<br>Basketmania Camp',
+                'body'=>'Dzień dobry {{PARENT_NAME}},<br><br>Informujemy, że dane w formularzu obozowym uczestnika <strong>{{CHILD_NAME}}</strong> zostały sprawdzone i potwierdzone przez Organizatora Basketmania Camp.<br><br>Wzór umowy jest już dostępny w panelu rodzica. Kolejne informacje dotyczące podpisania umowy otrzymają Państwo w następnym etapie.<br><br><a href="{{PORTAL_URL}}" style="display:inline-block;background:#f97316;color:#ffffff;padding:13px 20px;border-radius:8px;text-decoration:none;font-weight:700">Otwórz panel rodzica</a><br><br>Turnus: {{CAMP_NAME}}<br>Termin: {{CAMP_DATES}}<br>Miejsce: {{CAMP_LOCATION}}',
                 'sms'=>'Basketmania Camp: formularz obozowy {{CHILD_NAME}} został potwierdzony przez Organizatora.',
             ],
             'draft_agreement' => [

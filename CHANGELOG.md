@@ -2,6 +2,15 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.16] - 2026-07-23
+
+### Zmieniono
+- wiadomość potwierdzająca Formularz Obozowy rozpoczyna wskazane akapity od „Informujemy, że dane…” oraz „Wzór umowy…”,
+- istniejący szablon jest aktualizowany punktowo, bez nadpisywania pozostałych zmian administratora.
+
+### Naprawiono
+- usunięto własne zakończenie „Pozdrawiamy / Basketmania Camp”, dzięki czemu wiadomość zawiera tylko wspólną stopkę „Z pozdrowieniami, Zespół Basketmania Camp”.
+
 ## [0.20.14] - 2026-07-23
 
 ### Zmieniono
