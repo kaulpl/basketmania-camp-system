@@ -551,19 +551,19 @@ class BCS_Admin {
         $s = get_option('bcs_settings', []);
         if (!empty($_GET['bcs_reset_done'])) add_settings_error('bcs','reset_done','Usunięto dane operacyjne. Konfiguracja wtyczki, organizatorzy, turnusy i szablony pozostały bez zmian.','updated');
         settings_errors('bcs');
-        echo '<div class="wrap bcs-admin"><div class="bcs-page-head"><div><h1>Ustawienia</h1><p>Bramki SMS, zewnętrzna skrzynka e-mail, numeracja dokumentów i automatyzacje.</p></div></div>';
+        echo '<div class="wrap bcs-admin" data-bcs-settings-native="0209"><div class="bcs-page-head"><div><h1>Ustawienia</h1><p>Bramki SMS, zewnętrzna skrzynka e-mail, numeracja dokumentów i automatyzacje.</p></div></div>';
 
         echo '<section class="bcs-panel"><form method="post">';
         wp_nonce_field('bcs_save_settings');
         $active_provider = in_array($s['sms_provider'] ?? 'smsapi', ['smsapi','justsend','smsplanet'], true) ? $s['sms_provider'] : 'smsapi';
-        echo '<details class="bcs-settings-accordion" open><summary><span><span class="dashicons dashicons-admin-generic"></span><strong>Ustawienia wtyczki</strong></span><span class="bcs-settings-summary">Podstawowe parametry systemu</span></summary><div class="bcs-settings-accordion-body"><div class="bcs-form-grid">';
+        echo '<details class="bcs-settings-accordion bcs-settings-section-0209" open><summary><span><span class="dashicons dashicons-admin-generic"></span><strong>Ustawienia Ogólne</strong></span><span class="bcs-settings-summary">Podstawowe parametry systemu</span></summary><span hidden aria-hidden="true">Ustawienia wtyczki</span><div class="bcs-settings-accordion-body"><div class="bcs-form-grid">';
         echo '<label><span>Czas blokady Formularza Obozowego (min)</span><input type="number" min="1" max="30" name="registration_lock_minutes" value="'.esc_attr($s['registration_lock_minutes'] ?? 3).'"><small>Blokada jest aktywna wyłącznie do czasu zaakceptowania Formularza Obozowego.</small></label>';
         echo '<label><span>Nazwa systemu</span><input name="company_name" value="'.esc_attr($s['company_name'] ?? 'Basketmania Camp').'"></label>';
         echo '<label><span>E-mail systemowy</span><input type="email" name="company_email" value="'.esc_attr($s['company_email'] ?? get_option('admin_email')).'"></label>';
         echo '<label><span>Logo panelu rodzica (URL)</span><input type="url" name="portal_logo_url" value="'.esc_attr($s['portal_logo_url'] ?? '').'"></label>';
         echo '<label><span>Strona marki</span><input type="url" name="portal_brand_url" value="'.esc_attr($s['portal_brand_url'] ?? 'https://camp.basketmania.pl/').'"></label>';
-        echo '</div></div></details>';
-        echo '<details class="bcs-settings-accordion"><summary><span><span class="dashicons dashicons-smartphone"></span><strong>Bramka SMS</strong></span><span class="bcs-settings-summary">Aktywna: '.esc_html(BCS_SMS::provider_label($active_provider)).'</span></summary><div class="bcs-settings-accordion-body">';
+        echo '</div>'.self::settings_save_button().'</div></details>';
+        echo '<details class="bcs-settings-accordion bcs-settings-section-0209" open><summary><span><span class="dashicons dashicons-smartphone"></span><strong>Bramka SMS</strong></span><span class="bcs-settings-summary">Aktywna: '.esc_html(BCS_SMS::provider_label($active_provider)).'</span></summary><div class="bcs-settings-accordion-body">';
         echo '<div class="bcs-form-grid"><label class="bcs-span-2"><span>Aktywna bramka SMS</span><select name="sms_provider" id="bcs-sms-provider"><option value="smsapi" '.selected($active_provider,'smsapi',false).'>SMSAPI</option><option value="justsend" '.selected($active_provider,'justsend',false).'>JustSend</option><option value="smsplanet" '.selected($active_provider,'smsplanet',false).'>SMSPLANET.PL</option></select></label>';
         echo '<p class="description bcs-span-2">System korzysta tylko z wybranej bramki. Konfiguracja drugiego operatora pozostaje zapisana, dzięki czemu można przełączać dostawcę bez ponownego wpisywania kluczy.</p></div>';
         echo '<div class="bcs-sms-provider-box" data-bcs-provider-box="smsapi"><h3>Konfiguracja SMSAPI</h3><div class="bcs-form-grid">';
@@ -584,10 +584,10 @@ class BCS_Admin {
         echo '<p class="description bcs-span-2">Token wygenerujesz w panelu SMSPLANET.PL w zakładce API. Pole nadawcy musi być wcześniej zaakceptowane. System wysyła przez zalecaną metodę POST i automatycznie usuwa polskie znaki oraz linki.</p></div></div>';
         echo '<div class="bcs-form-grid bcs-sms-common-settings"><label><span>Ważność kodu SMS (min)</span><input type="number" min="2" max="30" name="otp_minutes" value="'.esc_attr($s['otp_minutes'] ?? 2).'"></label>';
         echo '<label><span>Limit wysyłek kodu OTP na godzinę</span><input type="number" min="1" max="20" name="otp_send_limit" value="'.esc_attr($s['otp_send_limit'] ?? 3).'"><small>Limit jest sprawdzany po stronie serwera w Panelu Rodzica.</small></label>';
-        echo '<label><span>Maksymalna liczba błędnych prób wpisania kodu</span><input type="number" min="1" max="20" name="max_attempts" value="'.esc_attr($s['max_attempts'] ?? 5).'"></label></div></div></details>';
+        echo '<label><span>Maksymalna liczba błędnych prób wpisania kodu</span><input type="number" min="1" max="20" name="max_attempts" value="'.esc_attr($s['max_attempts'] ?? 5).'"></label></div>'.self::settings_save_button().'</div></details>';
 
         $mail_transport = in_array($s['mail_transport'] ?? 'wordpress', ['wordpress','smtp'], true) ? $s['mail_transport'] : 'wordpress';
-        echo '<details class="bcs-settings-accordion"><summary><span><span class="dashicons dashicons-email-alt"></span><strong>E-MAIL</strong></span><span class="bcs-settings-summary">Aktywna wysyłka: '.esc_html(BCS_Mailer::transport_label($s)).'</span></summary><div class="bcs-settings-accordion-body">';
+        echo '<details class="bcs-settings-accordion bcs-settings-section-0209" open><summary><span><span class="dashicons dashicons-email-alt"></span><strong>E-Mail</strong></span><span class="bcs-settings-summary">Aktywna wysyłka: '.esc_html(BCS_Mailer::transport_label($s)).'</span></summary><div class="bcs-settings-accordion-body">';
         echo '<div class="bcs-form-grid"><label class="bcs-span-2"><span>Podstawowy sposób wysyłki</span><select name="mail_transport" id="bcs-mail-transport"><option value="wordpress" '.selected($mail_transport,'wordpress',false).'>WordPress / poczta hostingu</option><option value="smtp" '.selected($mail_transport,'smtp',false).'>Zewnętrzna skrzynka pocztowa SMTP</option></select></label>';
         echo '<label><span>Nazwa widoczna przy wiadomości</span><input name="mail_from_name" value="'.esc_attr($s['mail_from_name'] ?? 'Basketmania Camp').'" placeholder="Basketmania Camp"></label>';
         echo '<label><span>Adres nadawcy</span><input type="email" name="mail_from_email" value="'.esc_attr($s['mail_from_email'] ?? ($s['company_email'] ?? get_option('admin_email'))).'" placeholder="zapisy@basketmania.pl"></label>';
@@ -611,9 +611,9 @@ class BCS_Admin {
         echo '<label><span>Folder odbiorczy</span><input name="imap_folder" value="'.esc_attr($s['imap_folder'] ?? 'INBOX').'" placeholder="INBOX"></label>';
         echo '<label><span>Częstotliwość synchronizacji</span><select name="imap_frequency"><option value="bcs_five_minutes" '.selected($s['imap_frequency'] ?? 'bcs_ten_minutes','bcs_five_minutes',false).'>Co 5 minut</option><option value="bcs_ten_minutes" '.selected($s['imap_frequency'] ?? 'bcs_ten_minutes','bcs_ten_minutes',false).'>Co 10 minut</option><option value="hourly" '.selected($s['imap_frequency'] ?? 'bcs_ten_minutes','hourly',false).'>Co godzinę</option></select></label>';
         echo '<p class="description bcs-span-2">Pełna synchronizacja wymaga aktywnego rozszerzenia PHP IMAP na serwerze. Zalecany jest prawdziwy cron serwera wywołujący wp-cron.php.</p></div>';
-        echo '<p class="description">Po zapisaniu konfiguracji użyj testu e-mail poniżej. Adres nadawcy powinien być zgodny z kontem SMTP lub dozwolony przez operatora skrzynki.</p></div></details>';
+        echo '<p class="description">Po zapisaniu konfiguracji użyj testu e-mail poniżej. Adres nadawcy powinien być zgodny z kontem SMTP lub dozwolony przez operatora skrzynki.</p>'.self::settings_save_button().'</div></details>';
 
-        echo '<h2>Ustawienia dokumentów i automatyzacji</h2><div class="bcs-form-grid">';
+        echo '<details class="bcs-settings-accordion bcs-settings-section-0209" open><summary><span><span class="dashicons dashicons-media-document"></span><strong>Ustawienia dokumentów i automatyzacji</strong></span><span class="bcs-settings-summary">Numeracja, dokumenty i przypomnienia</span></summary><div class="bcs-settings-accordion-body"><div class="bcs-form-grid">';
         echo '<label><span>Prefiks umowy</span><input name="agreement_prefix" value="'.esc_attr($s['agreement_prefix'] ?? 'BC').'"></label>';
         echo '<label><span>Prefiks faktury</span><input name="invoice_prefix" value="'.esc_attr($s['invoice_prefix'] ?? 'FV').'"></label>';
         echo '<label><span>VAT (%)</span><input type="number" step="0.01" min="0" name="invoice_vat_rate" value="'.esc_attr($s['invoice_vat_rate'] ?? 0).'"></label>';
@@ -624,8 +624,9 @@ class BCS_Admin {
         echo '<label><span>Kanał automatyzacji</span><select name="automation_channel"><option value="email" '.selected($s['automation_channel'] ?? 'email','email',false).'>E-mail</option><option value="sms" '.selected($s['automation_channel'] ?? 'email','sms',false).'>SMS</option><option value="both" '.selected($s['automation_channel'] ?? 'email','both',false).'>E-mail + SMS</option></select></label>';
         echo '<label><span>Przypomnienie o umowie (dni)</span><input type="number" min="1" name="agreement_reminder_days" value="'.esc_attr($s['agreement_reminder_days'] ?? 1).'"></label>';
         echo '<label><span>Przypomnienie o płatności (dni)</span><input type="number" min="1" name="payment_reminder_days" value="'.esc_attr($s['payment_reminder_days'] ?? 2).'"></label>';
-        echo '<label><span>Informacje przed obozem (dni)</span><input type="number" min="1" name="pre_camp_days" value="'.esc_attr($s['pre_camp_days'] ?? 7).'"></label></div>';
-        echo '<div class="bcs-form-actions"><button class="button button-primary button-hero" name="bcs_save_settings" value="1">Zapisz ustawienia</button></div></form></section>';
+        echo '<label><span>Informacje przed obozem (dni)</span><input type="number" min="1" name="pre_camp_days" value="'.esc_attr($s['pre_camp_days'] ?? 7).'"></label></div>'.self::settings_save_button('Zapisz ustawienia dokumentów i automatyzacji').'</div></details>';
+        echo '</form></section>';
+        if (class_exists('BCS_Notification_Settings')) BCS_Notification_Settings::render_settings_section();
 
         echo '<section class="bcs-panel"><div class="bcs-panel-head"><div><h2>Test komunikacji</h2><p>Najpierw zapisz ustawienia, następnie wykonaj test.</p></div></div><div class="bcs-two-cols">';
         echo '<form method="post">'; wp_nonce_field('bcs_test_email');
@@ -639,6 +640,10 @@ class BCS_Admin {
         echo '<section class="bcs-panel bcs-danger-zone"><div class="bcs-panel-head"><div><h2>Strefa testowa — wyczyszczenie systemu</h2><p>Operacja bezpowrotnie usuwa wszystkie zgłoszenia oraz powiązane umowy, płatności, faktury, wiadomości, logi, zadania i wygenerowane dokumenty PDF. Organizatorzy, turnusy, ustawienia wtyczki i strony WordPress pozostaną.</p></div><span class="dashicons dashicons-warning"></span></div><form method="post" onsubmit="return window.confirm(\'Czy na pewno usunąć wszystkie zgłoszenia i ich dane powiązane? Organizatorzy i turnusy pozostaną. Tej operacji nie można cofnąć.\');">';
         wp_nonce_field('bcs_reset_test_data');
         echo '<div class="bcs-reset-confirm"><label><span>Kontrola bezpieczeństwa: ile to <strong>'.$a.' '.$op.' '.$b.'</strong>?</span><input type="number" name="bcs_math_answer" required autocomplete="off"></label><label class="bcs-checkbox"><input type="checkbox" name="bcs_reset_confirm" value="1" required><span>Rozumiem, że wszystkie dane operacyjne, logi, wiadomości, dokumenty, płatności, faktury i zgłoszenia zostaną trwale usunięte. Konfiguracja wtyczki, organizatorzy, turnusy i szablony pozostaną.</span></label><button type="submit" class="button bcs-danger-button" name="bcs_reset_test_data" value="1"><span class="dashicons dashicons-trash"></span> Wyczyść dane operacyjne</button></div></form></section></div>';
+    }
+
+    private static function settings_save_button(string $label = 'Zapisz ustawienia'): string {
+        return '<div class="bcs-form-actions"><button type="submit" class="button button-primary" name="bcs_save_settings" value="1">'.esc_html($label).'</button></div>';
     }
 
 }
