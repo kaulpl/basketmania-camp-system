@@ -299,9 +299,9 @@ class BCS_CRM {
         $r=$wpdb->get_row($wpdb->prepare("SELECT r.*,c.name camp_name,c.start_date,c.end_date,c.location,a.agreement_number,a.accepted_at,a.status agreement_record_status,a.html agreement_html,a.document_hash agreement_hash,p.id payment_real_id,p.provider payment_provider,p.external_id payment_external_id,p.paid_at payment_paid_at,i.id invoice_real_id,i.invoice_number,i.file_path invoice_file_path FROM ".BCS_DB::table('registrations')." r JOIN ".BCS_DB::table('camps')." c ON c.id=r.camp_id LEFT JOIN ".BCS_DB::table('agreements')." a ON a.id=r.agreement_id LEFT JOIN ".BCS_DB::table('payments')." p ON p.id=r.payment_id LEFT JOIN ".BCS_DB::table('invoices')." i ON i.id=(SELECT i2.id FROM ".BCS_DB::table('invoices')." i2 WHERE i2.registration_id=r.id ORDER BY i2.id DESC LIMIT 1) WHERE r.id=%d",$id));
         if(!$r){echo '<div class="wrap"><h1>Nie znaleziono zgłoszenia.</h1></div>';return;}
         if(empty($r->form_verified_at)) BCS_Locks::touch($id, get_current_user_id());
-        $acts=$wpdb->get_results($wpdb->prepare("SELECT ac.*,u.display_name FROM ".BCS_DB::table('activities')." ac LEFT JOIN {$wpdb->users} u ON u.ID=ac.created_by WHERE ac.registration_id=%d AND ac.activity_type IN ('phone','note','task','email','invoice_sent') ORDER BY ac.created_at ASC",$id));
+        $acts=$wpdb->get_results($wpdb->prepare("SELECT ac.*,u.display_name FROM ".BCS_DB::table('activities')." ac LEFT JOIN {$wpdb->users} u ON u.ID=ac.created_by WHERE ac.registration_id=%d AND ac.activity_type IN ('phone','note','task','email','invoice_sent') ORDER BY ac.created_at ASC, ac.id ASC",$id));
         $versions=$wpdb->get_results($wpdb->prepare("SELECT * FROM ".BCS_DB::table('agreement_versions')." WHERE registration_id=%d ORDER BY created_at ASC",$id));
-        $allowed=array_keys(self::log_labels());$placeholders=implode(',',array_fill(0,count($allowed),'%s'));$logs=$wpdb->get_results($wpdb->prepare("SELECT * FROM ".BCS_DB::table('logs')." WHERE registration_id=%d AND event_type IN ($placeholders) ORDER BY created_at ASC",$id,...$allowed));
+        $logs=$wpdb->get_results($wpdb->prepare("SELECT * FROM ".BCS_DB::table('logs')." WHERE registration_id=%d ORDER BY created_at ASC, id ASC",$id));
         $portal=get_page_by_path('panel-rodzica');$portal_url=add_query_arg(['token'=>$r->public_token,'bcs_admin_preview'=>1],$portal?get_permalink($portal):home_url('/panel-rodzica/'));
         if(isset($_GET['communication_action'])) {
             $comm=get_transient('bcs_workflow_comm_'.get_current_user_id().'_'.$id);
@@ -359,14 +359,40 @@ class BCS_CRM {
         echo self::agreement_accordion($r,$versions);
         echo self::documents_panel($r,$versions);
         echo self::mail_correspondence_panel($id);
-        echo '<section class="bcs-panel"><h2>Historia klienta</h2><div class="bcs-timeline">';
-        $events=[];$has_created=false;
-        foreach($logs as $l){if($l->event_type==='registration_created')$has_created=true;$events[]=['date'=>$l->created_at,'title'=>self::log_label($l->event_type),'note'=>'','author'=>'System'];}
-        if(!$has_created)$events[]=['date'=>$r->created_at,'title'=>'Utworzono zgłoszenie','note'=>'','author'=>'System'];
-        foreach($acts as $a)$events[]=['date'=>$a->created_at,'title'=>$a->title,'note'=>$a->note,'author'=>$a->display_name?:'Administrator'];
-        usort($events,fn($a,$b)=>strcmp($a['date'],$b['date']));
-        foreach($events as $e)echo '<div class="bcs-timeline-item"><span class="bcs-timeline-dot"></span><div><strong>'.esc_html($e['title']).'</strong><small>'.esc_html(BCS_Utils::format_datetime($e['date']).' · '.$e['author']).'</small>'.($e['note']?'<p>'.nl2br(esc_html($e['note'])).'</p>':'').'</div></div>';
-        echo '</div></section></main><aside>';
+        echo '<section class="bcs-panel bcs-accordion-panel bcs-history-panel"><details><summary><span><span class="dashicons dashicons-backup"></span><strong>Historia klienta</strong></span><span class="bcs-accordion-hint">'.count($logs).' zdarzeń w logach</span></summary><div class="bcs-accordion-content"><div class="bcs-timeline">';
+        $events=[];$has_created=false;$logged_activity_types=[];
+        foreach($logs as $l){
+            $data=json_decode((string)$l->event_data,true);
+            if(!is_array($data))$data=[];
+            if($l->event_type==='registration_created')$has_created=true;
+            if(str_starts_with((string)$l->event_type,'crm_'))$logged_activity_types[substr((string)$l->event_type,4)]=true;
+            $actor_type=BCS_Utils::infer_actor_type((string)$l->event_type,$data);
+            $author=trim((string)($data['_actor_display_name']??''));
+            if($author==='')$author=BCS_Utils::actor_label($actor_type);
+            $events[]=[
+                'date'=>(string)$l->created_at,
+                'order'=>(int)$l->id,
+                'title'=>self::log_label((string)$l->event_type),
+                'note'=>self::log_note($data),
+                'author'=>$author,
+                'type'=>(string)$l->event_type,
+                'source'=>'log',
+            ];
+        }
+        if(!$has_created)$events[]=['date'=>(string)$r->created_at,'order'=>0,'title'=>'Utworzono zgłoszenie','note'=>'','author'=>'System','type'=>'registration_created','source'=>'fallback'];
+        foreach($acts as $a){
+            if(!empty($logged_activity_types[(string)$a->activity_type]))continue;
+            $events[]=['date'=>(string)$a->created_at,'order'=>(int)$a->id,'title'=>(string)$a->title,'note'=>(string)$a->note,'author'=>$a->display_name?:'Administrator','type'=>'activity_'.(string)$a->activity_type,'source'=>'activity'];
+        }
+        usort($events,static function(array $a,array $b):int{
+            $date=strcmp($a['date'],$b['date']);
+            if($date!==0)return $date;
+            $source=strcmp($a['source'],$b['source']);
+            return $source!==0?$source:($a['order']<=>$b['order']);
+        });
+        foreach($events as $e)echo '<div class="bcs-timeline-item" data-event-type="'.esc_attr($e['type']).'"><span class="bcs-timeline-dot"></span><div><strong>'.esc_html($e['title']).'</strong><small>'.esc_html(BCS_Utils::format_datetime($e['date']).' · '.$e['author']).'</small>'.($e['note']?'<p>'.nl2br(esc_html($e['note'])).'</p>':'').'</div></div>';
+        if(!$events)echo '<p class="bcs-muted">Brak zdarzeń powiązanych z tym zgłoszeniem.</p>';
+        echo '</div></div></details></section></main><aside>';
         echo '<section class="bcs-panel bcs-quick-actions"><h2>Szybkie czynności</h2>';
         self::action_form($id,'phone','Wykonano telefon','Notatka z rozmowy…');
         self::action_form($id,'note','Dodaj notatkę','Treść notatki…');
@@ -560,9 +586,27 @@ class BCS_CRM {
     private static function simple_action(int $id,string $action,string $label,string $class):void{echo '<form method="post" class="bcs-crm-action">';wp_nonce_field('bcs_crm_'.$id);echo '<input type="hidden" name="registration_id" value="'.$id.'"><button class="'.esc_attr($class).'" name="bcs_crm_action" value="'.$action.'">'.esc_html($label).'</button></form>';}
     private static function workflow_button(int $id,string $action,string $label,string $extra_class=''):string{$url=wp_nonce_url(add_query_arg(['action'=>'bcs_workflow_single','registration_id'=>$id,'workflow'=>$action],admin_url('admin-post.php')),'bcs_workflow_single_'.$id.'_'.$action);$classes=trim('button bcs-action-available '.$extra_class);return '<a class="'.esc_attr($classes).'" href="'.esc_url($url).'">'.esc_html($label).'</a>';}
     private static function log_labels(): array {return [
-        'registration_created'=>'Utworzono zgłoszenie','registration_admin_confirmed'=>'Potwierdzono rejestrację','parent_portal_invite_sent'=>'Wysłano link do formularza zgłoszeniowego','parent_form_completed'=>'Uzupełniono pełny formularz uczestnika','camp_form_verified'=>'Zweryfikowano i zaakceptowano formularz obozowy','agreement_sent_by_admin'=>'Wysłano umowę do akceptacji','agreement_signature_reminder_sent'=>'Wysłano przypomnienie o podpisaniu umowy','agreement_accepted'=>'Zaakceptowano umowę kodem SMS','stripe_link_sent'=>'Wysłano link do płatności Stripe','stripe_payment_confirmed'=>'Potwierdzono płatność Stripe','bank_payment_marked_paid'=>'Potwierdzono wpłatę przelewem','payment_confirmation_sent'=>'Wysłano potwierdzenie wpłaty','payment_reminder_sent'=>'Wysłano przypomnienie o płatności','invoice_generated_manually'=>'Wygenerowano fakturę','registration_cancelled'=>'Anulowano zgłoszenie'
+        'registration_created'=>'Utworzono zgłoszenie','registration_admin_confirmed'=>'Potwierdzono rejestrację','registration_edited_by_admin'=>'Edytowano dane zgłoszenia','registration_price_changed'=>'Zmieniono indywidualną cenę zgłoszenia','registration_cancelled'=>'Anulowano zgłoszenie',
+        'parent_portal_invite_sent'=>'Wysłano link do formularza zgłoszeniowego','parent_form_completed'=>'Uzupełniono pełny formularz uczestnika','parent_form_updated'=>'Zaktualizowano pełny formularz uczestnika','parent_form_save_blocked'=>'Zablokowano zapis formularza podczas pracy administratora','camp_form_verified'=>'Zweryfikowano i zaakceptowano formularz obozowy',
+        'agreement_template_opened'=>'Rodzic otworzył wzór umowy','agreement_opened_for_signature'=>'Rodzic po raz pierwszy otworzył umowę do podpisu','agreement_sent_by_admin'=>'Wysłano umowę do podpisu','agreement_signature_reminder_sent'=>'Wysłano przypomnienie o podpisaniu umowy','agreement_accepted'=>'Zaakceptowano umowę kodem SMS','agreement_withdrawn_before_signature'=>'Wycofano umowę przed podpisaniem','agreement_draft_edited'=>'Zaktualizowano draft umowy',
+        'stripe_link_sent'=>'Wysłano link do płatności Stripe','stripe_link_email_failed'=>'Nie udało się wysłać linku do płatności Stripe','stripe_payment_confirmed'=>'Potwierdzono płatność Stripe','bank_payment_marked_paid'=>'Potwierdzono wpłatę przelewem','payment_confirmation_sent'=>'Wysłano potwierdzenie wpłaty','payment_reminder_sent'=>'Wysłano przypomnienie o płatności',
+        'invoice_generated_manually'=>'Wygenerowano fakturę','invoice_duplicate_generation_blocked'=>'Zablokowano ponowne wygenerowanie faktury','invoice_downloaded_by_parent'=>'Rodzic pobrał fakturę','document_downloaded'=>'Pobrano dokument','document_download_denied'=>'Odrzucono próbę pobrania dokumentu',
+        'crm_phone'=>'Wykonano telefon','crm_note'=>'Dodano notatkę','crm_task'=>'Dodano zadanie','crm_email'=>'Wysłano wiadomość e-mail','crm_invoice_sent'=>'Wysłano fakturę'
     ];}
-    private static function log_label(string $event):string{return self::log_labels()[$event]??'';}
+    private static function log_label(string $event):string{
+        $known=self::log_labels();
+        if(isset($known[$event]))return $known[$event];
+        $label=trim(str_replace('_',' ',$event));
+        return $label!==''?ucfirst($label):'Zdarzenie systemowe';
+    }
+    private static function log_note(array $data):string{
+        foreach(['note','message','error','reason','title','document','subject'] as $key){
+            if(!isset($data[$key])||is_array($data[$key])||is_object($data[$key]))continue;
+            $value=trim((string)$data[$key]);
+            if($value!=='')return $value;
+        }
+        return '';
+    }
     private static function status_legend(): string {
         $html='<div class="bcs-legend-list">';
         foreach(BCS_Workflow_Engine::statuses() as $key=>$label) {
