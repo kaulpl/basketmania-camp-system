@@ -10,6 +10,7 @@ class BCS_Templates {
         self::migrate_0132_templates();
         self::migrate_0152_templates();
         self::migrate_0208_templates();
+        self::migrate_02013_templates();
     }
 
 
@@ -66,6 +67,24 @@ class BCS_Templates {
             update_option('bcs_content_templates', $saved, false);
         }
         update_option('bcs_templates_migrated_0208', 1, false);
+    }
+
+    private static function migrate_02013_templates(): void {
+        if (get_option('bcs_templates_migrated_02013')) return;
+        $saved = get_option('bcs_content_templates', []);
+        if (!is_array($saved)) $saved = [];
+        $template = (array)($saved['emails']['registration_received'] ?? []);
+        $body = (string)($template['body'] ?? '');
+        $legacy = $body === ''
+            || str_contains($body, 'Organizator zweryfikuje zgłoszenie')
+            || str_contains($body, 'nie wymaga wcześniejszej akceptacji administratora')
+            || str_contains($body, 'Przejdź od razu do Panelu Rodzica i go wypełnij');
+        if ($legacy) {
+            $defaults = BCS_Communication_Engine::default_templates();
+            $saved['emails']['registration_received'] = $defaults['registration_received'];
+            update_option('bcs_content_templates', $saved, false);
+        }
+        update_option('bcs_templates_migrated_02013', 1, false);
     }
 
     public static function menu(): void {
