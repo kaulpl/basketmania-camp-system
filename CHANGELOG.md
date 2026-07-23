@@ -2,6 +2,20 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.13] - 2026-07-23
+
+### Zmieniono
+- po zapisaniu formularza wstępnego zgłoszenie od razu otrzymuje dostęp do Panelu Rodzica i Formularza Obozowego,
+- rodzic jest automatycznie przekierowywany do Panelu Rodzica z otwartym Formularzem Obozowym,
+- wiadomość po rejestracji zawiera podziękowanie, informację o oczekiwaniu na pełny formularz oraz przycisk prowadzący bezpośrednio do Formularza Obozowego,
+- dotychczasowy standardowy szablon wiadomości rejestracyjnej jest bezpiecznie migrowany bez nadpisywania własnych, zmodyfikowanych treści.
+
+### Naprawiono
+- wszystkie przyciski mogące pojawić się w kolumnie „Szybkie akcje” korzystają z jednego endpointu AJAX,
+- wykonanie szybkiej akcji nie otwiera Karty Zgłoszenia i nie przeładowuje listy,
+- po sukcesie właściwy wiersz otrzymuje aktualny etap, rozliczenie, postęp i kolejną dostępną akcję,
+- wynik działania jest prezentowany przez dwusekundowy centralny popup sukcesu lub błędu.
+
 ## [0.20.11] - 2026-07-23
 
 ### Zmieniono

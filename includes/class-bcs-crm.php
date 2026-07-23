@@ -14,7 +14,7 @@ class BCS_CRM {
         $nonce = sanitize_text_field(wp_unslash($_POST['nonce'] ?? ''));
         if (!$id || !$action) wp_send_json_error(['message'=>'Brak danych szybkiej akcji.'], 422);
 
-        $workflow_actions = ['confirm_registration','send_agreement'];
+        $workflow_actions = ['confirm_registration','send_agreement','send_stripe_link','mark_bank_paid','remind_payment','generate_invoice'];
         if (in_array($action, $workflow_actions, true)) {
             if (!wp_verify_nonce($nonce, 'bcs_workflow_single_'.$id.'_'.$action)) {
                 wp_send_json_error(['message'=>'Sesja wygasła. Odśwież listę i spróbuj ponownie.'], 403);
@@ -27,6 +27,7 @@ class BCS_CRM {
             $ok = match ($action) {
                 'verify_form' => BCS_Workflow_Engine::verify_form($id),
                 'mark_paid' => BCS_Workflow_Engine::mark_bank_paid($id),
+                'invoice_generate' => BCS_Workflow_Engine::generate_invoice($id),
                 'invoice_send' => self::send_invoice($id),
                 default => false,
             };
@@ -38,9 +39,59 @@ class BCS_CRM {
             'verify_form'=>'Formularz Obozowy został zaakceptowany.',
             'send_agreement'=>'Umowa została wysłana.',
             'mark_paid'=>'Wpłata została zaksięgowana.',
+            'invoice_generate'=>'Faktura została wygenerowana.',
             'invoice_send'=>'Faktura została wysłana.',
         ];
-        wp_send_json_success(['message'=>$messages[$action] ?? 'Akcja została wykonana.']);
+        $row = self::list_row_state($id);
+        if (!$row) wp_send_json_error(['message'=>'Akcja została wykonana, ale nie udało się odświeżyć wiersza zgłoszenia.'], 500);
+        $labels = BCS_Workflow_Engine::statuses();
+        $due = max(0, (float)$row->total_amount - (float)$row->paid_amount);
+        wp_send_json_success([
+            'message'=>$messages[$action] ?? 'Akcja została wykonana.',
+            'status'=>(string)$row->status,
+            'status_label'=>(string)($labels[$row->status] ?? $row->status),
+            'status_class'=>self::status_class((string)$row->status),
+            'agreement_number'=>(string)($row->agreement_number ?: 'Bez umowy'),
+            'paid'=>(float)$row->paid_amount,
+            'payment_html'=>'<strong>'.number_format((float)$row->paid_amount,2,',',' ').' zł</strong><br><small>pozostało '.number_format($due,2,',',' ').' zł</small>'.self::payment_reference($row),
+            'progress_html'=>self::milestone_badges($row),
+            'quick_html'=>self::list_quick_actions_html($row),
+            'requires_action'=>!empty($row->requires_action),
+            'complete'=>!empty($row->has_sent_invoice) || ($row->invoice_status??'')==='sent',
+            'updated_at'=>(string)$row->updated_at,
+        ]);
+    }
+
+    private static function list_row_state(int $id): ?object {
+        global $wpdb;
+        $action_condition = BCS_Admin::action_required_condition('r');
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT r.*,c.name camp_name,c.start_date,a.agreement_number,a.status agreement_record_status,p.id payment_real_id,p.provider payment_provider,p.external_id payment_external_id,p.paid_at payment_paid_at,
+            CASE WHEN (".$action_condition.") THEN 1 ELSE 0 END requires_action,
+            EXISTS(SELECT 1 FROM ".BCS_DB::table('logs')." lf WHERE lf.registration_id=r.id AND lf.event_type='camp_form_verified') has_form_verified_log,
+            EXISTS(SELECT 1 FROM ".BCS_DB::table('activities')." af WHERE af.registration_id=r.id AND af.activity_type IN ('form_verified','camp_form_verified')) has_form_verified_activity,
+            EXISTS(SELECT 1 FROM ".BCS_DB::table('agreements')." au WHERE au.id=r.agreement_id AND au.status='accepted') has_signed_agreement,
+            EXISTS(SELECT 1 FROM ".BCS_DB::table('payments')." pp WHERE pp.registration_id=r.id AND pp.status='paid') has_paid_payment,
+            EXISTS(SELECT 1 FROM ".BCS_DB::table('invoices')." fi WHERE fi.registration_id=r.id AND fi.status='sent') has_sent_invoice
+            FROM ".BCS_DB::table('registrations')." r
+            JOIN ".BCS_DB::table('camps')." c ON c.id=r.camp_id
+            LEFT JOIN ".BCS_DB::table('agreements')." a ON a.id=r.agreement_id
+            LEFT JOIN ".BCS_DB::table('payments')." p ON p.id=r.payment_id
+            WHERE r.id=%d LIMIT 1",
+            $id
+        ));
+    }
+
+    private static function list_quick_actions_html(object $r): string {
+        $quick='<div class="bcs-inline-actions">';
+        if($r->status==='new') $quick.=self::workflow_button((int)$r->id,'confirm_registration','Potwierdź rejestrację');
+        elseif(($r->form_status??'')==='complete' && empty($r->form_verified_at)) $quick.=self::list_action_form((int)$r->id,'verify_form','Akceptuj formularz','button');
+        elseif(!empty($r->form_verified_at) && ($r->agreement_record_status??'')!=='accepted' && ($r->agreement_record_status??'')!=='pending') $quick.=self::workflow_button((int)$r->id,'send_agreement','Wyślij umowę');
+        elseif(($r->agreement_record_status??'')==='accepted' && (float)$r->paid_amount < (float)$r->total_amount) $quick.=self::list_action_form((int)$r->id,'mark_paid','Zaksięguj wpłatę','button');
+        elseif($r->invoice_status==='generated') $quick.=self::list_action_form((int)$r->id,'invoice_send','Wyślij fakturę','button');
+        elseif(BCS_Workflow_Engine::invoice_available((int)$r->id)) $quick.=self::list_action_form((int)$r->id,'invoice_generate','Generuj fakturę','button');
+        else $quick.='<span class="bcs-muted">Brak wymaganej akcji</span>';
+        return $quick.'</div>';
     }
 
     public static function actions(): void {
@@ -230,20 +281,12 @@ class BCS_CRM {
         foreach($rows as $r){
             $milestones=self::milestone_badges($r);
             $due=max(0,(float)$r->total_amount-(float)$r->paid_amount);
-            $quick='<div class="bcs-inline-actions">';
-            if($r->status==='new') $quick.=self::workflow_button((int)$r->id,'confirm_registration','Potwierdź rejestrację');
-            elseif(($r->form_status??'')==='complete' && empty($r->form_verified_at)) $quick.=self::list_action_form((int)$r->id,'verify_form','Akceptuj formularz','button');
-            elseif(!empty($r->form_verified_at) && ($r->agreement_record_status??'')!=='accepted' && ($r->agreement_record_status??'')!=='pending') $quick.=self::workflow_button((int)$r->id,'send_agreement','Wyślij umowę');
-            elseif(($r->agreement_record_status??'')==='accepted' && (float)$r->paid_amount < (float)$r->total_amount) $quick.=self::list_action_form((int)$r->id,'mark_paid','Zaksięguj wpłatę','button');
-            elseif($r->invoice_status==='generated') $quick.=self::list_action_form((int)$r->id,'invoice_send','Wyślij fakturę','button');
-            elseif(BCS_Workflow_Engine::invoice_available((int)$r->id)) $quick.=self::list_action_form((int)$r->id,'invoice_generate','Generuj fakturę','button');
-            else $quick.='<span class="bcs-muted">Brak wymaganej akcji</span>';
-            $quick.='</div>';
+            $quick=self::list_quick_actions_html($r);
             $row_classes=[]; if(!empty($r->requires_action))$row_classes[]='bcs-requires-action'; if(!empty($r->has_sent_invoice) || ($r->invoice_status??'')==='sent')$row_classes[]='bcs-registration-complete'; $row_class=$row_classes?' class="'.esc_attr(implode(' ',$row_classes)).'"':'';
             $action_marker = !empty($r->requires_action) ? '<span class="bcs-row-action-marker" title="To zgłoszenie wymaga działania administratora">Wymaga akcji</span>' : '';
             $search_blob = strtolower(trim($r->parent_first_name.' '.$r->parent_last_name.' '.$r->child_first_name.' '.$r->child_last_name.' '.$r->parent_email.' '.$r->parent_phone.' '.$r->camp_name.' '.($labels[$r->status]??$r->status)));
             $data_attrs = ' data-id="'.(int)$r->id.'" data-created="'.esc_attr((string)$r->created_at).'" data-client="'.esc_attr(strtolower(trim($r->parent_last_name.' '.$r->parent_first_name.' '.$r->child_last_name.' '.$r->child_first_name))).'" data-camp="'.esc_attr(strtolower((string)$r->camp_name)).'" data-camp-id="'.(int)$r->camp_id.'" data-stage="'.esc_attr(strtolower((string)($labels[$r->status]??$r->status))).'" data-status="'.esc_attr((string)$r->status).'" data-paid="'.esc_attr((string)(float)$r->paid_amount).'" data-updated="'.esc_attr((string)$r->updated_at).'" data-requires="'.(!empty($r->requires_action)?'1':'0').'" data-search="'.esc_attr($search_blob).'"';
-            echo '<tr'.$row_class.$data_attrs.'><td><span class="bcs-id">#'.(int)$r->id.'</span>'.self::device_icon((string)($r->device_type??'unknown')).(empty($r->form_verified_at)&&BCS_Locks::active((int)$r->id)?'<span class="dashicons dashicons-lock bcs-registration-lock-icon" title="Formularz Obozowy jest chwilowo zablokowany z powodu pracy administratora."></span>':'').$action_marker.'</td><td><strong>'.esc_html(wp_date('d.m.Y',strtotime((string)$r->created_at))).'</strong><br><small>'.esc_html(wp_date('H:i',strtotime((string)$r->created_at))).'</small></td><td><div class="bcs-client-preview-wrap"><div><strong>'.esc_html($r->parent_first_name.' '.$r->parent_last_name).'</strong><br><span>'.esc_html($r->child_first_name.' '.$r->child_last_name).'</span></div><button type="button" class="bcs-registration-preview" title="Podejrzyj dane rejestracyjne" data-parent="'.esc_attr(trim($r->parent_first_name.' '.$r->parent_last_name)).'" data-email="'.esc_attr($r->parent_email).'" data-phone="'.esc_attr($r->parent_phone).'" data-child="'.esc_attr(trim($r->child_first_name.' '.$r->child_last_name)).'" data-birth="'.esc_attr($r->child_birth_date).'" data-height="'.esc_attr($r->child_height).'" data-shirt="'.esc_attr($r->shirt_size).'" data-camp="'.esc_attr($r->camp_name).'" data-created="'.esc_attr(BCS_Utils::format_datetime($r->created_at)).'" data-device="'.esc_attr((string)($r->device_type??'unknown')).'"><span class="dashicons dashicons-visibility"></span></button></div></td><td><strong>'.esc_html($r->camp_name).'</strong><br><small>'.esc_html($r->start_date).'</small></td><td><span class="bcs-badge '.esc_attr(self::status_class($r->status)).'">'.esc_html($labels[$r->status]??$r->status).'</span><br><small>'.esc_html($r->agreement_number?:'Bez umowy').'</small></td><td><button type="button" class="bcs-contact-email" data-registration-id="'.(int)$r->id.'" data-email="'.esc_attr($r->parent_email).'" data-client="'.esc_attr(trim($r->parent_first_name.' '.$r->parent_last_name)).'" data-nonce="'.esc_attr(wp_create_nonce('bcs_crm_'.(int)$r->id)).'">'.esc_html($r->parent_email).'</button><br><a href="tel:'.esc_attr($r->parent_phone).'">'.esc_html($r->parent_phone).'</a></td><td><strong>'.number_format((float)$r->paid_amount,2,',',' ').' zł</strong><br><small>pozostało '.number_format($due,2,',',' ').' zł</small>'.self::payment_reference($r).'</td><td>'.$milestones.'</td><td>'.$quick.'</td><td><a class="button button-primary" href="'.esc_url(admin_url('admin.php?page=bcs-registrations&view='.$r->id)).'">Otwórz kartę CRM</a></td></tr>';
+            echo '<tr'.$row_class.$data_attrs.'><td><span class="bcs-id">#'.(int)$r->id.'</span>'.self::device_icon((string)($r->device_type??'unknown')).(empty($r->form_verified_at)&&BCS_Locks::active((int)$r->id)?'<span class="dashicons dashicons-lock bcs-registration-lock-icon" title="Formularz Obozowy jest chwilowo zablokowany z powodu pracy administratora."></span>':'').$action_marker.'</td><td><strong>'.esc_html(wp_date('d.m.Y',strtotime((string)$r->created_at))).'</strong><br><small>'.esc_html(wp_date('H:i',strtotime((string)$r->created_at))).'</small></td><td><div class="bcs-client-preview-wrap"><div><strong>'.esc_html($r->parent_first_name.' '.$r->parent_last_name).'</strong><br><span>'.esc_html($r->child_first_name.' '.$r->child_last_name).'</span></div><button type="button" class="bcs-registration-preview" title="Podejrzyj dane rejestracyjne" data-parent="'.esc_attr(trim($r->parent_first_name.' '.$r->parent_last_name)).'" data-email="'.esc_attr($r->parent_email).'" data-phone="'.esc_attr($r->parent_phone).'" data-child="'.esc_attr(trim($r->child_first_name.' '.$r->child_last_name)).'" data-birth="'.esc_attr($r->child_birth_date).'" data-height="'.esc_attr($r->child_height).'" data-shirt="'.esc_attr($r->shirt_size).'" data-camp="'.esc_attr($r->camp_name).'" data-created="'.esc_attr(BCS_Utils::format_datetime($r->created_at)).'" data-device="'.esc_attr((string)($r->device_type??'unknown')).'"><span class="dashicons dashicons-visibility"></span></button></div></td><td><strong>'.esc_html($r->camp_name).'</strong><br><small>'.esc_html($r->start_date).'</small></td><td data-bcs-col="status"><span class="bcs-badge '.esc_attr(self::status_class($r->status)).'">'.esc_html($labels[$r->status]??$r->status).'</span><br><small>'.esc_html($r->agreement_number?:'Bez umowy').'</small></td><td><button type="button" class="bcs-contact-email" data-registration-id="'.(int)$r->id.'" data-email="'.esc_attr($r->parent_email).'" data-client="'.esc_attr(trim($r->parent_first_name.' '.$r->parent_last_name)).'" data-nonce="'.esc_attr(wp_create_nonce('bcs_crm_'.(int)$r->id)).'">'.esc_html($r->parent_email).'</button><br><a href="tel:'.esc_attr($r->parent_phone).'">'.esc_html($r->parent_phone).'</a></td><td data-bcs-col="payment"><strong>'.number_format((float)$r->paid_amount,2,',',' ').' zł</strong><br><small>pozostało '.number_format($due,2,',',' ').' zł</small>'.self::payment_reference($r).'</td><td data-bcs-col="progress">'.$milestones.'</td><td data-bcs-col="actions">'.$quick.'</td><td><a class="button button-primary" href="'.esc_url(admin_url('admin.php?page=bcs-registrations&view='.$r->id)).'">Otwórz kartę CRM</a></td></tr>';
         }
         if(!$rows)echo '<tr class="bcs-server-empty"><td colspan="10"><div class="bcs-empty">Brak wyników.</div></td></tr>';
         echo '<tr class="bcs-live-empty" hidden><td colspan="10"><div class="bcs-empty">Brak zgłoszeń spełniających wybrane kryteria.</div></td></tr>';

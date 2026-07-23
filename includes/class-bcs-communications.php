@@ -22,7 +22,7 @@ class BCS_Communications {
             'registration_received' => [
                 'name'=>'Przyjęcie pierwszego zgłoszenia',
                 'subject'=>'Otrzymaliśmy zgłoszenie – {{CAMP_NAME}}',
-                'body'=>'Dzień dobry {{PARENT_NAME}},<br><br>otrzymaliśmy wstępne zgłoszenie uczestnika <strong>{{CHILD_NAME}}</strong> na turnus <strong>{{CAMP_NAME}}</strong>.<br><br>Organizator zweryfikuje zgłoszenie. Po jego potwierdzeniu otrzymają Państwo dostęp do Panelu Rodzica i Formularza Obozowego.<br><br>Termin: {{CAMP_DATES}}<br>Miejsce: {{CAMP_LOCATION}}<br><br>Pozdrawiamy<br>Basketmania Camp',
+                'body'=>'Dzień dobry {{PARENT_NAME}},<br><br>dziękujemy za wstępną rejestrację uczestnika <strong>{{CHILD_NAME}}</strong> na turnus <strong>{{CAMP_NAME}}</strong>.<br><br>Czekamy teraz na wypełnienie pełnego Formularza Obozowego. Formularz jest już otwarty w Panelu Rodzica i można go uzupełnić od razu.<br><br><a href="{{PORTAL_URL}}" style="display:inline-block;background:#f97316;color:#ffffff;padding:13px 20px;border-radius:8px;text-decoration:none;font-weight:700">Wypełnij Formularz Obozowy</a><br><br>Termin: {{CAMP_DATES}}<br>Miejsce: {{CAMP_LOCATION}}<br><br>Pozdrawiamy<br>Basketmania Camp',
                 'sms'=>'',
             ],
             'camp_form_request' => [
@@ -145,7 +145,7 @@ class BCS_Communications {
              LEFT JOIN ".BCS_DB::table('organizers')." o ON o.id=c.organizer_id WHERE r.id=%d", $registration_id));
         if (!$r) return null;
         $portal_page = get_page_by_path('panel-rodzica');
-        $portal = add_query_arg('token', $r->public_token, $portal_page ? get_permalink($portal_page) : home_url('/panel-rodzica/'));
+        $portal = add_query_arg(['token'=>$r->public_token,'edit'=>'camp'], $portal_page ? get_permalink($portal_page) : home_url('/panel-rodzica/'));
         return [
             'row' => $r,
             'vars' => [

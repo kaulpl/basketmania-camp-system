@@ -86,6 +86,8 @@ final class BCS_Release_0200 {
         .bcs-settings-section-0200>summary .bcs-settings-hint{margin-left:0!important;text-align:left!important}
         .bcs-invoice-done-0200{background:#15803d!important;border-color:#15803d!important;color:#fff!important;pointer-events:none}
         .bcs-invoice-summary-0200{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+        tr.bcs-ajax-updated-02013>td{animation:bcs-row-updated-02013 1.6s ease}
+        @keyframes bcs-row-updated-02013{0%,35%{background:#dcfce7}100%{background:transparent}}
         </style>
         <?php
     }
@@ -137,6 +139,7 @@ final class BCS_Release_0200 {
                 const form=event.target;
                 const submitter=event.submitter;
                 if(page!=='bcs-registrations'||!submitter||!isInvoiceForm(form,submitter))return;
+                if(!view&&form.matches('.bcs-list-action'))return;
                 event.preventDefault();
                 event.stopImmediatePropagation();
                 const id=registrationId(form);
@@ -165,16 +168,47 @@ final class BCS_Release_0200 {
 
             async function runListQuickAction(element,id,action,actionNonce){
                 element.disabled=true;
+                const row=element.closest('tr[data-id]');
                 try{
                     const response=await fetch(ajaxUrl,{
                         method:'POST',credentials:'same-origin',
                         headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
                         body:new URLSearchParams({action:'bcs_list_quick_action_02010',registration_id:String(id),quick_action:String(action),nonce:String(actionNonce)})
                     });
-                    const json=await response.json();
+                    const responseText=await response.text();
+                    let json;
+                    try{json=JSON.parse(responseText)}catch(parseError){throw new Error('Serwer zwrócił nieprawidłową odpowiedź. Spróbuj ponownie.')}
                     if(!response.ok||!json.success)throw new Error(json?.data?.message||'Nie udało się wykonać akcji.');
+                    if(row){
+                        const data=json.data||{};
+                        const statusCell=row.querySelector('[data-bcs-col="status"]');
+                        const paymentCell=row.querySelector('[data-bcs-col="payment"]');
+                        const progressCell=row.querySelector('[data-bcs-col="progress"]');
+                        const actionsCell=row.querySelector('[data-bcs-col="actions"]');
+                        if(statusCell)statusCell.innerHTML='<span class="bcs-badge '+String(data.status_class||'')+'">'+String(data.status_label||'')+'</span><br><small>'+String(data.agreement_number||'Bez umowy')+'</small>';
+                        if(paymentCell)paymentCell.innerHTML=String(data.payment_html||'');
+                        if(progressCell)progressCell.innerHTML=String(data.progress_html||'');
+                        if(actionsCell)actionsCell.innerHTML=String(data.quick_html||'<span class="bcs-muted">Brak wymaganej akcji</span>');
+                        row.dataset.status=String(data.status||'');
+                        row.dataset.stage=String(data.status_label||'').toLocaleLowerCase('pl-PL');
+                        row.dataset.paid=String(data.paid||0);
+                        row.dataset.updated=String(data.updated_at||'');
+                        row.dataset.requires=data.requires_action?'1':'0';
+                        row.classList.toggle('bcs-requires-action',!!data.requires_action);
+                        row.classList.toggle('bcs-registration-complete',!!data.complete);
+                        const idCell=row.cells[0];
+                        let marker=idCell?.querySelector('.bcs-row-action-marker');
+                        if(data.requires_action&&!marker&&idCell){
+                            marker=document.createElement('span');
+                            marker.className='bcs-row-action-marker';
+                            marker.title='To zgłoszenie wymaga działania administratora';
+                            marker.textContent='Wymaga akcji';
+                            idCell.appendChild(marker);
+                        }else if(!data.requires_action&&marker)marker.remove();
+                        row.classList.add('bcs-ajax-updated-02013');
+                        window.setTimeout(()=>row.classList.remove('bcs-ajax-updated-02013'),1600);
+                    }
                     popup(json.data.message||'Akcja została wykonana.',true);
-                    window.setTimeout(()=>window.location.reload(),2000);
                 }catch(error){
                     element.disabled=false;
                     popup(error.message||'Nie udało się wykonać akcji.',false);
