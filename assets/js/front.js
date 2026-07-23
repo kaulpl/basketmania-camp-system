@@ -1,4 +1,25 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const watchedForm=document.querySelector('.bcs-camp-form[data-bcs-lock-watch="1"]');
+  if(watchedForm&&window.BCS&&BCS.ajax){
+    let checking=false;
+    const checkLock=async()=>{
+      if(checking||!document.body.contains(watchedForm))return;
+      checking=true;
+      try{
+        const body=new URLSearchParams({action:'bcs_parent_form_lock_status',registration_id:watchedForm.dataset.registrationId||'',token:watchedForm.dataset.token||''});
+        const response=await fetch(BCS.ajax,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body});
+        const json=await response.json();
+        if(json.success&&(json.data.locked||json.data.verified)){
+          const url=new URL(window.location.href);
+          url.searchParams.delete('edit');
+          if(json.data.locked)url.searchParams.set('edit_locked','1');
+          window.location.replace(url.toString());
+        }
+      }catch(error){}
+      finally{checking=false;}
+    };
+    window.setInterval(checkLock,5000);
+  }
   const agreementModal = document.querySelector('#bcs-agreement-modal');
   const agreementFrame = document.querySelector('#bcs-agreement-frame');
   const openAgreement = (url) => {

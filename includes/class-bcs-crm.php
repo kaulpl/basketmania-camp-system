@@ -4,6 +4,43 @@ if (!defined('ABSPATH')) exit;
 class BCS_CRM {
     public static function init(): void {
         add_action('admin_init', [__CLASS__, 'actions']);
+        add_action('wp_ajax_bcs_list_quick_action_02010', [__CLASS__, 'ajax_list_quick_action']);
+    }
+
+    public static function ajax_list_quick_action(): void {
+        if (!current_user_can('manage_options')) wp_send_json_error(['message'=>'Brak uprawnień.'], 403);
+        $id = absint($_POST['registration_id'] ?? 0);
+        $action = sanitize_key(wp_unslash($_POST['quick_action'] ?? ''));
+        $nonce = sanitize_text_field(wp_unslash($_POST['nonce'] ?? ''));
+        if (!$id || !$action) wp_send_json_error(['message'=>'Brak danych szybkiej akcji.'], 422);
+
+        $workflow_actions = ['confirm_registration','send_agreement'];
+        if (in_array($action, $workflow_actions, true)) {
+            if (!wp_verify_nonce($nonce, 'bcs_workflow_single_'.$id.'_'.$action)) {
+                wp_send_json_error(['message'=>'Sesja wygasła. Odśwież listę i spróbuj ponownie.'], 403);
+            }
+            $ok = BCS_Workflow_Engine::execute($action, $id);
+        } else {
+            if (!wp_verify_nonce($nonce, 'bcs_crm_'.$id)) {
+                wp_send_json_error(['message'=>'Sesja wygasła. Odśwież listę i spróbuj ponownie.'], 403);
+            }
+            $ok = match ($action) {
+                'verify_form' => BCS_Workflow_Engine::verify_form($id),
+                'mark_paid' => BCS_Workflow_Engine::mark_bank_paid($id),
+                'invoice_send' => self::send_invoice($id),
+                default => false,
+            };
+        }
+        if (!$ok) wp_send_json_error(['message'=>'Nie udało się wykonać akcji. Sprawdź aktualny etap zgłoszenia.'], 409);
+
+        $messages = [
+            'confirm_registration'=>'Rejestracja została potwierdzona.',
+            'verify_form'=>'Formularz Obozowy został zaakceptowany.',
+            'send_agreement'=>'Umowa została wysłana.',
+            'mark_paid'=>'Wpłata została zaksięgowana.',
+            'invoice_send'=>'Faktura została wysłana.',
+        ];
+        wp_send_json_success(['message'=>$messages[$action] ?? 'Akcja została wykonana.']);
     }
 
     public static function actions(): void {

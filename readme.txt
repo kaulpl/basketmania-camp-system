@@ -2,11 +2,17 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.9
+Stable tag: 0.20.10
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.10 =
+* Rodzic może ponownie otworzyć i edytować Formularz Obozowy do chwili jego akceptacji przez administratora.
+* Panel Rodzica automatycznie wykrywa otwarcie Karty Zgłoszenia przez administratora i blokuje edycję.
+* Szybkie akcje na liście zgłoszeń działają przez AJAX i pokazują dwusekundowe potwierdzenie bez otwierania karty.
+* Ujednolicono widoczną nazwę „Formularz Obozowy”.
 
 = 0.20.9 =
 * Uporządkowano moduł Ustawienia w pięć spójnych, rozwijanych sekcji z widocznymi polami i przyciskami zapisu.
