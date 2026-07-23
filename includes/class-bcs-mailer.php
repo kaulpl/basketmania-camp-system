@@ -136,7 +136,12 @@ class BCS_Mailer {
         $organizer_address = sanitize_text_field((string)($settings['company_address'] ?? ''));
         $year = wp_date('Y', BCS_Utils::timestamp());
 
-        $content = wp_kses_post($content);
+        // Szablony są edytowane w edytorze WordPressa, który zapisuje część
+        // odstępów jako puste linie. W HTML wiadomości same znaki nowej linii
+        // są zwijane, dlatego przed sanitacją odtwarzamy akapity i przełamania.
+        // Dotyczy to wspólnego wrappera, więc zachowuje formatowanie wszystkich
+        // szablonów oraz wiadomości tworzonych ręcznie w systemie.
+        $content = wp_kses_post(wpautop($content));
         $address_html = $organizer_address !== '' ? '<br>'.esc_html($organizer_address) : '';
 
         return '<!doctype html><html lang="pl" xmlns="http://www.w3.org/1999/xhtml"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>'.esc_html($heading).'</title><style>'

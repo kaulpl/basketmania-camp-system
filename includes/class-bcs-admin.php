@@ -177,7 +177,7 @@ class BCS_Admin {
             return;
         }
         global $wpdb;
-        $tables = ['otp','agreement_versions','mail_messages','messages','logs','activities','payments','invoices','agreements','registrations'];
+        $tables = ['otp','agreement_versions','mail_messages','messages','logs','activities','payments','invoices','agreements','feedback','registrations'];
         foreach ($tables as $name) {
             $table = BCS_DB::table($name);
             $wpdb->query("DELETE FROM {$table}");
@@ -187,7 +187,36 @@ class BCS_Admin {
         self::remove_directory_contents($documents);
 
         // Reset usuwa wyłącznie dane operacyjne. Konfiguracja wtyczki,
-        // integracje, szablony, organizatorzy i turnusy pozostają bez zmian.
+        // integracje, szablony, organizatorzy, turnusy i strony WordPressa
+        // pozostają bez zmian.
+        foreach ([
+            'bcs_last_mail_transport_error',
+            'bcs_last_mail_result',
+            'bcs_last_sms_result',
+            'bcs_sms_counters',
+            'bcs_last_imap_result',
+            'bcs_invoice_batch_last_sent',
+        ] as $option_name) {
+            delete_option($option_name);
+        }
+        foreach ([
+            'bcs_agreement_sequence_%',
+            'bcs_invoice_number_lock_%',
+            'bcs_invoice_lock_%',
+            '_transient_bcs_workflow_comm_%',
+            '_transient_timeout_bcs_workflow_comm_%',
+            '_transient_bcs_portal_send_%',
+            '_transient_timeout_bcs_portal_send_%',
+            '_transient_bcs_form_verify_%',
+            '_transient_timeout_bcs_form_verify_%',
+            '_transient_bcs_notification_errors_%',
+            '_transient_timeout_bcs_notification_errors_%',
+        ] as $option_pattern) {
+            $wpdb->query($wpdb->prepare(
+                "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+                $option_pattern
+            ));
+        }
         delete_transient('bcs_sms_dashboard_stats');
         delete_transient('bcs_reset_challenge_' . get_current_user_id());
         wp_safe_redirect(add_query_arg(['page'=>'bcs-settings','bcs_reset_done'=>1], admin_url('admin.php')));

@@ -2,7 +2,7 @@
 if (!defined('ABSPATH')) exit;
 
 class BCS_DB {
-    public const DB_VERSION = '0.20.14';
+    public const DB_VERSION = '0.20.15';
     public static function init(): void {}
 
     public static function maybe_upgrade(): void {
