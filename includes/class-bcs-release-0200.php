@@ -188,11 +188,11 @@ final class BCS_Release_0200 {
                     if(summary&&!summary.querySelector('.dashicons'))summary.insertAdjacentHTML('afterbegin','<span class="dashicons dashicons-media-document"></span>');
                 }
                 const email=sectionByTitle(/^E-?MAIL$/i);
-                const notifications=sectionByTitle(/^(Ustawienia powiadomień|Powiadomienia workflow)$/i);
+                const notifications=sectionByTitle(/^(Powiadomienia SMS\/EMAIL|Ustawienia powiadomień|Powiadomienia workflow)$/i);
                 if(email&&notifications&&email.parentNode===notifications.parentNode)email.after(notifications);
                 if(notifications){
                     notifications.classList.add('bcs-settings-section-0200');
-                    const headings=[...notifications.querySelectorAll('h2,h3')].filter(x=>/Ustawienia powiadomień|Powiadomienia workflow/i.test(x.textContent));
+                    const headings=[...notifications.querySelectorAll('h2,h3')].filter(x=>/Powiadomienia SMS\/EMAIL|Ustawienia powiadomień|Powiadomienia workflow/i.test(x.textContent));
                     headings.slice(1).forEach(x=>x.remove());
                     const summary=notifications.querySelector('summary');
                     if(summary&&!summary.querySelector('.dashicons'))summary.insertAdjacentHTML('afterbegin','<span class="dashicons dashicons-bell"></span>');

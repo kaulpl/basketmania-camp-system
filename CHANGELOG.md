@@ -2,6 +2,12 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.6] - 2026-07-23
+
+### Zmieniono
+- tabela konfiguracji kanałów workflow znajduje się w osobnej rozwijanej sekcji „Powiadomienia SMS/EMAIL”,
+- sekcja korzysta z tego samego układu, ikony, nagłówka i mechanizmu rozwijania co „Bramka SMS” oraz „E-MAIL”.
+
 ## [0.20.5] - 2026-07-23
 
 ### Naprawiono

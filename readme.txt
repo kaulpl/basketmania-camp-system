@@ -2,11 +2,15 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.5
+Stable tag: 0.20.6
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.6 =
+* Tabela kanałów wysyłki znajduje się w osobnej rozwijanej sekcji „Powiadomienia SMS/EMAIL”.
+* Sekcja ma taki sam układ, ikonę i zachowanie jak bloki Bramka SMS oraz E-MAIL.
 
 = 0.20.5 =
 * Naprawiono błędne migracje indeksów tabel wiadomości i faktur powodujące komunikat „Multiple primary key defined”.
