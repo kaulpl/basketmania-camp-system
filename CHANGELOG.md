@@ -2,6 +2,15 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.19.2] - 2026-07-23
+
+### Naprawiono
+- pierwsze otwarcie wzoru umowy oraz pierwsze otwarcie umowy do podpisu są widoczne w Historii klienta na karcie zgłoszenia,
+- podpisana umowa zawiera tylko jedną sekcję „Cyfrowe potwierdzenie podpisania umowy”,
+- usunięto odstępy pomiędzy kolejnymi wierszami danych podpisu cyfrowego,
+- sekcja podpisu cyfrowego otrzymała cienką pomarańczową ramkę,
+- komunikat „Wysłano umowę do akceptacji” zmieniono na „Wysłano umowę do podpisu”.
+
 ## [0.19.1] - 2026-07-23
 
 ### Zmieniono
