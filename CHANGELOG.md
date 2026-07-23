@@ -2,6 +2,13 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.2] - 2026-07-23
+
+### Naprawiono
+- numeracja faktur uwzględnia wszystkie faktury z tym samym prefiksem i rokiem, niezależnie od organizatora, zgodnie z globalnym indeksem unikalnym `invoice_number`,
+- wspólna blokada przydzielania numerów zapobiega wybraniu tego samego numeru przez dwa równoległe żądania,
+- generator ponownie sprawdza istnienie faktury po uzyskaniu blokady.
+
 ## [0.20.1] - 2026-07-23
 
 ### Naprawiono
