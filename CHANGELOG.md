@@ -2,6 +2,17 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.9] - 2026-07-23
+
+### Zmieniono
+- moduł Ustawienia ma pięć spójnych, rozwijanych sekcji: Ustawienia Ogólne, Bramka SMS, E-Mail, Ustawienia dokumentów i automatyzacji oraz Ustawienia powiadomień SMS / E-Mail,
+- wszystkie sekcje są domyślnie rozwinięte i zawierają od razu właściwe pola oraz przyciski zapisu,
+- sekcja ustawień powiadomień jest renderowana bezpośrednio na stronie, bez przenoszenia jej przez JavaScript.
+
+### Naprawiono
+- przycisk zapisu ustawień dokumentów i automatyzacji pozostaje we właściwym formularzu i uruchamia zapis serwerowy,
+- starsze skrypty zgodności nie przepinają już formularzy ani nie tworzą dodatkowych sekcji na ekranie Ustawienia.
+
 ## [0.20.8] - 2026-07-23
 
 ### Zmieniono
