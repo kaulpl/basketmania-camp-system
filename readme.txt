@@ -2,11 +2,15 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.19.4.2
+Stable tag: 0.19.4.3
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.19.4.3 =
+* Ponowne przygotowanie wydania na bazie poprawionego kodu 0.19.4.2.
+* Zachowano obowiązkową kontrolę składni PHP w procesie publikacji.
 
 = 0.17.0 =
 * Dodano moduł Feedback do zgłaszania błędów, poprawek i nowych funkcjonalności.
