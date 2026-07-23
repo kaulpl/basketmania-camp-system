@@ -2,6 +2,13 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.4] - 2026-07-23
+
+### Zmieniono
+- numer umowy ma format `[prefiks umów z Ustawień]/[prefiks organizatora]/[ROK]/[NUMER]`,
+- numer faktury ma format `[prefiks faktur z Ustawień]/[prefiks organizatora]/[ROK]/[NUMER]`,
+- pole prefiksu organizatora jest wspólne dla umów i faktur; pierwszy człon obu numerów pozostaje konfigurowany w module Ustawienia.
+
 ## [0.20.3] - 2026-07-23
 
 ### Dodano
