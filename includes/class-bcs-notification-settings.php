@@ -119,8 +119,11 @@ final class BCS_Notification_Settings {
         <script>
         document.addEventListener('DOMContentLoaded',function(){
             const wrap=document.querySelector('.wrap.bcs-admin');if(!wrap||document.querySelector('.bcs-notification-settings'))return;
-            const section=document.createElement('section');section.className='bcs-panel bcs-notification-settings';section.style.marginTop='20px';
-            section.innerHTML=<?php echo wp_json_encode(self::settings_html(is_array($saved)?$saved:[])); ?>;wrap.appendChild(section);
+            const section=document.createElement('details');section.className='bcs-settings-accordion bcs-settings-section-0200 bcs-notification-settings';section.style.marginTop='20px';
+            section.innerHTML='<summary><span><span class="dashicons dashicons-bell"></span><strong>Powiadomienia SMS/EMAIL</strong></span><span class="bcs-settings-summary">Kanały wysyłki dla etapów procesu</span></summary><div class="bcs-settings-accordion-body">'+<?php echo wp_json_encode(self::settings_html(is_array($saved)?$saved:[])); ?>+'</div>';
+            const email=[...wrap.querySelectorAll('details')].find(function(item){return /^E-?MAIL$/i.test((item.querySelector('summary strong')?.textContent||'').trim());});
+            const settingsPanel=email?.closest('.bcs-panel');
+            if(settingsPanel)settingsPanel.after(section);else wrap.appendChild(section);
         });
         </script>
         <?php
@@ -129,7 +132,7 @@ final class BCS_Notification_Settings {
     private static function settings_html(array $saved): string {
         $templates = class_exists('BCS_Template_Engine') ? BCS_Template_Engine::all() : [];
         $email_templates = (array)($templates['emails'] ?? []);
-        $html='<div class="bcs-panel-head"><div><h2>Powiadomienia workflow</h2><p>Ustawienia określają kanał wysyłki. Moduł Szablony zawsze przechowuje osobno gotową treść e-mail i SMS.</p></div><a class="button" href="'.esc_url(admin_url('admin.php?page=bcs-templates')).'">Otwórz wszystkie szablony</a></div>';
+        $html='<div class="bcs-panel-head"><div><h2>Ustawienia kanałów powiadomień</h2><p>Ustawienia określają kanał wysyłki. Moduł Szablony zawsze przechowuje osobno gotową treść e-mail i SMS.</p></div><a class="button" href="'.esc_url(admin_url('admin.php?page=bcs-templates')).'">Otwórz wszystkie szablony</a></div>';
         if(isset($_GET['notifications_saved']))$html.='<div class="notice notice-success inline"><p>Ustawienia powiadomień zostały zapisane.</p></div>';
         if(isset($_GET['notifications_error'])){
             $errors=get_transient('bcs_notification_errors_'.get_current_user_id());delete_transient('bcs_notification_errors_'.get_current_user_id());
