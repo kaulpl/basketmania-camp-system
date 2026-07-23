@@ -2,6 +2,25 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.18.9] - 2026-07-23
+
+### Zmieniono
+- lista strojów oraz lista uczestników dla każdego turnusu obejmują wyłącznie zgłoszenia z podpisaną umową i potwierdzoną pełną wpłatą,
+- w wiadomości po rejestracji komunikat o braku konieczności akceptacji administratora zastąpiono zdaniem: „Przejdź od razu do Panelu Rodzica i go wypełnij.”,
+- wszystkie checkboxy w systemie otrzymały jednolity wygląd przełączników,
+- sekcje ustawień ogólnych i powiadomień workflow korzystają z tego samego stylu rozwijania co osobne sekcje E-mail i SMS,
+- nagłówki sekcji Formularza Obozowego otrzymały pomarańczowe wyróżniki,
+- Panel Rodzica jest prezentowany jako samodzielna strona bez nagłówka i stopki motywu WordPress,
+- w górnym bloku turnusu wyświetlany jest wyśrodkowany tytuł „Panel Rodzica”,
+- komunikat trybu testowego został skrócony do „Wersja testowa systemu”,
+- przy kroku „Umowa” dla turnusów w przyszłym roku dodano informację o wysyłce umów od początku stycznia.
+
+### Usunięto
+- element „Rejestracja potwierdzona – wykonano” z sekcji „Szybkie czynności”,
+- zielony komunikat „Bezpieczny dostęp” z Panelu Rodzica,
+- osobny górny blok „Strefa uczestnika / Panel Rodzica”,
+- nagłówek, menu i stopkę aktywnego motywu WordPress z widoku Panelu Rodzica.
+
 ## [0.18.8] - 2026-07-23
 
 ### Przywrócono i skonsolidowano
