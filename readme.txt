@@ -2,11 +2,17 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.15
+Stable tag: 0.20.16
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.16 =
+* Usunięto zdublowane zakończenie „Pozdrawiamy / Basketmania Camp” z wiadomości potwierdzającej Formularz Obozowy.
+* Wiadomość korzysta wyłącznie ze wspólnej stopki „Z pozdrowieniami, Zespół Basketmania Camp”.
+* Poprawiono początki akapitów na „Informujemy, że dane…” oraz „Wzór umowy…”.
+* Istniejący szablon jest aktualizowany punktowo bez nadpisywania pozostałych własnych zmian.
 
 = 0.20.15 =
 * Reset danych usuwa wszystkie dane operacyjne, w tym zgłoszenia Feedback, dokumenty, komunikację, płatności, faktury, logi i techniczne liczniki.
