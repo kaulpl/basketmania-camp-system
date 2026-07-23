@@ -2,6 +2,13 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.1] - 2026-07-23
+
+### Naprawiono
+- generowanie faktury nie korzysta już z niedostępnej na części hostingów funkcji MySQL `GET_LOCK`, która zanieczyszczała odpowiedź AJAX kodem HTML,
+- endpoint faktury wywołuje jawnie operację silnika workflow i przechwytuje błędy serwera,
+- interfejs pokazuje czytelny komunikat zamiast technicznego błędu `Unexpected token '<'`.
+
 ## [0.20.0] - 2026-07-23
 
 ### Naprawiono
