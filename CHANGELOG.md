@@ -2,6 +2,19 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.19.3] - 2026-07-23
+
+### Naprawiono
+- komunikat „Dane zostały zapisane i ponownie przekazane organizatorowi.” w Panelu Rodzica znika automatycznie po 3 sekundach,
+- checkbox potwierdzenia w pierwotnym formularzu zapisów korzysta z zielonego przesuwanego przełącznika,
+- przy kwocie płatności na karcie zgłoszenia dodano widoczny przycisk „Edytuj cenę”.
+
+### Zasady edycji ceny
+- cena może być zmieniona wyłącznie przed wysłaniem umowy do podpisu,
+- zmieniona cena jest zapisywana w zgłoszeniu i przenoszona do istniejącego wzoru umowy,
+- po wysłaniu lub podpisaniu umowy edycja ceny jest zablokowana,
+- po wycofaniu niepodpisanej umowy cena ponownie staje się edytowalna.
+
 ## [0.19.2] - 2026-07-23
 
 ### Naprawiono
