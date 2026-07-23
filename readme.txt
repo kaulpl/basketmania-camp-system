@@ -2,11 +2,15 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.4
+Stable tag: 0.20.5
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.5 =
+* Naprawiono błędne migracje indeksów tabel wiadomości i faktur powodujące komunikat „Multiple primary key defined”.
+* Każdy klucz i indeks jest przekazywany do WordPress `dbDelta()` w osobnym wierszu.
 
 = 0.20.4 =
 * Umowy mają format [prefiks umów z Ustawień]/[prefiks organizatora]/[rok]/[numer].

@@ -2,7 +2,7 @@
 if (!defined('ABSPATH')) exit;
 
 class BCS_DB {
-    public const DB_VERSION = '0.20.3';
+    public const DB_VERSION = '0.20.5';
     public static function init(): void {}
 
     public static function maybe_upgrade(): void {
@@ -209,7 +209,9 @@ class BCS_DB {
             status VARCHAR(20) NOT NULL DEFAULT 'queued',
             sent_by BIGINT UNSIGNED NULL,
             created_at DATETIME NOT NULL,
-            PRIMARY KEY (id), KEY registration_id (registration_id), KEY template_key (template_key)
+            PRIMARY KEY (id),
+            KEY registration_id (registration_id),
+            KEY template_key (template_key)
         ) $charset;";
 
         $sql[] = "CREATE TABLE " . self::table('mail_messages') . " (
@@ -293,7 +295,10 @@ class BCS_DB {
             email_status VARCHAR(30) NULL,
             sms_status VARCHAR(30) NULL,
             created_at DATETIME NOT NULL,
-            PRIMARY KEY (id), UNIQUE KEY organizer_invoice_number (organizer_id, invoice_number), KEY registration_id (registration_id), KEY organizer_id (organizer_id)
+            PRIMARY KEY (id),
+            UNIQUE KEY organizer_invoice_number (organizer_id, invoice_number),
+            KEY registration_id (registration_id),
+            KEY organizer_id (organizer_id)
         ) $charset;";
 
 
