@@ -2,6 +2,17 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.20] - 2026-07-23
+
+### Dodano
+- osobne logi sukcesu, błędu i uzasadnionego pominięcia dla przypomnienia o umowie, przypomnienia o płatności oraz informacji przed obozem,
+- przypisanie każdego zdarzenia automatyzacji do konkretnego zgłoszenia i istniejącej umowy,
+- czytelne polskie etykiety błędów i pominięć w Historii klienta.
+
+### Naprawiono
+- nieudana wysyłka i wyłączony kanał nie kończą już automatyzacji bez dedykowanego śladu audytowego,
+- identyczne pominięcia są deduplikowane, aby kolejne uruchomienia WP-Cronu nie powielały wpisów.
+
 ## [0.20.19] - 2026-07-23
 
 ### Zmieniono
