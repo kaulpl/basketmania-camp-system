@@ -2,6 +2,16 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.3] - 2026-07-23
+
+### Dodano
+- pole prefiksu faktur w ustawieniach każdego organizatora,
+- format numeru `FV/[prefiks organizatora]/[ROK]/[kolejny numer]`.
+
+### Zmieniono
+- każdy organizator prowadzi własną roczną sekwencję numerów faktur,
+- indeks numerów faktur uwzględnia organizatora, dzięki czemu różni organizatorzy mogą mieć niezależną numerację.
+
 ## [0.20.2] - 2026-07-23
 
 ### Naprawiono
