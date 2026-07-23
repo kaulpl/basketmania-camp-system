@@ -2,6 +2,13 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.5] - 2026-07-23
+
+### Naprawiono
+- definicje indeksów tabel `messages` i `invoices` są zapisane po jednym kluczu na wiersz, zgodnie z wymaganiami parsera WordPress `dbDelta()`,
+- usunięto przyczynę błędnych poleceń `ADD PRIMARY KEY`, w których `KEY` i `UNIQUE` były traktowane jak nazwy kolumn,
+- podniesiono wersję schematu bazy, aby poprawna migracja wykonała się przy aktualizacji istniejącej instalacji.
+
 ## [0.20.4] - 2026-07-23
 
 ### Zmieniono
