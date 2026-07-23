@@ -2,6 +2,17 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.8] - 2026-07-23
+
+### Zmieniono
+- szablon wiadomości z linkiem Stripe korzysta z przycisku zgodnego z pozostałymi wiadomościami systemowymi,
+- obok daty płatności na liście zgłoszeń wyświetlana jest ikona Stripe, gdy płatność została potwierdzona przez Stripe.
+
+### Naprawiono
+- status wysłania linku Stripe jest zapisywany dopiero po skutecznym przekazaniu wiadomości e-mail,
+- webhook Stripe weryfikuje identyfikator sesji, kwotę i walutę przed zaksięgowaniem,
+- ponowne dostarczenie tego samego zdarzenia Stripe nie nalicza płatności drugi raz ani nie wysyła kolejnego potwierdzenia.
+
 ## [0.20.7] - 2026-07-23
 
 ### Zmieniono
