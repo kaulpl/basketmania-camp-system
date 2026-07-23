@@ -2,6 +2,14 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.19.4.2] - 2026-07-23
+
+### Naprawiono
+- poprawiono znaczniki powrotu do PHP w `BCS_Release_0194`, których błędna składnia uniemożliwiała domknięcie metod i aktywację wtyczki.
+
+### Zmieniono
+- proces publikacji wykonuje kontrolę składni wszystkich plików PHP przed zbudowaniem paczki ZIP.
+
 ## [0.19.4.1] - 2026-07-23
 
 ### Zmieniono
