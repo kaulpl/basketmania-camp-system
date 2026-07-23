@@ -33,7 +33,7 @@ class BCS_Agreements {
         ];
         $html=strtr($template,$replace);$hash=hash('sha256',$html);
         $existing=$reg->agreement_id?$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('agreements')." WHERE id=%d",$reg->agreement_id)):null;
-        $data=['agreement_number'=>$number,'version'=>$include_date?'1.0':'draft','html'=>$html,'document_hash'=>$hash,'status'=>$status];
+        $data=['agreement_number'=>$number,'version'=>$include_date?'1.0':'template','html'=>$html,'document_hash'=>$hash,'status'=>$status];
         if($existing){$wpdb->update(BCS_DB::table('agreements'),$data,['id'=>$existing->id]);$agreement_id=(int)$existing->id;}
         else{$data['registration_id']=$registration_id;$data['created_at']=BCS_Utils::now();$wpdb->insert(BCS_DB::table('agreements'),$data);$agreement_id=(int)$wpdb->insert_id;}
         $snapshot=wp_json_encode(['name'=>$reg->organizer_name,'legal_form'=>$reg->organizer_legal_form,'address'=>$reg->organizer_address,'nip'=>$reg->organizer_nip,'regon'=>$reg->organizer_regon,'krs'=>$reg->organizer_krs,'email'=>$reg->organizer_email,'phone'=>$reg->organizer_phone,'representative'=>$reg->organizer_representative,'bank_name'=>$reg->bank_name,'bank_account'=>$reg->bank_account,'transfer_title_template'=>$reg->transfer_title_template],JSON_UNESCAPED_UNICODE);
@@ -42,64 +42,41 @@ class BCS_Agreements {
         BCS_Utils::log($status==='draft'?'agreement_draft_created':'agreement_created',['hash'=>$hash,'date'=>$agreement_date],$registration_id,$agreement_id);return $agreement_id;
     }
 
-
-    /**
-     * Publishes the current editable draft without rebuilding its contents.
-     * The exact HTML and SHA-256 hash approved by the administrator are copied
-     * to the "sent" snapshot and become the immutable document offered for OTP.
-     */
     public static function publish_draft(int $registration_id): int {
         global $wpdb;
-        $row = $wpdb->get_row($wpdb->prepare(
-            "SELECT r.agreement_id, a.* FROM ".BCS_DB::table('registrations')." r LEFT JOIN ".BCS_DB::table('agreements')." a ON a.id=r.agreement_id WHERE r.id=%d",
-            $registration_id
-        ));
+        $row = $wpdb->get_row($wpdb->prepare("SELECT r.agreement_id, a.* FROM ".BCS_DB::table('registrations')." r LEFT JOIN ".BCS_DB::table('agreements')." a ON a.id=r.agreement_id WHERE r.id=%d",$registration_id));
         if (!$row || empty($row->agreement_id) || $row->status !== 'draft' || trim((string)$row->html) === '') return 0;
-
-        $agreement_id = (int)$row->agreement_id;
-        $html = (string)$row->html;
-        $hash = hash('sha256', $html);
-        $now = BCS_Utils::now();
-
-        $updated = $wpdb->update(BCS_DB::table('agreements'), [
-            'status' => 'pending',
-            'version' => '1.0',
-            'document_hash' => $hash,
-        ], ['id' => $agreement_id]);
+        $agreement_id = (int)$row->agreement_id;$html = (string)$row->html;$hash = hash('sha256', $html);$now = BCS_Utils::now();
+        $updated = $wpdb->update(BCS_DB::table('agreements'), ['status'=>'pending','version'=>'1.0','document_hash'=>$hash], ['id'=>$agreement_id]);
         if ($updated === false) return 0;
-
         self::save_version($agreement_id, $registration_id, 'sent', $html, $hash, (string)$row->agreement_number);
-        $wpdb->update(BCS_DB::table('registrations'), [
-            'agreement_status' => 'pending',
-            'updated_at' => $now,
-        ], ['id' => $registration_id]);
-
-        BCS_Utils::log('agreement_draft_published', [
-            'hash' => $hash,
-            'source' => 'editable_draft',
-        ], $registration_id, $agreement_id);
+        $wpdb->update(BCS_DB::table('registrations'), ['agreement_status'=>'pending','updated_at'=>$now], ['id'=>$registration_id]);
+        BCS_Utils::log('agreement_draft_published', ['hash'=>$hash,'source'=>'editable_template'], $registration_id, $agreement_id);
         return $agreement_id;
     }
 
-
     private static function save_version(int $agreement_id, int $registration_id, string $stage, string $html, string $hash, string $number): void {
-        global $wpdb;
-        $table=BCS_DB::table('agreement_versions');
+        global $wpdb;$table=BCS_DB::table('agreement_versions');
         $existing=$wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE agreement_id=%d AND stage=%s",$agreement_id,$stage));
         $data=['agreement_id'=>$agreement_id,'registration_id'=>$registration_id,'stage'=>$stage,'html'=>$html,'document_hash'=>$hash,'agreement_number'=>$number,'created_at'=>BCS_Utils::now()];
         if($existing)$wpdb->update($table,$data,['id'=>(int)$existing]); else $wpdb->insert($table,$data);
     }
 
-    public static function ajax_send_otp(): void {
-        check_ajax_referer('bcs_front', 'nonce');
+    private static function first_opened_at(int $registration_id, int $agreement_id): string {
         global $wpdb;
+        return (string)$wpdb->get_var($wpdb->prepare("SELECT MIN(created_at) FROM ".BCS_DB::table('logs')." WHERE registration_id=%d AND agreement_id=%d AND event_type='agreement_opened_for_signature'",$registration_id,$agreement_id));
+    }
+
+    public static function ajax_send_otp(): void {
+        check_ajax_referer('bcs_front', 'nonce');global $wpdb;
         $agreement_id=absint($_POST['agreement_id']??0); $token=sanitize_text_field(wp_unslash($_POST['token']??''));
         $row=$wpdb->get_row($wpdb->prepare("SELECT a.*,r.parent_phone,r.id registration_id,r.public_token FROM ".BCS_DB::table('agreements')." a JOIN ".BCS_DB::table('registrations')." r ON r.id=a.registration_id WHERE a.id=%d",$agreement_id));
         if(!$row||!hash_equals((string)$row->public_token,$token)) wp_send_json_error(['message'=>BCS_Template_Engine::get('ui','invalid_link','Nieprawidłowy link.')],403);
         $registration_id=(int)$row->registration_id; $provider=BCS_SMS::provider_label(); $phone_masked=BCS_Utils::mask_phone((string)$row->parent_phone);
-        if($row->status==='draft') wp_send_json_error(['message'=>'To jest draft umowy. Oczekuj na wysłanie właściwej umowy przez organizatora.'],409);
+        if($row->status==='draft') wp_send_json_error(['message'=>'To jest wzór umowy. Oczekuj na wysłanie właściwej umowy przez organizatora.'],409);
         if($row->status==='accepted') wp_send_json_error(['message'=>BCS_Template_Engine::get('ui','agreement_already_accepted','Umowa jest już potwierdzona.')],409);
-        if(sanitize_key(wp_unslash($_POST['agreement_read']??''))!=='1') wp_send_json_error(['message'=>'Przed wysłaniem kodu otwórz umowę i zaznacz potwierdzenie zapoznania się z jej treścią.'],400);
+        if(self::first_opened_at($registration_id,$agreement_id)==='') wp_send_json_error(['message'=>'Najpierw otwórz umowę do podpisu i zapoznaj się z jej treścią oraz załącznikami.'],400);
+        if(sanitize_key(wp_unslash($_POST['agreement_read']??''))!=='1') wp_send_json_error(['message'=>'Zaznacz wszystkie wymagane oświadczenia przed wysłaniem kodu SMS.'],400);
         $settings=get_option('bcs_settings',[]); $minutes=max(2,min(30,absint($settings['otp_minutes']??2))); $send_limit=max(1,min(20,absint($settings['otp_send_limit']??3))); $now=time();
         $last=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('otp')." WHERE agreement_id=%d AND used_at IS NULL ORDER BY id DESC LIMIT 1",$agreement_id));
         if($last){ $last_exp=strtotime((string)$last->expires_at.' Europe/Warsaw'); if($last_exp>$now){$retry=$last_exp-$now; BCS_Utils::log('otp_send_blocked_active_code',['otp_id'=>(int)$last->id,'retry_after'=>$retry,'phone'=>$phone_masked,'provider'=>$provider,'actor'=>'parent'],$registration_id,$agreement_id); wp_send_json_error(['message'=>'Poprzedni kod jest nadal ważny. Kolejny SMS można wysłać dopiero po jego wygaśnięciu.','retry_after'=>$retry,'expires_at'=>$last_exp],429);}}
@@ -107,6 +84,7 @@ class BCS_Agreements {
         if($recent>=$send_limit){BCS_Utils::log('otp_send_blocked_hourly_limit',['count'=>$recent,'configured_limit'=>$send_limit,'phone'=>$phone_masked,'provider'=>$provider,'actor'=>'parent'],$registration_id,$agreement_id);wp_send_json_error(['message'=>BCS_Template_Engine::get('ui','otp_limit','Osiągnięto limit wysyłek. Spróbuj później.'),'limit'=>$send_limit],429);}
         $code=(string)random_int(100000,999999); $expires_ts=$now+($minutes*MINUTE_IN_SECONDS); $expires=wp_date('Y-m-d H:i:s',$expires_ts,BCS_Utils::timezone());
         $tpl=BCS_Template_Engine::get('emails','otp_sms',''); $message=$tpl!==''?BCS_Template_Engine::render($tpl,['{{AGREEMENT_NUMBER}}'=>$row->agreement_number,'{{CODE}}'=>$code,'{{MINUTES}}'=>(string)$minutes]):sprintf('Basketmania Camp: kod potwierdzający umowę %s to %s. Kod ważny %d min. Nie udostępniaj go innym.',$row->agreement_number,$code,$minutes);
+        BCS_Utils::log('agreement_declarations_accepted',['accepted_at'=>BCS_Utils::now(),'actor'=>'parent'],$registration_id,$agreement_id);
         BCS_Utils::log('otp_send_requested',['phone'=>$phone_masked,'provider'=>$provider,'valid_minutes'=>$minutes,'actor'=>'parent'],$registration_id,$agreement_id);
         $sent=BCS_SMS::send((string)$row->parent_phone,$message);
         if(empty($sent['success'])){BCS_Utils::log('otp_send_failed',['error'=>(string)($sent['error']??'Nieznany błąd'),'response'=>$sent,'phone'=>$phone_masked,'provider'=>$provider,'actor'=>'parent'],$registration_id,$agreement_id);wp_send_json_error(['message'=>'Nie udało się wysłać SMS: '.(string)($sent['error']??'Nieznany błąd.')],500);}
@@ -117,64 +95,39 @@ class BCS_Agreements {
     }
 
     public static function ajax_verify_otp(): void {
-        check_ajax_referer('bcs_front', 'nonce');
-        global $wpdb;
-        $agreement_id = absint($_POST['agreement_id'] ?? 0);
-        $token = sanitize_text_field(wp_unslash($_POST['token'] ?? ''));
-        $code = preg_replace('/\D+/', '', (string)($_POST['code'] ?? ''));
-        $declaration = sanitize_textarea_field(wp_unslash($_POST['declaration'] ?? ''));
-        $row = $wpdb->get_row($wpdb->prepare("SELECT a.*, r.parent_phone, r.id registration_id, r.public_token, r.total_amount FROM " . BCS_DB::table('agreements') . " a JOIN " . BCS_DB::table('registrations') . " r ON r.id=a.registration_id WHERE a.id=%d", $agreement_id));
-        if (!$row || !hash_equals($row->public_token, $token)) wp_send_json_error(['message' => BCS_Template_Engine::get('ui','invalid_link','Nieprawidłowy link.')], 403);
-        if ($row->status === 'accepted') wp_send_json_success(['message' => BCS_Template_Engine::get('ui','agreement_already_accepted','Umowa została już potwierdzona.')]);
-        $agreement_read = sanitize_key(wp_unslash($_POST['agreement_read'] ?? ''));
-        if ($agreement_read !== '1' || $declaration === '') wp_send_json_error(['message' => 'Potwierdzenie zapoznania się z umową jest wymagane.'], 400);
-        if (strlen($code) !== 6) wp_send_json_error(['message' => 'Wpisz pełny 6-cyfrowy kod SMS.'], 400);
-        $otp = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . BCS_DB::table('otp') . " WHERE agreement_id=%d AND used_at IS NULL ORDER BY id DESC LIMIT 1", $agreement_id));
-        if (!$otp) wp_send_json_error(['message' => BCS_Template_Engine::get('ui','otp_first','Najpierw wyślij kod SMS.')], 400);
-        if (strtotime($otp->expires_at . ' Europe/Warsaw') < time()) wp_send_json_error(['message' => BCS_Template_Engine::get('ui','otp_expired','Kod wygasł. Wyślij nowy.')], 410);
-        $settings = get_option('bcs_settings', []);
-        $max = max(3, absint($settings['max_attempts'] ?? 5));
-        if ((int)$otp->attempts >= $max) wp_send_json_error(['message' => BCS_Template_Engine::get('ui','otp_attempts','Przekroczono liczbę prób. Wyślij nowy kod.')], 429);
-        $wpdb->query($wpdb->prepare("UPDATE " . BCS_DB::table('otp') . " SET attempts=attempts+1 WHERE id=%d", $otp->id));
-        if (!wp_check_password($code, $otp->code_hash)) {
-            BCS_Utils::log('otp_invalid', ['otp_id' => (int)$otp->id], (int)$row->registration_id, $agreement_id);
-            wp_send_json_error(['message' => BCS_Template_Engine::get('ui','otp_invalid','Kod jest nieprawidłowy.')], 400);
-        }
-        $now = BCS_Utils::now();
-        $wpdb->update(BCS_DB::table('otp'), ['used_at' => $now], ['id' => $otp->id]);
-        $wpdb->update(BCS_DB::table('agreements'), [
-            'status' => 'accepted',
-            'accepted_at' => $now,
-            'accepted_ip' => BCS_Utils::client_ip(),
-            'accepted_user_agent' => sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'] ?? '')),
-            'accepted_phone_masked' => $row->parent_phone,
-            'sms_message_id' => $otp->sms_message_id,
-            'declaration_text' => $declaration,
-        ], ['id' => $agreement_id]);
-        $due=(new DateTimeImmutable('+7 days', BCS_Utils::timezone()))->format('Y-m-d');
-        $wpdb->update(BCS_DB::table('registrations'), ['agreement_status' => 'accepted', 'status' => 'awaiting_bank_payment', 'payment_due_date'=>$due, 'updated_at' => $now], ['id' => $row->registration_id]);
+        check_ajax_referer('bcs_front', 'nonce');global $wpdb;
+        $agreement_id=absint($_POST['agreement_id']??0);$token=sanitize_text_field(wp_unslash($_POST['token']??''));$code=preg_replace('/\D+/','',(string)($_POST['code']??''));$declaration=sanitize_textarea_field(wp_unslash($_POST['declaration']??''));
+        $row=$wpdb->get_row($wpdb->prepare("SELECT a.*,r.parent_phone,r.id registration_id,r.public_token,r.total_amount FROM ".BCS_DB::table('agreements')." a JOIN ".BCS_DB::table('registrations')." r ON r.id=a.registration_id WHERE a.id=%d",$agreement_id));
+        if(!$row||!hash_equals($row->public_token,$token)) wp_send_json_error(['message'=>BCS_Template_Engine::get('ui','invalid_link','Nieprawidłowy link.')],403);
+        if($row->status==='accepted') wp_send_json_success(['message'=>BCS_Template_Engine::get('ui','agreement_already_accepted','Umowa została już potwierdzona.')]);
+        $opened=self::first_opened_at((int)$row->registration_id,$agreement_id);if($opened==='') wp_send_json_error(['message'=>'Najpierw otwórz umowę do podpisu.'],400);
+        $agreement_read=sanitize_key(wp_unslash($_POST['agreement_read']??''));if($agreement_read!=='1'||$declaration==='') wp_send_json_error(['message'=>'Wszystkie oświadczenia są wymagane.'],400);
+        if(strlen($code)!==6) wp_send_json_error(['message'=>'Wpisz pełny 6-cyfrowy kod SMS.'],400);
+        $otp=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('otp')." WHERE agreement_id=%d AND used_at IS NULL ORDER BY id DESC LIMIT 1",$agreement_id));
+        if(!$otp) wp_send_json_error(['message'=>BCS_Template_Engine::get('ui','otp_first','Najpierw wyślij kod SMS.')],400);
+        if(strtotime($otp->expires_at.' Europe/Warsaw')<time()) wp_send_json_error(['message'=>BCS_Template_Engine::get('ui','otp_expired','Kod wygasł. Wyślij nowy.')],410);
+        $settings=get_option('bcs_settings',[]);$max=max(3,absint($settings['max_attempts']??5));if((int)$otp->attempts>=$max) wp_send_json_error(['message'=>BCS_Template_Engine::get('ui','otp_attempts','Przekroczono liczbę prób. Wyślij nowy kod.')],429);
+        $wpdb->query($wpdb->prepare("UPDATE ".BCS_DB::table('otp')." SET attempts=attempts+1 WHERE id=%d",$otp->id));
+        if(!wp_check_password($code,$otp->code_hash)){BCS_Utils::log('otp_invalid',['otp_id'=>(int)$otp->id],(int)$row->registration_id,$agreement_id);wp_send_json_error(['message'=>BCS_Template_Engine::get('ui','otp_invalid','Kod jest nieprawidłowy.')],400);}
+        $now=BCS_Utils::now();$wpdb->update(BCS_DB::table('otp'),['used_at'=>$now],['id'=>$otp->id]);
+        $wpdb->update(BCS_DB::table('agreements'),['status'=>'accepted','accepted_at'=>$now,'accepted_ip'=>BCS_Utils::client_ip(),'accepted_user_agent'=>sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT']??'')),'accepted_phone_masked'=>$row->parent_phone,'sms_message_id'=>$otp->sms_message_id,'declaration_text'=>$declaration],['id'=>$agreement_id]);
+        $due=(new DateTimeImmutable('+7 days',BCS_Utils::timezone()))->format('Y-m-d');$wpdb->update(BCS_DB::table('registrations'),['agreement_status'=>'accepted','status'=>'awaiting_bank_payment','payment_due_date'=>$due,'updated_at'=>$now],['id'=>$row->registration_id]);
         if(class_exists('BCS_Workflow')) BCS_Workflow_Engine::refresh_invoice_readiness((int)$row->registration_id);
-        $proof='<div class="proof"><h2>Cyfrowe potwierdzenie podpisania umowy</h2><p><strong>Status:</strong> umowa podpisana jednorazowym kodem SMS</p><p><strong>Data i czas podpisania:</strong> '.esc_html(BCS_Utils::format_datetime($now)).' (Europe/Warsaw)</p><p><strong>Numer telefonu użyty do autoryzacji:</strong> '.esc_html($row->parent_phone).'</p><p><strong>Identyfikator wiadomości SMS:</strong> '.esc_html((string)$otp->sms_message_id).'</p><p><strong>Oświadczenie podpisującego:</strong> '.esc_html($declaration).'</p><p><strong>Adres IP:</strong> '.esc_html(BCS_Utils::client_ip()).'</p><p><strong>Skrót SHA-256 podpisanej treści:</strong><br><code>'.esc_html($row->document_hash).'</code></p></div>';
+        $proof='<div class="proof"><h2>Cyfrowe potwierdzenie podpisania umowy</h2><p><strong>Status:</strong> umowa podpisana jednorazowym kodem SMS</p><p><strong>Data i czas pierwszego otwarcia umowy:</strong> '.esc_html(BCS_Utils::format_datetime($opened)).' (Europe/Warsaw)</p><p><strong>Data i czas podpisania:</strong> '.esc_html(BCS_Utils::format_datetime($now)).' (Europe/Warsaw)</p><p><strong>Numer telefonu użyty do autoryzacji:</strong> '.esc_html($row->parent_phone).'</p><p><strong>Identyfikator wiadomości SMS:</strong> '.esc_html((string)$otp->sms_message_id).'</p><p><strong>Oświadczenie podpisującego:</strong> '.esc_html($declaration).'</p><p><strong>Adres IP:</strong> '.esc_html(BCS_Utils::client_ip()).'</p><p><strong>Skrót SHA-256 podpisanej treści:</strong><br><code>'.esc_html($row->document_hash).'</code></p></div>';
         self::save_version((int)$agreement_id,(int)$row->registration_id,'signed',$row->html.$proof,$row->document_hash,$row->agreement_number);
-        BCS_Utils::log('agreement_accepted', ['sms_message_id' => $otp->sms_message_id, 'hash' => $row->document_hash], (int)$row->registration_id, $agreement_id);
-        if(class_exists('BCS_Communications')) { BCS_Communication_Engine::send_to_registration((int)$row->registration_id,'agreement_signed','email'); }
-        wp_send_json_success(['message' => BCS_Template_Engine::get('ui','agreement_success','Umowa została skutecznie potwierdzona.')]);
+        BCS_Utils::log('agreement_accepted',['sms_message_id'=>$otp->sms_message_id,'hash'=>$row->document_hash,'opened_at'=>$opened],(int)$row->registration_id,$agreement_id);
+        if(class_exists('BCS_Communications')) BCS_Communication_Engine::send_to_registration((int)$row->registration_id,'agreement_signed','email');
+        wp_send_json_success(['message'=>BCS_Template_Engine::get('ui','agreement_success','Umowa została skutecznie potwierdzona.')]);
     }
 
     public static function view_agreement(): void {
-        global $wpdb;
-        $id = absint($_GET['agreement'] ?? 0);
-        $token = sanitize_text_field(wp_unslash($_GET['token'] ?? ''));
-        $row = $wpdb->get_row($wpdb->prepare("SELECT a.*, r.public_token, r.parent_first_name, r.parent_last_name, r.parent_phone FROM " . BCS_DB::table('agreements') . " a JOIN " . BCS_DB::table('registrations') . " r ON r.id=a.registration_id WHERE a.id=%d", $id));
-        if (!$row || (!current_user_can('manage_options') && !hash_equals($row->public_token, $token))) wp_die(BCS_Template_Engine::get('ui','access_denied','Brak dostępu.'), 403);
-        header('Content-Type: text/html; charset=utf-8');
-        echo '<!doctype html><html><head><meta charset="utf-8"><title>' . esc_html($row->agreement_number) . '</title><style>body{font-family:Arial,sans-serif;max-width:900px;margin:40px auto;line-height:1.55;color:#171717} .proof{margin-top:40px;padding:20px;border:2px solid #111} @media print{button{display:none}}</style></head><body><button onclick="window.print()">Drukuj / zapisz jako PDF</button>';
+        global $wpdb;$id=absint($_GET['agreement']??0);$token=sanitize_text_field(wp_unslash($_GET['token']??''));
+        $row=$wpdb->get_row($wpdb->prepare("SELECT a.*,r.public_token,r.parent_first_name,r.parent_last_name,r.parent_phone FROM ".BCS_DB::table('agreements')." a JOIN ".BCS_DB::table('registrations')." r ON r.id=a.registration_id WHERE a.id=%d",$id));
+        if(!$row||(!current_user_can('manage_options')&&!hash_equals($row->public_token,$token))) wp_die(BCS_Template_Engine::get('ui','access_denied','Brak dostępu.'),403);
+        header('Content-Type: text/html; charset=utf-8');echo '<!doctype html><html><head><meta charset="utf-8"><title>'.esc_html($row->agreement_number).'</title><style>body{font-family:Arial,sans-serif;max-width:900px;margin:40px auto;line-height:1.55;color:#171717}.proof{margin-top:40px;padding:20px;border:2px solid #111}@media print{button{display:none}}</style></head><body><button onclick="window.print()">Drukuj / zapisz jako PDF</button>';
         echo wp_kses_post($row->html);
-        if ($row->status === 'accepted') {
-            echo '<div class="proof"><h2>Cyfrowe potwierdzenie podpisania umowy</h2><p><strong>Status:</strong> umowa podpisana jednorazowym kodem SMS</p><p><strong>Data i czas podpisania:</strong> ' . esc_html($row->accepted_at) . '</p><p><strong>Telefon:</strong> ' . esc_html($row->parent_phone) . '</p><p><strong>Identyfikator SMS:</strong> ' . esc_html($row->sms_message_id) . '</p><p><strong>Skrót SHA-256 dokumentu:</strong><br><code>' . esc_html($row->document_hash) . '</code></p></div>';
-        }
-        echo '</body></html>';
-        exit;
+        if($row->status==='accepted'){$opened=self::first_opened_at((int)$row->registration_id,$id);echo '<div class="proof"><h2>Cyfrowe potwierdzenie podpisania umowy</h2><p><strong>Status:</strong> umowa podpisana jednorazowym kodem SMS</p><p><strong>Data pierwszego otwarcia umowy:</strong> '.esc_html($opened?:'—').'</p><p><strong>Data i czas podpisania:</strong> '.esc_html($row->accepted_at).'</p><p><strong>Telefon:</strong> '.esc_html($row->parent_phone).'</p><p><strong>Identyfikator SMS:</strong> '.esc_html($row->sms_message_id).'</p><p><strong>Skrót SHA-256 dokumentu:</strong><br><code>'.esc_html($row->document_hash).'</code></p></div>';}
+        echo '</body></html>';exit;
     }
 
     public static function default_template(): string {
