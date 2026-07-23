@@ -9,6 +9,7 @@ class BCS_Templates {
         self::migrate_0131_templates();
         self::migrate_0132_templates();
         self::migrate_0152_templates();
+        self::migrate_0208_templates();
     }
 
 
@@ -52,6 +53,19 @@ class BCS_Templates {
         $saved['emails']['agreement_signed'] = $defaults['agreement_signed'];
         update_option('bcs_content_templates', $saved, false);
         update_option('bcs_templates_migrated_0152', 1, false);
+    }
+
+    private static function migrate_0208_templates(): void {
+        if (get_option('bcs_templates_migrated_0208')) return;
+        $saved = get_option('bcs_content_templates', []);
+        if (!is_array($saved)) $saved = [];
+        $body = (string)($saved['emails']['stripe_link']['body'] ?? '');
+        if ($body === '' || preg_match('/<a\b(?![^>]*\bstyle=)[^>]*href=["\']\{\{STRIPE_URL\}\}/i', $body)) {
+            $defaults = BCS_Communication_Engine::default_templates();
+            $saved['emails']['stripe_link'] = $defaults['stripe_link'];
+            update_option('bcs_content_templates', $saved, false);
+        }
+        update_option('bcs_templates_migrated_0208', 1, false);
     }
 
     public static function menu(): void {
