@@ -159,10 +159,17 @@ class BCS_Workflow {
         if(!$r || $r->status==='cancelled' || empty($r->form_verified_at)) return false;
         if((float)$r->total_amount > 0 && (float)$r->paid_amount >= (float)$r->total_amount) return false;
         $payment=BCS_Payments::create_checkout($id); if(is_wp_error($payment)) return false;
+        $templates=BCS_Communication_Engine::templates();$tpl=$templates['stripe_link']??[];$ctx=BCS_Communication_Engine::registration_context($id);
+        if(!$ctx) return false;
+        $vars=$ctx['vars'];$vars['{{STRIPE_URL}}']=$payment['url'];$subject=strtr((string)($tpl['subject']??'Link do płatności online'),$vars);$body=strtr((string)($tpl['body']??'{{STRIPE_URL}}'),$vars);
+        $sent=BCS_Mailer::send($ctx['row']->parent_email,$subject,$body,['Content-Type: text/html; charset=UTF-8'],[],$id);
+        if(!$sent){
+            $wpdb->update(BCS_DB::table('payments'),['status'=>'failed','updated_at'=>BCS_Utils::now()],['id'=>(int)$payment['payment_id']]);
+            BCS_Utils::log('stripe_link_email_failed',['payment_id'=>$payment['payment_id'],'error'=>BCS_Mailer::last_error()],$id,(int)$r->agreement_id);
+            return false;
+        }
         $now=BCS_Utils::now();
         $wpdb->update(BCS_DB::table('registrations'),['status'=>'stripe_link_sent','stripe_link_sent_at'=>$now,'stripe_link_sent_by'=>get_current_user_id(),'updated_at'=>$now],['id'=>$id]);
-        $templates=BCS_Communication_Engine::templates();$tpl=$templates['stripe_link']??[];$ctx=BCS_Communication_Engine::registration_context($id);
-        if($ctx){$vars=$ctx['vars'];$vars['{{STRIPE_URL}}']=$payment['url'];$subject=strtr((string)($tpl['subject']??'Link do płatności online'),$vars);$body=strtr((string)($tpl['body']??'{{STRIPE_URL}}'),$vars);BCS_Mailer::send($ctx['row']->parent_email,$subject,$body,['Content-Type: text/html; charset=UTF-8'],[],$id);}
         BCS_Utils::log('stripe_link_sent',['payment_id'=>$payment['payment_id']],$id,(int)$r->agreement_id); return true;
     }
 
@@ -292,4 +299,3 @@ class BCS_Workflow {
             ($r->invoice_status==='generated'||$r->invoice_status==='sent'?'':$make('generate_invoice','Faktura',$paid && BCS_Workflow::invoice_available((int)$r->id)));
     }
 }
-
