@@ -2,6 +2,17 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.11] - 2026-07-23
+
+### Zmieniono
+- pod przyciskiem „Potwierdź podpis umowy SMS-em” dodano informację o warunkach jego aktywacji,
+- oczekująca płatność Stripe jest opisana czytelnym statusem bez technicznego identyfikatora sesji `cs_...`.
+
+### Naprawiono
+- poprawny powrót z Checkout Stripe jest dodatkowo weryfikowany bezpośrednio przez API Stripe i może zaksięgować płatność niezależnie od opóźnienia webhooka,
+- potwierdzenie płatności zawsze aktualizuje powiązanie `payment_id`, kwotę `paid_amount` i status całego zgłoszenia,
+- ponowne potwierdzenie odbudowuje sumę wpłat z rekordów oznaczonych jako opłacone bez podwójnego naliczania.
+
 ## [0.20.10] - 2026-07-23
 
 ### Zmieniono
