@@ -54,6 +54,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const countdown = document.querySelector('#bcs-otp-countdown');
   let timer = null;
   let expiresAt = 0;
+  if(send && !root.querySelector('.bcs-signature-button-note')){
+    const note=document.createElement('small');
+    note.className='bcs-signature-button-note';
+    note.textContent='Przycisk stanie się aktywny po obejrzeniu umowy i zaznaczeniu wymaganych oświadczeń i zgód.';
+    send.insertAdjacentElement('afterend',note);
+  }
 
   const post = async (action, extra = {}) => {
     const body = new URLSearchParams({action,nonce:BCS.nonce,agreement_id:root.dataset.agreement,token:root.dataset.token,agreement_read:checked?.checked?'1':'0',...extra});
