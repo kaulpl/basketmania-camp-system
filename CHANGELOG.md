@@ -2,6 +2,18 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.14] - 2026-07-23
+
+### Zmieniono
+- przycisk „Wyślij link Stripe” na Karcie Zgłoszenia działa przez zabezpieczony endpoint AJAX i pokazuje czytelny wynik bez przeładowania strony,
+- każdy organizator ma własną roczną sekwencję numerów umów; istniejące numery i treści dokumentów nie są zmieniane,
+- indeks unikalności umów, podobnie jak faktur, uwzględnia organizatora.
+
+### Naprawiono
+- błąd utworzenia sesji Stripe lub wysyłki wiadomości jest przekazywany administratorowi zamiast kończyć się nieskutecznym powrotem do Karty Zgłoszenia,
+- numer porządkowy nowej umowy nie jest już globalnym ID zgłoszenia,
+- zachowano pełną weryfikację pozytywnej płatności Stripe: powiązanie płatności, zgłoszenia, organizatora i sesji oraz zgodność kwoty, waluty i statusu `paid`.
+
 ## [0.20.13] - 2026-07-23
 
 ### Zmieniono
