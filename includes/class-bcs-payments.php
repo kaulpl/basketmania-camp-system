@@ -86,10 +86,29 @@ class BCS_Payments {
             $session=$event['data']['object']??[]; $payment_id=absint($session['metadata']['payment_id']??$session['client_reference_id']??0); $registration_id=absint($session['metadata']['registration_id']??0);
             $payment=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('payments')." WHERE id=%d",$payment_id));
             if($payment && (int)$payment->organizer_id===(int)$organizer->id && (int)$payment->registration_id===$registration_id && (($session['payment_status']??'')==='paid')){
+                $session_id=sanitize_text_field((string)($session['id']??''));
+                $currency=strtoupper(sanitize_text_field((string)($session['currency']??'')));
+                $amount_total=(int)($session['amount_total']??-1);
+                $expected_amount=(int)round((float)$payment->amount*100);
+                if($session_id==='' || ($payment->external_id && !hash_equals((string)$payment->external_id,$session_id)) || $currency!=='PLN' || $amount_total!==$expected_amount){
+                    BCS_Utils::log('stripe_payment_rejected',[
+                        'payment_id'=>$payment_id,
+                        'session_id'=>$session_id,
+                        'currency'=>$currency,
+                        'amount_total'=>$amount_total,
+                        'expected_amount'=>$expected_amount,
+                    ],$registration_id);
+                    return new WP_REST_Response(['error'=>'payment_details_mismatch'],400);
+                }
                 $now=BCS_Utils::now();
-                $wpdb->update(BCS_DB::table('payments'),['status'=>'paid','paid_at'=>$now,'external_id'=>sanitize_text_field((string)($session['id']??$payment->external_id)),'updated_at'=>$now],['id'=>$payment_id]);
+                $claimed=$wpdb->query($wpdb->prepare(
+                    "UPDATE ".BCS_DB::table('payments')." SET status='paid',paid_at=%s,external_id=%s,updated_at=%s WHERE id=%d AND status<>'paid'",
+                    $now,$session_id,$now,$payment_id
+                ));
+                if($claimed===0) return new WP_REST_Response(['received'=>true,'duplicate'=>true],200);
+                if($claimed===false) return new WP_REST_Response(['error'=>'payment_update_failed'],500);
                 $r=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('registrations')." WHERE id=%d",$registration_id));
-                if($r){$new=min((float)$r->total_amount,(float)$r->paid_amount+(float)$payment->amount);$paid=$new>=(float)$r->total_amount;$wpdb->update(BCS_DB::table('registrations'),['paid_amount'=>$new,'status'=>$paid?'paid':'partially_paid','updated_at'=>$now],['id'=>$registration_id]);if($paid && class_exists('BCS_Workflow'))BCS_Workflow_Engine::refresh_invoice_readiness($registration_id);BCS_Utils::log('stripe_payment_confirmed',['payment_id'=>$payment_id,'session_id'=>$session['id']??''],$registration_id,(int)$r->agreement_id);if($paid)BCS_Communication_Engine::send_to_registration($registration_id,'paid','email','', '', false);}
+                if($r){$new=min((float)$r->total_amount,(float)$r->paid_amount+(float)$payment->amount);$paid=$new>=(float)$r->total_amount;$wpdb->update(BCS_DB::table('registrations'),['paid_amount'=>$new,'status'=>$paid?'paid':'partially_paid','updated_at'=>$now],['id'=>$registration_id]);if($paid && class_exists('BCS_Workflow'))BCS_Workflow_Engine::refresh_invoice_readiness($registration_id);BCS_Utils::log('stripe_payment_confirmed',['payment_id'=>$payment_id,'session_id'=>$session_id],$registration_id,(int)$r->agreement_id);if($paid)BCS_Communication_Engine::send_to_registration($registration_id,'paid','email','', '', false);}
             }
         }
         return new WP_REST_Response(['received'=>true],200);
