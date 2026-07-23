@@ -2,11 +2,16 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.19.4.3
+Stable tag: 0.19.4.4
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.19.4.4 =
+* Naprawiono wyświetlanie pustych pól Formularza Obozowego w Panelu Rodzica na PHP 8.1+.
+* Puste wartości nie wywołują już ostrzeżeń `htmlspecialchars()` ani nie trafiają do pól formularza.
+* Wydanie zawiera zebrane poprawki interfejsu, faktur i ustawień przygotowane po wersji 0.19.4.3.
 
 = 0.19.4.3 =
 * Ponowne przygotowanie wydania na bazie poprawionego kodu 0.19.4.2.
