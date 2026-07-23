@@ -2,11 +2,16 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.8
+Stable tag: 0.20.9
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.9 =
+* Uporządkowano moduł Ustawienia w pięć spójnych, rozwijanych sekcji z widocznymi polami i przyciskami zapisu.
+* Naprawiono zapis ustawień dokumentów i automatyzacji oraz wyłączono ingerencję starszych skryptów w nowy układ.
+* Sekcja ustawień powiadomień SMS / E-Mail jest renderowana bezpośrednio na stronie zamiast być przenoszona przez JavaScript.
 
 = 0.20.8 =
 * Link Stripe w wiadomości e-mail jest wyświetlany jako przycisk zgodny z pozostałymi szablonami.
