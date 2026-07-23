@@ -21,7 +21,7 @@ class BCS_Invoices {
 
     private static function registration_row(int $registration_id): ?object {
         global $wpdb;
-        return $wpdb->get_row($wpdb->prepare("SELECT r.*, c.name camp_name, c.start_date, c.end_date, c.location, c.organizer_id, o.name organizer_name, o.address organizer_address, o.nip organizer_nip, o.regon organizer_regon, o.email organizer_email, o.phone organizer_phone, o.bank_name, o.bank_account FROM ".BCS_DB::table('registrations')." r JOIN ".BCS_DB::table('camps')." c ON c.id=r.camp_id JOIN ".BCS_DB::table('organizers')." o ON o.id=c.organizer_id WHERE r.id=%d",$registration_id));
+        return $wpdb->get_row($wpdb->prepare("SELECT r.*, c.name camp_name, c.start_date, c.end_date, c.location, c.organizer_id, o.name organizer_name, o.address organizer_address, o.nip organizer_nip, o.regon organizer_regon, o.email organizer_email, o.phone organizer_phone, o.bank_name, o.bank_account, o.invoice_prefix organizer_invoice_prefix FROM ".BCS_DB::table('registrations')." r JOIN ".BCS_DB::table('camps')." c ON c.id=r.camp_id JOIN ".BCS_DB::table('organizers')." o ON o.id=c.organizer_id WHERE r.id=%d",$registration_id));
     }
 
     public static function has_invoice(int $registration_id): bool {
@@ -41,12 +41,10 @@ class BCS_Invoices {
         return $path && file_exists((string)$path) ? (string)$path : '';
     }
 
-    private static function next_number(int $year, string $prefix): string {
+    private static function next_number(int $organizer_id, int $year, string $prefix): string {
         global $wpdb;
         $like = $wpdb->esc_like(strtoupper($prefix).'/'.$year.'/').'%';
-        // invoice_number ma globalny indeks UNIQUE, dlatego sekwencja musi obejmować
-        // wszystkich organizatorów korzystających z tego samego prefiksu i roku.
-        $numbers = $wpdb->get_col($wpdb->prepare("SELECT invoice_number FROM ".BCS_DB::table('invoices')." WHERE invoice_number LIKE %s",$like));
+        $numbers = $wpdb->get_col($wpdb->prepare("SELECT invoice_number FROM ".BCS_DB::table('invoices')." WHERE organizer_id=%d AND invoice_number LIKE %s",$organizer_id,$like));
         $max=0;
         foreach($numbers as $number){ if(preg_match('~/(\\d+)$~',(string)$number,$m)) $max=max($max,(int)$m[1]); }
         return strtoupper($prefix).'/'.$year.'/'.str_pad((string)($max+1),6,'0',STR_PAD_LEFT);
@@ -64,8 +62,12 @@ class BCS_Invoices {
         if($existing && $existing->file_path && file_exists($existing->file_path)) return (string)$existing->file_path;
         $r=self::registration_row($registration_id);
         if(!$r || !BCS_Workflow_Engine::invoice_available($registration_id)) return '';
-        $settings=get_option('bcs_settings',[]);$prefix=sanitize_key($settings['invoice_prefix']??'FV');$year=(int)BCS_Utils::today('Y');
-        $number_lock_key='bcs_invoice_number_lock_'.md5(strtoupper($prefix).'/'.$year);
+        $settings=get_option('bcs_settings',[]);
+        $base_prefix=strtoupper(preg_replace('/[^A-Za-z0-9_-]/','',(string)($settings['invoice_prefix']??'FV'))) ?: 'FV';
+        $organizer_prefix=strtoupper(preg_replace('/[^A-Za-z0-9_-]/','',(string)($r->organizer_invoice_prefix??''))) ?: 'ORG'.(int)$r->organizer_id;
+        $prefix=$base_prefix.'/'.$organizer_prefix;
+        $year=(int)BCS_Utils::today('Y');
+        $number_lock_key='bcs_invoice_number_lock_'.md5((int)$r->organizer_id.'/'.strtoupper($prefix).'/'.$year);
         $number_lock_acquired=add_option($number_lock_key,(string)time(),'','no');
         if(!$number_lock_acquired){
             $locked_at=(int)get_option($number_lock_key,0);
@@ -83,7 +85,7 @@ class BCS_Invoices {
         // pomiędzy równoległymi żądaniami dla tego samego zgłoszenia.
         $existing=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('invoices')." WHERE registration_id=%d ORDER BY id DESC LIMIT 1",$registration_id));
         if($existing) return ($existing->file_path && file_exists($existing->file_path)) ? (string)$existing->file_path : '';
-        $number=self::next_number($year,$prefix);
+        $number=self::next_number((int)$r->organizer_id,$year,$prefix);
         $vat_rate=(float)($settings['invoice_vat_rate']??0);$gross=(float)$r->paid_amount;$net=$vat_rate>0?$gross/(1+$vat_rate/100):$gross;$vat=$gross-$net;
         $money=static fn(float $v):string=>number_format($v,2,',',' ').' PLN';
         $vars=[

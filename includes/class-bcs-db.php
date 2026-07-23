@@ -2,7 +2,7 @@
 if (!defined('ABSPATH')) exit;
 
 class BCS_DB {
-    public const DB_VERSION = '0.17.0';
+    public const DB_VERSION = '0.20.3';
     public static function init(): void {}
 
     public static function maybe_upgrade(): void {
@@ -33,6 +33,7 @@ class BCS_DB {
             bank_name VARCHAR(190) NULL,
             bank_account VARCHAR(50) NOT NULL,
             transfer_title_template VARCHAR(255) NULL,
+            invoice_prefix VARCHAR(40) NULL,
             representative VARCHAR(190) NULL,
             stripe_enabled TINYINT(1) NOT NULL DEFAULT 0,
             stripe_mode VARCHAR(10) NOT NULL DEFAULT 'test',
@@ -292,7 +293,7 @@ class BCS_DB {
             email_status VARCHAR(30) NULL,
             sms_status VARCHAR(30) NULL,
             created_at DATETIME NOT NULL,
-            PRIMARY KEY (id), UNIQUE KEY invoice_number (invoice_number), KEY registration_id (registration_id), KEY organizer_id (organizer_id)
+            PRIMARY KEY (id), UNIQUE KEY organizer_invoice_number (organizer_id, invoice_number), KEY registration_id (registration_id), KEY organizer_id (organizer_id)
         ) $charset;";
 
 
@@ -317,6 +318,14 @@ class BCS_DB {
         ) $charset;";
 
         foreach ($sql as $statement) dbDelta($statement);
+
+        // Od 0.20.3 numer faktury jest unikalny w ramach organizatora.
+        // dbDelta dodaje indeks złożony, ale nie usuwa starego globalnego indeksu.
+        $invoices_table = self::table('invoices');
+        $legacy_invoice_index = $wpdb->get_var("SHOW INDEX FROM {$invoices_table} WHERE Key_name = 'invoice_number'");
+        if ($legacy_invoice_index !== null) {
+            $wpdb->query("ALTER TABLE {$invoices_table} DROP INDEX invoice_number");
+        }
 
         // Migracja starego, fabrycznego wzoru faktury do nowego szablonu 0.12.0.
         $content_templates = get_option('bcs_content_templates', []);
