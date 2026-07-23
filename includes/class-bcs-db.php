@@ -319,6 +319,14 @@ class BCS_DB {
 
         foreach ($sql as $statement) dbDelta($statement);
 
+        // Od 0.20.3 numer faktury jest unikalny w ramach organizatora.
+        // dbDelta dodaje indeks złożony, ale nie usuwa starego globalnego indeksu.
+        $invoices_table = self::table('invoices');
+        $legacy_invoice_index = $wpdb->get_var("SHOW INDEX FROM {$invoices_table} WHERE Key_name = 'invoice_number'");
+        if ($legacy_invoice_index !== null) {
+            $wpdb->query("ALTER TABLE {$invoices_table} DROP INDEX invoice_number");
+        }
+
         // Migracja starego, fabrycznego wzoru faktury do nowego szablonu 0.12.0.
         $content_templates = get_option('bcs_content_templates', []);
         if (!empty($content_templates['documents']['invoice']) && str_starts_with((string)$content_templates['documents']['invoice'], '<h1>Faktura {{INVOICE_NUMBER}}</h1>')) {
