@@ -58,7 +58,7 @@ class BCS_Communications {
             'stripe_link' => [
                 'name'=>'Indywidualny link Stripe',
                 'subject'=>'Link do płatności online za {{CAMP_NAME}}',
-                'body'=>'Dzień dobry {{PARENT_NAME}},<br><br>zgodnie z prośbą przesyłamy indywidualny link do płatności online za udział {{CHILD_NAME}} w {{CAMP_NAME}}:<br><a href="{{STRIPE_URL}}">Zapłać online</a><br><br>Kwota: {{AMOUNT_DUE}} zł.',
+                'body'=>'Dzień dobry {{PARENT_NAME}},<br><br>zgodnie z prośbą przesyłamy indywidualny link do płatności online za udział <strong>{{CHILD_NAME}}</strong> w <strong>{{CAMP_NAME}}</strong>.<br><br><a href="{{STRIPE_URL}}" style="display:inline-block;background:#f97316;color:#ffffff;padding:13px 20px;border-radius:8px;text-decoration:none;font-weight:700">Zapłać online przez Stripe</a><br><br>Kwota: <strong>{{AMOUNT_DUE}} zł</strong>.<br><br>Pozdrawiamy<br>Basketmania Camp',
                 'sms'=>'',
             ],
             'reservation' => [
