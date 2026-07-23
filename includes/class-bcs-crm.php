@@ -388,7 +388,9 @@ class BCS_CRM {
             if ($is_paid) {
                 echo '<span class="bcs-action-done bcs-payment-completed"><span class="dashicons dashicons-yes-alt"></span> Płatność została zaksięgowana — wykonano</span>';
             } else {
-                echo self::conditional_workflow_button($id,'send_stripe_link','Wyślij link Stripe',$form_verified,true?'Dostępne po zaakceptowaniu formularza obozowego':'');
+                echo $form_verified
+                    ? '<form method="post" class="bcs-stripe-link-action-02014"><input type="hidden" name="registration_id" value="'.$id.'"><input type="hidden" name="nonce" value="'.esc_attr(wp_create_nonce('bcs_send_stripe_link_02014_'.$id)).'"><button type="submit" class="button bcs-action-available">Wyślij link Stripe</button></form>'
+                    : '<span class="button disabled bcs-button-disabled bcs-action-unavailable" aria-disabled="true">Dostępne po zaakceptowaniu formularza obozowego</span>';
                 echo '<div class="bcs-payment-action-row">';
                 echo self::conditional_workflow_button($id,'mark_bank_paid','Zaksięguj wpłatę',$agreement_accepted,'Dostępne po podpisaniu umowy SMS-em');
                 echo $agreement_accepted

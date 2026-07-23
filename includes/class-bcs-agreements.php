@@ -19,7 +19,11 @@ class BCS_Agreements {
         $base_prefix=strtoupper(preg_replace('/[^A-Za-z0-9_-]/','',(string)($settings['agreement_prefix']??'BC'))) ?: 'BC';
         $organizer_prefix=strtoupper(preg_replace('/[^A-Za-z0-9_-]/','',(string)($reg->organizer_prefix??''))) ?: 'ORG'.(int)$reg->organizer_id;
         $year=$reg->start_date?substr($reg->start_date,0,4):gmdate('Y');
-        $number=$base_prefix.'/'.$organizer_prefix.'/'.$year.'/'.str_pad((string)$registration_id,5,'0',STR_PAD_LEFT);
+        $existing=$reg->agreement_id?$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('agreements')." WHERE id=%d",$reg->agreement_id)):null;
+        $number=$existing && !empty($existing->agreement_number)
+            ? (string)$existing->agreement_number
+            : self::next_number((int)$reg->organizer_id,(int)$year,$base_prefix.'/'.$organizer_prefix);
+        if($number==='') return 0;
         $template=BCS_Template_Engine::get('documents','agreement',self::default_template());
         $agreement_date=$include_date?BCS_Utils::today('d.m.Y'):'';
         $replace=[
@@ -34,14 +38,39 @@ class BCS_Agreements {
             '{{BANK_NAME}}'=>esc_html((string)$reg->bank_name),'{{BANK_ACCOUNT}}'=>esc_html(BCS_Utils::format_bank_account((string)$reg->bank_account)),
         ];
         $html=strtr($template,$replace);$hash=hash('sha256',$html);
-        $existing=$reg->agreement_id?$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('agreements')." WHERE id=%d",$reg->agreement_id)):null;
-        $data=['agreement_number'=>$number,'version'=>$include_date?'1.0':'template','html'=>$html,'document_hash'=>$hash,'status'=>$status];
+        $data=['organizer_id'=>(int)$reg->organizer_id,'agreement_number'=>$number,'version'=>$include_date?'1.0':'template','html'=>$html,'document_hash'=>$hash,'status'=>$status];
         if($existing){$wpdb->update(BCS_DB::table('agreements'),$data,['id'=>$existing->id]);$agreement_id=(int)$existing->id;}
         else{$data['registration_id']=$registration_id;$data['created_at']=BCS_Utils::now();$wpdb->insert(BCS_DB::table('agreements'),$data);$agreement_id=(int)$wpdb->insert_id;}
+        if(!$agreement_id) return 0;
         $snapshot=wp_json_encode(['name'=>$reg->organizer_name,'legal_form'=>$reg->organizer_legal_form,'address'=>$reg->organizer_address,'nip'=>$reg->organizer_nip,'regon'=>$reg->organizer_regon,'krs'=>$reg->organizer_krs,'email'=>$reg->organizer_email,'phone'=>$reg->organizer_phone,'representative'=>$reg->organizer_representative,'bank_name'=>$reg->bank_name,'bank_account'=>$reg->bank_account,'transfer_title_template'=>$reg->transfer_title_template],JSON_UNESCAPED_UNICODE);
         $wpdb->update(BCS_DB::table('registrations'),['agreement_id'=>$agreement_id,'agreement_status'=>$status,'organizer_snapshot'=>$snapshot,'bank_account_snapshot'=>$reg->bank_account,'updated_at'=>BCS_Utils::now()],['id'=>$registration_id]);
         self::save_version($agreement_id,$registration_id,$status==='draft'?'draft':'sent',$html,$hash,$number);
         BCS_Utils::log($status==='draft'?'agreement_draft_created':'agreement_created',['hash'=>$hash,'date'=>$agreement_date],$registration_id,$agreement_id);return $agreement_id;
+    }
+
+    private static function next_number(int $organizer_id,int $year,string $prefix): string {
+        global $wpdb;
+        $prefix=strtoupper($prefix);
+        $option_name='bcs_agreement_sequence_'.md5($organizer_id.'/'.$prefix.'/'.$year);
+        if(get_option($option_name,false)===false){
+            $like=$wpdb->esc_like($prefix.'/'.$year.'/').'%';
+            $numbers=$wpdb->get_col($wpdb->prepare(
+                "SELECT agreement_number FROM ".BCS_DB::table('agreements')." WHERE organizer_id=%d AND agreement_number LIKE %s",
+                $organizer_id,$like
+            ));
+            $max=0;
+            foreach($numbers as $number){
+                if(preg_match('~/(\\d+)$~',(string)$number,$match)) $max=max($max,(int)$match[1]);
+            }
+            add_option($option_name,(string)$max,'','no');
+        }
+        $updated=$wpdb->query($wpdb->prepare(
+            "UPDATE {$wpdb->options} SET option_value=LAST_INSERT_ID(CAST(option_value AS UNSIGNED)+1) WHERE option_name=%s",
+            $option_name
+        ));
+        if($updated!==1) return '';
+        $next=(int)$wpdb->get_var('SELECT LAST_INSERT_ID()');
+        return $prefix.'/'.$year.'/'.str_pad((string)$next,6,'0',STR_PAD_LEFT);
     }
 
     public static function publish_draft(int $registration_id): int {

@@ -3,8 +3,10 @@ if (!defined('ABSPATH')) exit;
 
 class BCS_Workflow {
     private static array $last_form_verification_result = [];
+    private static string $last_error = '';
 
     public static function last_form_verification_result(): array { return self::$last_form_verification_result; }
+    public static function last_error(): string { return self::$last_error; }
 
     public static function test_mode_enabled(): bool {
         $settings = get_option('bcs_settings', []);
@@ -13,6 +15,20 @@ class BCS_Workflow {
     public static function init(): void {
         add_action('admin_init', [__CLASS__, 'handle_actions']);
         add_action('admin_post_bcs_workflow_single',[__CLASS__,'handle_single']);
+        add_action('wp_ajax_bcs_send_stripe_link_02014',[__CLASS__,'ajax_send_stripe_link']);
+    }
+
+    public static function ajax_send_stripe_link(): void {
+        if(!current_user_can('manage_options')) wp_send_json_error(['message'=>'Brak uprawnień.'],403);
+        $id=absint($_POST['registration_id']??0);
+        $nonce=sanitize_text_field(wp_unslash($_POST['nonce']??''));
+        if(!$id || !wp_verify_nonce($nonce,'bcs_send_stripe_link_02014_'.$id)){
+            wp_send_json_error(['message'=>'Sesja wygasła. Odśwież Kartę Zgłoszenia i spróbuj ponownie.'],403);
+        }
+        if(!self::send_stripe_link($id)){
+            wp_send_json_error(['message'=>self::$last_error?:'Nie udało się utworzyć i wysłać linku Stripe.'],409);
+        }
+        wp_send_json_success(['message'=>'Link do płatności Stripe został utworzony i wysłany do rodzica.']);
     }
 
 
@@ -155,17 +171,20 @@ class BCS_Workflow {
 
     public static function send_stripe_link(int $id): bool {
         global $wpdb;
+        self::$last_error='';
         $r=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('registrations')." WHERE id=%d",$id));
-        if(!$r || $r->status==='cancelled' || empty($r->form_verified_at)) return false;
-        if((float)$r->total_amount > 0 && (float)$r->paid_amount >= (float)$r->total_amount) return false;
-        $payment=BCS_Payments::create_checkout($id); if(is_wp_error($payment)) return false;
+        if(!$r || $r->status==='cancelled' || empty($r->form_verified_at)){self::$last_error='Formularz Obozowy nie został zaakceptowany lub zgłoszenie jest anulowane.';return false;}
+        if((float)$r->total_amount > 0 && (float)$r->paid_amount >= (float)$r->total_amount){self::$last_error='Zgłoszenie jest już w pełni opłacone.';return false;}
+        $payment=BCS_Payments::create_checkout($id);
+        if(is_wp_error($payment)){self::$last_error=$payment->get_error_message();return false;}
         $templates=BCS_Communication_Engine::templates();$tpl=$templates['stripe_link']??[];$ctx=BCS_Communication_Engine::registration_context($id);
-        if(!$ctx) return false;
+        if(!$ctx){self::$last_error='Nie udało się przygotować danych wiadomości dla rodzica.';return false;}
         $vars=$ctx['vars'];$vars['{{STRIPE_URL}}']=$payment['url'];$subject=strtr((string)($tpl['subject']??'Link do płatności online'),$vars);$body=strtr((string)($tpl['body']??'{{STRIPE_URL}}'),$vars);
         $sent=BCS_Mailer::send($ctx['row']->parent_email,$subject,$body,['Content-Type: text/html; charset=UTF-8'],[],$id);
         if(!$sent){
             $wpdb->update(BCS_DB::table('payments'),['status'=>'failed','updated_at'=>BCS_Utils::now()],['id'=>(int)$payment['payment_id']]);
             BCS_Utils::log('stripe_link_email_failed',['payment_id'=>$payment['payment_id'],'error'=>BCS_Mailer::last_error()],$id,(int)$r->agreement_id);
+            self::$last_error='Sesja Stripe została utworzona, ale nie udało się wysłać wiadomości e-mail: '.BCS_Mailer::last_error();
             return false;
         }
         $now=BCS_Utils::now();
