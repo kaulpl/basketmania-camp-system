@@ -163,6 +163,43 @@ final class BCS_Release_0200 {
                 }
             },true);
 
+            async function runListQuickAction(element,id,action,actionNonce){
+                element.disabled=true;
+                try{
+                    const response=await fetch(ajaxUrl,{
+                        method:'POST',credentials:'same-origin',
+                        headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+                        body:new URLSearchParams({action:'bcs_list_quick_action_02010',registration_id:String(id),quick_action:String(action),nonce:String(actionNonce)})
+                    });
+                    const json=await response.json();
+                    if(!response.ok||!json.success)throw new Error(json?.data?.message||'Nie udało się wykonać akcji.');
+                    popup(json.data.message||'Akcja została wykonana.',true);
+                    window.setTimeout(()=>window.location.reload(),2000);
+                }catch(error){
+                    element.disabled=false;
+                    popup(error.message||'Nie udało się wykonać akcji.',false);
+                }
+            }
+            document.addEventListener('submit',function(event){
+                if(page!=='bcs-registrations'||view)return;
+                const form=event.target;
+                if(!form.matches('.bcs-list-action'))return;
+                const submitter=event.submitter;
+                if(!submitter||isInvoiceForm(form,submitter))return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                runListQuickAction(submitter,registrationId(form),submitter.value||'',form.querySelector('[name="_wpnonce"]')?.value||'');
+            },true);
+            document.addEventListener('click',function(event){
+                if(page!=='bcs-registrations'||view)return;
+                const link=event.target.closest('.bcs-inline-actions a[href*="bcs_workflow_single"]');
+                if(!link)return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                const url=new URL(link.href);
+                runListQuickAction(link,url.searchParams.get('registration_id')||'',url.searchParams.get('workflow')||'',url.searchParams.get('_wpnonce')||'');
+            },true);
+
             function fixRegistrationActions(){
                 if(page!=='bcs-registrations')return;
                 document.querySelectorAll('.bcs-handling-section-0190').forEach(x=>x.remove());
@@ -224,19 +261,19 @@ final class BCS_Release_0200 {
                 const locked=old.some(x=>/zablokowan/i.test(x.textContent))
                     || /obecnie przeglądane|tymczasowo zablokowana/i.test(document.body.textContent);
                 const edit=old.find(x=>/Zmień dane|Edytuj formularz/i.test(x.textContent));
-                const preview=old.find(x=>/formularz obozowy|formularza osobowego/i.test(x.textContent));
+                const preview=old.find(x=>/Formularz Obozowy/i.test(x.textContent));
                 card.querySelectorAll(':scope>p').forEach(x=>x.remove());
                 actions.innerHTML='';
                 if(!accepted&&!locked){
                     const a=document.createElement('a');
                     a.className='bcs-button bcs-secondary';
                     a.href=edit?.href||preview?.href||'#';
-                    a.textContent='Podgląd formularza osobowego';
+                    a.textContent='Podgląd Formularza Obozowego';
                     actions.appendChild(a);
                 }else{
                     const span=document.createElement('span');
                     span.className='bcs-button bcs-disabled';
-                    span.textContent='Podgląd formularza osobowego';
+                    span.textContent='Podgląd Formularza Obozowego';
                     actions.appendChild(span);
                 }
             }
