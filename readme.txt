@@ -2,11 +2,16 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.14
+Stable tag: 0.20.15
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.15 =
+* Reset danych usuwa wszystkie dane operacyjne, w tym zgłoszenia Feedback, dokumenty, komunikację, płatności, faktury, logi i techniczne liczniki.
+* Reset zachowuje ustawienia wtyczki, szablony, organizatorów, turnusy oraz wszystkie strony WordPressa.
+* Wszystkie wiadomości e-mail zachowują akapity, puste linie i podziały wierszy zapisane w edytorze szablonu.
 
 = 0.20.14 =
 * Naprawiono wysyłkę linku Stripe z Karty Zgłoszenia i dodano czytelny wynik operacji AJAX bez przeładowania strony.
