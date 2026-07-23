@@ -2,6 +2,15 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.18.9] - 2026-07-23
+
+### Zmieniono
+- lista strojów oraz lista uczestników dla każdego turnusu obejmują wyłącznie zgłoszenia z podpisaną umową i potwierdzoną pełną wpłatą,
+- w wiadomości po rejestracji komunikat o braku konieczności akceptacji administratora zastąpiono zdaniem: „Przejdź od razu do Panelu Rodzica i go wypełnij.”
+
+### Naprawiono
+- usunięto z sekcji „Szybkie czynności” pozostały element „Rejestracja potwierdzona – wykonano”.
+
 ## [0.18.8] - 2026-07-23
 
 ### Przywrócono i skonsolidowano
