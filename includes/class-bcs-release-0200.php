@@ -179,6 +179,7 @@ final class BCS_Release_0200 {
             }
             function fixSettings(){
                 if(page!=='bcs-settings')return;
+                const wrap=document.querySelector('.wrap.bcs-admin');if(wrap&&wrap.dataset.bcsSettingsNative==='0209')return;
                 document.querySelectorAll('details').forEach(x=>x.classList.add('bcs-settings-section-0200'));
                 const docs=sectionByTitle(/^Ustawienia dokumentów i automatyzacji$/i);
                 if(docs){

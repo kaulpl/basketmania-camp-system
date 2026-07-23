@@ -9,7 +9,6 @@ final class BCS_Notification_Settings {
     public static function init(): void {
         self::ensure_complete_templates();
         add_action('admin_post_bcs_save_notification_settings', [self::class, 'save']);
-        add_action('admin_footer', [self::class, 'render_settings_section']);
         add_action('admin_footer', [self::class, 'enhance_templates_module']);
     }
 
@@ -115,18 +114,9 @@ final class BCS_Notification_Settings {
         if (!current_user_can('manage_options')) return;
         if (sanitize_key(wp_unslash($_GET['page'] ?? '')) !== 'bcs-settings') return;
         $saved = get_option(self::OPTION, []);
-        ?>
-        <script>
-        document.addEventListener('DOMContentLoaded',function(){
-            const wrap=document.querySelector('.wrap.bcs-admin');if(!wrap||document.querySelector('.bcs-notification-settings'))return;
-            const section=document.createElement('details');section.className='bcs-settings-accordion bcs-settings-section-0200 bcs-notification-settings';section.style.marginTop='20px';
-            section.innerHTML='<summary><span><span class="dashicons dashicons-bell"></span><strong>Powiadomienia SMS/EMAIL</strong></span><span class="bcs-settings-summary">Kanały wysyłki dla etapów procesu</span></summary><div class="bcs-settings-accordion-body">'+<?php echo wp_json_encode(self::settings_html(is_array($saved)?$saved:[])); ?>+'</div>';
-            const email=[...wrap.querySelectorAll('details')].find(function(item){return /^E-?MAIL$/i.test((item.querySelector('summary strong')?.textContent||'').trim());});
-            const settingsPanel=email?.closest('.bcs-panel');
-            if(settingsPanel)settingsPanel.after(section);else wrap.appendChild(section);
-        });
-        </script>
-        <?php
+        echo '<section class="bcs-panel bcs-notification-settings-panel"><details class="bcs-settings-accordion bcs-settings-section-0209 bcs-notification-settings" open>';
+        echo '<summary><span><span class="dashicons dashicons-bell"></span><strong>Ustawienia powiadomień SMS / E-Mail</strong></span><span class="bcs-settings-summary">Kanały wysyłki dla etapów procesu</span></summary>';
+        echo '<div class="bcs-settings-accordion-body">'.self::settings_html(is_array($saved) ? $saved : []).'</div></details></section>';
     }
 
     private static function settings_html(array $saved): string {
@@ -150,7 +140,7 @@ final class BCS_Notification_Settings {
             foreach($options as $value=>$label)$html.='<option value="'.esc_attr($value).'" '.selected($current,$value,false).'>'.esc_html($label).'</option>';
             $html.='</select></td></tr>';
         }
-        $html.='</tbody></table><p class="description">Włączenie kanału jest możliwe tylko wtedy, gdy jego szablon jest kompletny. Oba warianty pozostają zawsze edytowalne w module Szablony.</p><p><button class="button button-primary button-hero">Zapisz ustawienia powiadomień</button></p></form>';
+        $html.='</tbody></table><p class="description">Włączenie kanału jest możliwe tylko wtedy, gdy jego szablon jest kompletny. Oba warianty pozostają zawsze edytowalne w module Szablony.</p><div class="bcs-form-actions"><button type="submit" class="button button-primary">Zapisz ustawienia powiadomień SMS / E-Mail</button></div></form>';
         return $html;
     }
 
