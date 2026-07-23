@@ -233,6 +233,37 @@ final class BCS_Release_0200 {
                 const url=new URL(link.href);
                 runListQuickAction(link,url.searchParams.get('registration_id')||'',url.searchParams.get('workflow')||'',url.searchParams.get('_wpnonce')||'');
             },true);
+            document.addEventListener('submit',async function(event){
+                const form=event.target;
+                if(page!=='bcs-registrations'||!view||!form.matches('.bcs-stripe-link-action-02014'))return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                const button=event.submitter||form.querySelector('button[type="submit"]');
+                if(button)button.disabled=true;
+                try{
+                    const response=await fetch(ajaxUrl,{
+                        method:'POST',credentials:'same-origin',
+                        headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+                        body:new URLSearchParams({
+                            action:'bcs_send_stripe_link_02014',
+                            registration_id:String(form.querySelector('[name="registration_id"]')?.value||''),
+                            nonce:String(form.querySelector('[name="nonce"]')?.value||'')
+                        })
+                    });
+                    const responseText=await response.text();
+                    let json;
+                    try{json=JSON.parse(responseText)}catch(parseError){throw new Error('Serwer zwrócił nieprawidłową odpowiedź. Spróbuj ponownie.')}
+                    if(!response.ok||!json.success)throw new Error(json?.data?.message||'Nie udało się wysłać linku Stripe.');
+                    if(button){
+                        button.innerHTML='<span class="dashicons dashicons-yes-alt"></span> Link Stripe wysłany';
+                        button.classList.add('bcs-invoice-done-0200');
+                    }
+                    popup(json.data.message,true);
+                }catch(error){
+                    if(button)button.disabled=false;
+                    popup(error.message||'Nie udało się wysłać linku Stripe.',false);
+                }
+            },true);
 
             function fixRegistrationActions(){
                 if(page!=='bcs-registrations')return;
