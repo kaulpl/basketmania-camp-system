@@ -25,7 +25,17 @@ final class BCS_Release_0200 {
             $registration_id
         ));
         if (!$invoice) {
-            $result = BCS_Workflow_Engine::generate_invoice($registration_id);
+            try {
+                $result = BCS_Workflow_Engine::execute('generate_invoice', $registration_id);
+            } catch (Throwable $error) {
+                BCS_Utils::log('invoice_ajax_failed', [
+                    'error' => $error->getMessage(),
+                    'type' => get_class($error),
+                ], $registration_id, null);
+                wp_send_json_error([
+                    'message' => 'Nie udało się wygenerować faktury z powodu błędu serwera. Szczegóły zapisano w dzienniku systemu.',
+                ], 500);
+            }
             $invoice = $wpdb->get_row($wpdb->prepare(
                 'SELECT * FROM ' . BCS_DB::table('invoices') . ' WHERE registration_id=%d ORDER BY id DESC LIMIT 1',
                 $registration_id
@@ -137,7 +147,13 @@ final class BCS_Release_0200 {
                         headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
                         body:new URLSearchParams({action:'bcs_generate_invoice_0200',nonce,registration_id:String(id)})
                     });
-                    const json=await response.json();
+                    const responseText=await response.text();
+                    let json;
+                    try{
+                        json=JSON.parse(responseText);
+                    }catch(parseError){
+                        throw new Error('Serwer zwrócił nieprawidłową odpowiedź. Sprawdź dziennik błędów lub skontaktuj się z administratorem.');
+                    }
                     if(!response.ok||!json.success)throw new Error(json?.data?.message||'Nie udało się wygenerować faktury.');
                     applyInvoiceState(json.data,submitter);
                     popup(json.data.message,true);

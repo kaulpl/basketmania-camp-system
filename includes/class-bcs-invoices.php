@@ -94,10 +94,16 @@ class BCS_Invoices {
 
     public static function generate_and_send(int $registration_id): bool {
         global $wpdb;
-        $lock_name='bcs_invoice_registration_'.$registration_id;
-        $lock_result=$wpdb->get_var($wpdb->prepare("SELECT GET_LOCK(%s, 5)",$lock_name));
-        $locked=(int)$lock_result===1;
-        if($lock_result!==null && !$locked){
+        $lock_key='bcs_invoice_lock_'.$registration_id;
+        $lock_acquired=add_option($lock_key,(string)time(),'','no');
+        if(!$lock_acquired){
+            $locked_at=(int)get_option($lock_key,0);
+            if($locked_at>0 && $locked_at<(time()-60)){
+                delete_option($lock_key);
+                $lock_acquired=add_option($lock_key,(string)time(),'','no');
+            }
+        }
+        if(!$lock_acquired){
             BCS_Utils::log('invoice_duplicate_generation_blocked',['reason'=>'Inny proces generuje już fakturę.'],$registration_id,null);
             return false;
         }
@@ -124,7 +130,7 @@ class BCS_Invoices {
             BCS_Utils::log('invoice_delivery',['invoice_id'=>(int)$invoice->id,'invoice_number'=>$invoice->invoice_number,'email_success'=>$email_ok,'email_error'=>$email_ok?'':BCS_Mailer::last_error(),'sms_success'=>$sms_ok,'sms_error'=>$sms_ok?'':(string)($sms_result['error']??''),'email_body'=>$body,'sms_body'=>$sms],$registration_id,null);
             return true;
         } finally {
-            if($locked)$wpdb->get_var($wpdb->prepare("SELECT RELEASE_LOCK(%s)",$lock_name));
+            delete_option($lock_key);
         }
     }
 
