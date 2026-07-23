@@ -41,10 +41,12 @@ class BCS_Invoices {
         return $path && file_exists((string)$path) ? (string)$path : '';
     }
 
-    private static function next_number(int $organizer_id, int $year, string $prefix): string {
+    private static function next_number(int $year, string $prefix): string {
         global $wpdb;
         $like = $wpdb->esc_like(strtoupper($prefix).'/'.$year.'/').'%';
-        $numbers = $wpdb->get_col($wpdb->prepare("SELECT invoice_number FROM ".BCS_DB::table('invoices')." WHERE organizer_id=%d AND invoice_number LIKE %s",$organizer_id,$like));
+        // invoice_number ma globalny indeks UNIQUE, dlatego sekwencja musi obejmować
+        // wszystkich organizatorów korzystających z tego samego prefiksu i roku.
+        $numbers = $wpdb->get_col($wpdb->prepare("SELECT invoice_number FROM ".BCS_DB::table('invoices')." WHERE invoice_number LIKE %s",$like));
         $max=0;
         foreach($numbers as $number){ if(preg_match('~/(\\d+)$~',(string)$number,$m)) $max=max($max,(int)$m[1]); }
         return strtoupper($prefix).'/'.$year.'/'.str_pad((string)($max+1),6,'0',STR_PAD_LEFT);
@@ -63,7 +65,25 @@ class BCS_Invoices {
         $r=self::registration_row($registration_id);
         if(!$r || !BCS_Workflow_Engine::invoice_available($registration_id)) return '';
         $settings=get_option('bcs_settings',[]);$prefix=sanitize_key($settings['invoice_prefix']??'FV');$year=(int)BCS_Utils::today('Y');
-        $number=self::next_number((int)$r->organizer_id,$year,$prefix);
+        $number_lock_key='bcs_invoice_number_lock_'.md5(strtoupper($prefix).'/'.$year);
+        $number_lock_acquired=add_option($number_lock_key,(string)time(),'','no');
+        if(!$number_lock_acquired){
+            $locked_at=(int)get_option($number_lock_key,0);
+            if($locked_at>0 && $locked_at<(time()-60)){
+                delete_option($number_lock_key);
+                $number_lock_acquired=add_option($number_lock_key,(string)time(),'','no');
+            }
+        }
+        if(!$number_lock_acquired){
+            BCS_Utils::log('invoice_number_generation_blocked',['reason'=>'Inny proces przydziela numer faktury.'],$registration_id,null);
+            return '';
+        }
+        try {
+        // Ponowne sprawdzenie po uzyskaniu wspólnej blokady zamyka wyścig
+        // pomiędzy równoległymi żądaniami dla tego samego zgłoszenia.
+        $existing=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('invoices')." WHERE registration_id=%d ORDER BY id DESC LIMIT 1",$registration_id));
+        if($existing) return ($existing->file_path && file_exists($existing->file_path)) ? (string)$existing->file_path : '';
+        $number=self::next_number($year,$prefix);
         $vat_rate=(float)($settings['invoice_vat_rate']??0);$gross=(float)$r->paid_amount;$net=$vat_rate>0?$gross/(1+$vat_rate/100):$gross;$vat=$gross-$net;
         $money=static fn(float $v):string=>number_format($v,2,',',' ').' PLN';
         $vars=[
@@ -90,6 +110,9 @@ class BCS_Invoices {
         $wpdb->update(BCS_DB::table('registrations'),['invoice_status'=>'generated','updated_at'=>BCS_Utils::now()],['id'=>$registration_id]);
         BCS_Utils::log('invoice_created',['invoice_id'=>$invoice_id,'invoice_number'=>$number,'path'=>$path],$registration_id,null);
         return $path;
+        } finally {
+            delete_option($number_lock_key);
+        }
     }
 
     public static function generate_and_send(int $registration_id): bool {
