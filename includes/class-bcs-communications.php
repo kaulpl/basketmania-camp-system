@@ -49,6 +49,12 @@ class BCS_Communications {
                 'body'=>'Dzień dobry {{PARENT_NAME}},<br><br>umowa dotycząca udziału {{CHILD_NAME}} w {{CAMP_NAME}} jest gotowa do akceptacji kodem SMS.<br><br><a href="{{PORTAL_URL}}" style="display:inline-block;background:#f97316;color:#ffffff;padding:13px 20px;border-radius:8px;text-decoration:none;font-weight:700">Podpisz umowę w Panelu Rodzica</a>',
                 'sms'=>'Basketmania Camp: umowa {{AGREEMENT_NUMBER}} jest gotowa do podpisu. Otworz panel rodzica, przeczytaj umowe i potwierdz podpis kodem SMS.',
             ],
+            'agreement_reminder' => [
+                'name'=>'Przypomnienie o podpisaniu umowy',
+                'subject'=>'Przypomnienie: umowa {{AGREEMENT_NUMBER}} oczekuje na podpis',
+                'body'=>'Dzień dobry {{PARENT_NAME}},<br><br>przypominamy, że umowa <strong>{{AGREEMENT_NUMBER}}</strong> dotycząca udziału <strong>{{CHILD_NAME}}</strong> w turnusie <strong>{{CAMP_NAME}}</strong> nadal oczekuje na podpis kodem SMS.<br><br><a href="{{PORTAL_URL}}" style="display:inline-block;background:#f97316;color:#ffffff;padding:13px 20px;border-radius:8px;text-decoration:none;font-weight:700">Podpisz umowę w Panelu Rodzica</a>',
+                'sms'=>'Basketmania Camp: przypominamy, ze umowa {{AGREEMENT_NUMBER}} nadal oczekuje na podpis. Otworz Panel Rodzica i potwierdz umowe kodem SMS.',
+            ],
             'agreement_signed' => [
                 'name'=>'Podpisanie umowy i dane do płatności',
                 'subject'=>'Umowa {{AGREEMENT_NUMBER}} została podpisana – dziękujemy za zaufanie',
@@ -251,18 +257,37 @@ class BCS_Communications {
         global $wpdb;
         $settings = get_option('bcs_settings', []);
         if (empty($settings['automations_enabled'])) return;
-        $rows = $wpdb->get_results("SELECT r.id, r.agreement_status, r.total_amount, r.paid_amount, r.created_at, c.start_date
+        $rows = $wpdb->get_results("SELECT r.id, r.agreement_id, r.agreement_status, r.total_amount, r.paid_amount,
+                r.payment_due_date, c.start_date,
+                (SELECT MAX(l.created_at) FROM ".BCS_DB::table('logs')." l
+                    WHERE l.registration_id=r.id AND l.agreement_id=r.agreement_id
+                    AND l.event_type='agreement_sent_by_admin') agreement_sent_at
             FROM ".BCS_DB::table('registrations')." r JOIN ".BCS_DB::table('camps')." c ON c.id=r.camp_id
             WHERE r.status NOT IN ('cancelled')");
         $agreement_after = max(1, absint($settings['agreement_reminder_days'] ?? 1));
         $payment_after = max(1, absint($settings['payment_reminder_days'] ?? 2));
         $pre_days = max(1, absint($settings['pre_camp_days'] ?? 7));
+        $today = new DateTimeImmutable('today', BCS_Utils::timezone());
         foreach ($rows as $r) {
-            $age_days = floor((time() - strtotime($r->created_at.' UTC')) / DAY_IN_SECONDS);
-            if ($r->agreement_status !== 'accepted' && $age_days >= $agreement_after) self::send_once((int)$r->id, 'auto_reservation', 'reservation');
-            if ($r->agreement_status === 'accepted' && (float)$r->paid_amount < (float)$r->total_amount && $age_days >= $payment_after) self::send_once((int)$r->id, 'auto_payment', 'payment');
-            $days_to = (int)ceil((strtotime($r->start_date.' 00:00:00') - BCS_Utils::timestamp()) / DAY_IN_SECONDS);
-            if ($days_to >= 0 && $days_to <= $pre_days && (float)$r->paid_amount >= (float)$r->total_amount) self::send_once((int)$r->id, 'auto_pre_camp', 'pre_camp');
+            if ($r->agreement_status === 'pending' && !empty($r->agreement_id) && !empty($r->agreement_sent_at)) {
+                $agreement_trigger = (new DateTimeImmutable($r->agreement_sent_at, BCS_Utils::timezone()))->setTime(0, 0);
+                if ($agreement_trigger->modify('+'.$agreement_after.' days') <= $today) {
+                    self::send_once((int)$r->id, 'auto_agreement_reminder', 'agreement_reminder');
+                }
+            }
+            if ($r->agreement_status === 'accepted' && (float)$r->paid_amount < (float)$r->total_amount && !empty($r->payment_due_date)) {
+                $payment_trigger = new DateTimeImmutable($r->payment_due_date, BCS_Utils::timezone());
+                if ($payment_trigger->modify('+'.$payment_after.' days') <= $today) {
+                    self::send_once((int)$r->id, 'auto_payment', 'payment');
+                }
+            }
+            if (!empty($r->start_date)) {
+                $camp_start = new DateTimeImmutable($r->start_date, BCS_Utils::timezone());
+                $days_to = (int)$today->diff($camp_start)->format('%r%a');
+                if ($days_to >= 0 && $days_to <= $pre_days) {
+                    self::send_once((int)$r->id, 'auto_pre_camp', 'pre_camp');
+                }
+            }
         }
     }
 
@@ -270,9 +295,13 @@ class BCS_Communications {
         global $wpdb;
         $exists = (int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM ".BCS_DB::table('logs')." WHERE registration_id=%d AND event_type=%s", $registration_id, $event));
         if ($exists) return;
-        $settings = get_option('bcs_settings', []);
-        $channel = in_array($settings['automation_channel'] ?? '', ['email','sms','both'], true) ? $settings['automation_channel'] : 'email';
-        if (self::send_to_registration($registration_id, $template, $channel)) BCS_Utils::log($event, [], $registration_id, null);
+        $channel = class_exists('BCS_Notification_Settings')
+            ? BCS_Notification_Settings::channels_for($template, 'email')
+            : 'email';
+        if ($channel === 'off') return;
+        if (self::send_to_registration($registration_id, $template, $channel)) {
+            BCS_Utils::log($event, ['template'=>$template,'channel'=>$channel], $registration_id, null);
+        }
     }
 
     public static function page(): void {

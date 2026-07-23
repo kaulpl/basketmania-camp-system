@@ -129,7 +129,6 @@ class BCS_Admin {
                 'invoice_exemption_basis' => sanitize_text_field(wp_unslash($_POST['invoice_exemption_basis'] ?? '')),
                 'sales_document_type' => in_array($_POST['sales_document_type'] ?? 'invoice', ['invoice','receipt'], true) ? $_POST['sales_document_type'] : 'invoice',
                 'automations_enabled' => isset($_POST['automations_enabled']) ? 1 : 0,
-                'automation_channel' => in_array($_POST['automation_channel'] ?? '', ['email','sms','both'], true) ? $_POST['automation_channel'] : 'email',
                 'agreement_reminder_days' => max(1, absint($_POST['agreement_reminder_days'] ?? 1)),
                 'payment_reminder_days' => max(1, absint($_POST['payment_reminder_days'] ?? 2)),
                 'pre_camp_days' => max(1, absint($_POST['pre_camp_days'] ?? 7)),
@@ -650,10 +649,10 @@ class BCS_Admin {
         echo '<label class="bcs-checkbox bcs-span-2"><input type="checkbox" name="test_workflow_mode" value="1" '.checked((!array_key_exists('test_workflow_mode',$s) || !empty($s['test_workflow_mode'])),true,false).'><span><strong>Tryb testowy procesu</strong> — znosi ograniczenie daty 1 stycznia roku turnusu dla podpisywania umów i generowania faktur. Pozostałe warunki workflow nadal obowiązują. Panel rodzica wyświetla informację, że działa w wersji testowej.</span></label>';
         echo '<label><span>Dokument sprzedaży</span><select name="sales_document_type"><option value="invoice" '.selected($s['sales_document_type'] ?? 'invoice','invoice',false).'>Faktura</option><option value="receipt" '.selected($s['sales_document_type'] ?? 'invoice','receipt',false).'>Rachunek</option></select></label>';
         echo '<label class="bcs-checkbox"><input type="checkbox" name="automations_enabled" value="1" '.checked(!empty($s['automations_enabled']),true,false).'><span>Włącz automatyczne przypomnienia</span></label>';
-        echo '<label><span>Kanał automatyzacji</span><select name="automation_channel"><option value="email" '.selected($s['automation_channel'] ?? 'email','email',false).'>E-mail</option><option value="sms" '.selected($s['automation_channel'] ?? 'email','sms',false).'>SMS</option><option value="both" '.selected($s['automation_channel'] ?? 'email','both',false).'>E-mail + SMS</option></select></label>';
-        echo '<label><span>Przypomnienie o umowie (dni)</span><input type="number" min="1" name="agreement_reminder_days" value="'.esc_attr($s['agreement_reminder_days'] ?? 1).'"></label>';
-        echo '<label><span>Przypomnienie o płatności (dni)</span><input type="number" min="1" name="payment_reminder_days" value="'.esc_attr($s['payment_reminder_days'] ?? 2).'"></label>';
-        echo '<label><span>Informacje przed obozem (dni)</span><input type="number" min="1" name="pre_camp_days" value="'.esc_attr($s['pre_camp_days'] ?? 7).'"></label></div>'.self::settings_save_button('Zapisz ustawienia dokumentów i automatyzacji').'</div></details>';
+        echo '<label><span>Przypomnienie o umowie — dni od wysłania</span><input type="number" min="1" name="agreement_reminder_days" value="'.esc_attr($s['agreement_reminder_days'] ?? 1).'"></label>';
+        echo '<label><span>Przypomnienie o płatności — dni po terminie</span><input type="number" min="1" name="payment_reminder_days" value="'.esc_attr($s['payment_reminder_days'] ?? 2).'"></label>';
+        echo '<label><span>Informacje przed obozem — dni przed startem</span><input type="number" min="1" name="pre_camp_days" value="'.esc_attr($s['pre_camp_days'] ?? 7).'"></label>';
+        echo '<p class="description bcs-span-2">Kanał każdej automatyzacji ustawisz osobno w sekcji „Ustawienia powiadomień SMS / E-Mail”. Informacje organizacyjne przed obozem są wysyłane wszystkim aktywnym uczestnikom, niezależnie od statusu płatności.</p></div>'.self::settings_save_button('Zapisz ustawienia dokumentów i automatyzacji').'</div></details>';
         echo '</form></section>';
         if (class_exists('BCS_Notification_Settings')) BCS_Notification_Settings::render_settings_section();
 
