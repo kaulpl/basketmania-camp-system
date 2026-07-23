@@ -2,11 +2,17 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.19
+Stable tag: 0.20.20
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.20 =
+* Każdy sukces, błąd i uzasadnione pominięcie automatycznego przypomnienia jest zapisywane w logach.
+* Zdarzenia automatyzacji są przypisane do konkretnego zgłoszenia i, gdy istnieje, do jego umowy.
+* Historia klienta pokazuje czytelne polskie nazwy błędów i pominięć automatyzacji.
+* Identyczne pominięcia są zapisywane jednokrotnie, aby codzienny WP-Cron nie zaśmiecał historii.
 
 = 0.20.19 =
 * Przypomnienie o umowie jest liczone od faktycznego wysłania bieżącej umowy i korzysta z osobnego szablonu.
