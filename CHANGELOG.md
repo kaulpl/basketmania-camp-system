@@ -2,6 +2,14 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.19.4] - 2026-07-23
+
+### Naprawiono
+- panel „Szybkie czynności” na karcie zgłoszenia jest stale widoczny i znajduje się bezpośrednio nad formularzem wysyłki e-mail,
+- sekcja „Ustawienia powiadomień” nie jest już zagnieżdżona i działa jako pojedynczy blok umieszczony pod sekcją E-MAIL,
+- sekcja „Ustawienia dokumentów i automatyzacji” otrzymała taki sam układ i styl jak sekcja E-MAIL,
+- edycja ceny korzysta z centralnego, estetycznego modalu z przyciemnionym tłem, walidacją oraz przyciskami „Anuluj” i „Zapisz cenę”.
+
 ## [0.19.3] - 2026-07-23
 
 ### Naprawiono
