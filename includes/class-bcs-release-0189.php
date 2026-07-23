@@ -102,6 +102,7 @@ final class BCS_Release_0189 {
             function normalizeSettings() {
                 if (<?php echo wp_json_encode($page); ?> !== 'bcs-settings') return;
                 const wrap=document.querySelector('.wrap.bcs-admin');if(!wrap)return;
+                if(wrap.dataset.bcsSettingsNative==='0209')return;
                 const oldWrapper=wrap.querySelector('.bcs-settings-section-0187');
                 if(oldWrapper){const form=oldWrapper.querySelector('form');if(form){oldWrapper.parentNode.insertBefore(form,oldWrapper);oldWrapper.remove();}}
                 const form=Array.from(wrap.querySelectorAll('form')).find(item=>item.querySelector('[name="bcs_save_settings"]'));
