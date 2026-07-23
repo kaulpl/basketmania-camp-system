@@ -2,11 +2,17 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.7
+Stable tag: 0.20.8
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.8 =
+* Link Stripe w wiadomości e-mail jest wyświetlany jako przycisk zgodny z pozostałymi szablonami.
+* Potwierdzenie Stripe weryfikuje sesję, kwotę i walutę oraz jest odporne na ponowne dostarczenie webhooka.
+* Status wysłania linku jest zapisywany dopiero po skutecznym przekazaniu wiadomości e-mail.
+* Przy dacie potwierdzonej płatności Stripe na liście zgłoszeń wyświetlana jest ikona Stripe.
 
 = 0.20.7 =
 * Lista zgłoszeń jest sortowana według kolejności etapów procesu.
