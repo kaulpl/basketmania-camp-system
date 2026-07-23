@@ -2,6 +2,15 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.19.1] - 2026-07-23
+
+### Zmieniono
+- usunięto dodatkową sekcję „Obsługa zgłoszenia” i przywrócono dotychczasowy blok „Szybkie czynności”,
+- blok „Szybkie czynności” ponownie działa jako prawy sidebar karty zgłoszenia,
+- „Notatka z telefonu” oraz „Dodaj notatkę” zostały przeniesione na sam dół bloku,
+- akcję „Dodaj zadanie” usunięto z interfejsu,
+- akcja „Wycofaj umowę przed podpisem” jest widoczna przy umowie oczekującej na podpis i działa przez AJAX.
+
 ## [0.19.0] - 2026-07-23
 
 ### Dodano
