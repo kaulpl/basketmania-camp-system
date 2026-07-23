@@ -74,6 +74,81 @@ class BCS_Payments {
         return false;
     }
 
+    private static function confirm_paid_session(array $session, object $organizer): array|WP_Error {
+        global $wpdb;
+        $session_id=sanitize_text_field((string)($session['id']??''));
+        $payment_id=absint($session['metadata']['payment_id']??$session['client_reference_id']??0);
+        $registration_id=absint($session['metadata']['registration_id']??0);
+        if(!$payment_id && $session_id!==''){
+            $payment_id=(int)$wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM ".BCS_DB::table('payments')." WHERE external_id=%s AND organizer_id=%d LIMIT 1",
+                $session_id,(int)$organizer->id
+            ));
+        }
+        $payment=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('payments')." WHERE id=%d",$payment_id));
+        if(!$payment) return new WP_Error('payment_not_found','Nie znaleziono płatności.');
+        if(!$registration_id) $registration_id=(int)$payment->registration_id;
+        if((int)$payment->organizer_id!==(int)$organizer->id || (int)$payment->registration_id!==$registration_id){
+            return new WP_Error('payment_owner_mismatch','Płatność nie jest powiązana z tym zgłoszeniem.');
+        }
+        if(($session['payment_status']??'')!=='paid') return new WP_Error('payment_not_paid','Płatność nie została potwierdzona przez Stripe.');
+
+        $currency=strtoupper(sanitize_text_field((string)($session['currency']??'')));
+        $amount_total=(int)($session['amount_total']??-1);
+        $expected_amount=(int)round((float)$payment->amount*100);
+        if($session_id==='' || ($payment->external_id && !hash_equals((string)$payment->external_id,$session_id)) || $currency!=='PLN' || $amount_total!==$expected_amount){
+            BCS_Utils::log('stripe_payment_rejected',[
+                'payment_id'=>$payment_id,'session_id'=>$session_id,'currency'=>$currency,
+                'amount_total'=>$amount_total,'expected_amount'=>$expected_amount,
+            ],$registration_id);
+            return new WP_Error('payment_details_mismatch','Dane płatności Stripe są niezgodne.');
+        }
+
+        $now=BCS_Utils::now();
+        $claimed=$wpdb->query($wpdb->prepare(
+            "UPDATE ".BCS_DB::table('payments')." SET status='paid',paid_at=COALESCE(paid_at,%s),external_id=%s,updated_at=%s WHERE id=%d AND status<>'paid'",
+            $now,$session_id,$now,$payment_id
+        ));
+        if($claimed===false) return new WP_Error('payment_update_failed','Nie udało się zapisać płatności.');
+        $r=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('registrations')." WHERE id=%d",$registration_id));
+        if(!$r) return new WP_Error('registration_not_found','Nie znaleziono zgłoszenia.');
+        $paid_total=(float)$wpdb->get_var($wpdb->prepare(
+            "SELECT COALESCE(SUM(amount),0) FROM ".BCS_DB::table('payments')." WHERE registration_id=%d AND status='paid'",
+            $registration_id
+        ));
+        $new=min((float)$r->total_amount,$paid_total);
+        $paid=(float)$r->total_amount>0 && $new>=(float)$r->total_amount;
+        $updated=$wpdb->update(BCS_DB::table('registrations'),[
+            'payment_id'=>$payment_id,'paid_amount'=>$new,'status'=>$paid?'paid':'partially_paid','updated_at'=>$now,
+        ],['id'=>$registration_id]);
+        if($updated===false) return new WP_Error('registration_payment_update_failed','Nie udało się oznaczyć zgłoszenia jako opłacone.');
+        if($paid && class_exists('BCS_Workflow')) BCS_Workflow_Engine::refresh_invoice_readiness($registration_id);
+        if($claimed===1){
+            BCS_Utils::log('stripe_payment_confirmed',['payment_id'=>$payment_id,'session_id'=>$session_id],$registration_id,(int)$r->agreement_id);
+            if($paid) BCS_Communication_Engine::send_to_registration($registration_id,'paid','email','', '', false);
+        }
+        return ['registration_id'=>$registration_id,'payment_id'=>$payment_id,'paid'=>$paid,'duplicate'=>$claimed===0];
+    }
+
+    public static function confirm_checkout_return(int $registration_id,string $session_id): array|WP_Error {
+        global $wpdb;
+        $session_id=sanitize_text_field($session_id);
+        if($registration_id<=0 || $session_id==='' || !str_starts_with($session_id,'cs_')){
+            return new WP_Error('invalid_checkout_return','Nieprawidłowy powrót z płatności.');
+        }
+        $payment=$wpdb->get_row($wpdb->prepare(
+            "SELECT p.*,c.organizer_id FROM ".BCS_DB::table('payments')." p JOIN ".BCS_DB::table('registrations')." r ON r.id=p.registration_id JOIN ".BCS_DB::table('camps')." c ON c.id=r.camp_id WHERE p.registration_id=%d AND p.external_id=%s AND p.provider='stripe' LIMIT 1",
+            $registration_id,$session_id
+        ));
+        if(!$payment) return new WP_Error('checkout_not_found','Nie znaleziono sesji płatności dla zgłoszenia.');
+        $organizer=self::organizer((int)$payment->organizer_id);
+        if(!$organizer) return new WP_Error('organizer_not_found','Nie znaleziono organizatora.');
+        $credentials=self::stripe_credentials($organizer);
+        $session=self::stripe_request('GET','checkout/sessions/'.rawurlencode($session_id),$credentials['secret_key']);
+        if(is_wp_error($session)) return $session;
+        return self::confirm_paid_session($session,$organizer);
+    }
+
     public static function webhook(WP_REST_Request $request): WP_REST_Response {
         global $wpdb;
         $organizer=self::organizer(absint($request['organizer_id']));
@@ -83,33 +158,9 @@ class BCS_Payments {
         if(!self::signature_valid($payload,$signature,$credentials['webhook_secret'])) return new WP_REST_Response(['error'=>'invalid_signature'],400);
         $event=json_decode($payload,true); $type=(string)($event['type']??'');
         if(in_array($type,['checkout.session.completed','checkout.session.async_payment_succeeded'],true)){
-            $session=$event['data']['object']??[]; $payment_id=absint($session['metadata']['payment_id']??$session['client_reference_id']??0); $registration_id=absint($session['metadata']['registration_id']??0);
-            $payment=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('payments')." WHERE id=%d",$payment_id));
-            if($payment && (int)$payment->organizer_id===(int)$organizer->id && (int)$payment->registration_id===$registration_id && (($session['payment_status']??'')==='paid')){
-                $session_id=sanitize_text_field((string)($session['id']??''));
-                $currency=strtoupper(sanitize_text_field((string)($session['currency']??'')));
-                $amount_total=(int)($session['amount_total']??-1);
-                $expected_amount=(int)round((float)$payment->amount*100);
-                if($session_id==='' || ($payment->external_id && !hash_equals((string)$payment->external_id,$session_id)) || $currency!=='PLN' || $amount_total!==$expected_amount){
-                    BCS_Utils::log('stripe_payment_rejected',[
-                        'payment_id'=>$payment_id,
-                        'session_id'=>$session_id,
-                        'currency'=>$currency,
-                        'amount_total'=>$amount_total,
-                        'expected_amount'=>$expected_amount,
-                    ],$registration_id);
-                    return new WP_REST_Response(['error'=>'payment_details_mismatch'],400);
-                }
-                $now=BCS_Utils::now();
-                $claimed=$wpdb->query($wpdb->prepare(
-                    "UPDATE ".BCS_DB::table('payments')." SET status='paid',paid_at=%s,external_id=%s,updated_at=%s WHERE id=%d AND status<>'paid'",
-                    $now,$session_id,$now,$payment_id
-                ));
-                if($claimed===0) return new WP_REST_Response(['received'=>true,'duplicate'=>true],200);
-                if($claimed===false) return new WP_REST_Response(['error'=>'payment_update_failed'],500);
-                $r=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('registrations')." WHERE id=%d",$registration_id));
-                if($r){$new=min((float)$r->total_amount,(float)$r->paid_amount+(float)$payment->amount);$paid=$new>=(float)$r->total_amount;$wpdb->update(BCS_DB::table('registrations'),['paid_amount'=>$new,'status'=>$paid?'paid':'partially_paid','updated_at'=>$now],['id'=>$registration_id]);if($paid && class_exists('BCS_Workflow'))BCS_Workflow_Engine::refresh_invoice_readiness($registration_id);BCS_Utils::log('stripe_payment_confirmed',['payment_id'=>$payment_id,'session_id'=>$session_id],$registration_id,(int)$r->agreement_id);if($paid)BCS_Communication_Engine::send_to_registration($registration_id,'paid','email','', '', false);}
-            }
+            $result=self::confirm_paid_session((array)($event['data']['object']??[]),$organizer);
+            if(is_wp_error($result)) return new WP_REST_Response(['error'=>$result->get_error_code()],400);
+            return new WP_REST_Response(['received'=>true,'duplicate'=>!empty($result['duplicate'])],200);
         }
         return new WP_REST_Response(['received'=>true],200);
     }
