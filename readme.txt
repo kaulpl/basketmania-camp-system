@@ -2,11 +2,15 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.6
+Stable tag: 0.20.7
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.7 =
+* Lista zgłoszeń jest sortowana według kolejności etapów procesu.
+* Najnowsze zgłoszenia oczekujące na Formularz Obozowy są na górze, a Opłacone i Anulowane na dole.
 
 = 0.20.6 =
 * Tabela kanałów wysyłki znajduje się w osobnej rozwijanej sekcji „Powiadomienia SMS/EMAIL”.
