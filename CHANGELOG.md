@@ -2,6 +2,17 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.18] - 2026-07-23
+
+### Zmieniono
+- „Historia klienta” na Karcie Zgłoszenia jest rozwijaną sekcją,
+- historia pobiera wszystkie logi powiązane przez `registration_id` z danym zgłoszeniem,
+- ręczne wpisy CRM pozostają widoczne, a wpisy posiadają czytelną nazwę, autora i dostępny opis.
+
+### Naprawiono
+- zdarzenia są sortowane stabilnie według daty, źródła i identyfikatora,
+- usunięto dopisywanie zdarzeń umowy po renderowaniu strony, które umieszczało je poza chronologią.
+
 ## [0.20.17] - 2026-07-23
 
 ### Zmieniono

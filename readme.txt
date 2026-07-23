@@ -2,11 +2,17 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.17
+Stable tag: 0.20.18
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.18 =
+* Historia klienta jest rozwijaną sekcją na Karcie Zgłoszenia.
+* Historia obejmuje wszystkie logi powiązane z danym zgłoszeniem oraz zachowuje ręczne wpisy CRM.
+* Zdarzenia są prezentowane chronologicznie według daty i identyfikatora logu.
+* Usunięto późniejsze dopisywanie zdarzeń umowy, które zaburzało kolejność osi czasu.
 
 = 0.20.17 =
 * Wszystkie szybkie czynności na Karcie Zgłoszenia działają przez AJAX, bez przeładowania strony.
