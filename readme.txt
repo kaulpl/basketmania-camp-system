@@ -2,11 +2,16 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.10
+Stable tag: 0.20.11
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.11 =
+* Dodano informację wyjaśniającą, kiedy przycisk potwierdzenia umowy SMS-em stanie się aktywny.
+* Powrót ze Stripe potwierdza sesję bezpośrednio w Stripe i księguje płatność także wtedy, gdy webhook jest opóźniony.
+* Status i kwota zgłoszenia są odbudowywane z potwierdzonych rekordów płatności, a techniczny identyfikator sesji Stripe nie jest wyświetlany na liście zgłoszeń.
 
 = 0.20.10 =
 * Rodzic może ponownie otworzyć i edytować Formularz Obozowy do chwili jego akceptacji przez administratora.
