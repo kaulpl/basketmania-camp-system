@@ -2,6 +2,13 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.19.4.1] - 2026-07-23
+
+### Zmieniono
+- opublikowano techniczne wydanie poprawkowe na bazie stabilnej wersji 0.19.4,
+- zsynchronizowano numer wersji w nagłówku wtyczki, stałej systemowej oraz pliku `readme.txt`,
+- zachowano komplet edytowalnych szablonów e-mail i SMS dla wszystkich etapów workflow.
+
 ## [0.19.4] - 2026-07-23
 
 ### Naprawiono
