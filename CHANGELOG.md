@@ -2,6 +2,17 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.17] - 2026-07-23
+
+### Zmieniono
+- wszystkie szybkie czynności na Karcie Zgłoszenia są wykonywane przez AJAX, bez przeładowania strony,
+- po powodzeniu widok Karty Zgłoszenia jest podmieniany aktualnym stanem zwróconym przez serwer.
+
+### Naprawiono
+- przywrócono centralne, automatycznie znikające po 2 sekundach komunikaty wyniku,
+- udana akcja jest oznaczona dużym zielonym ptaszkiem, a nieudana dużym czerwonym krzyżykiem,
+- wycofanie umowy nie wymusza już przeładowania strony.
+
 ## [0.20.16] - 2026-07-23
 
 ### Zmieniono

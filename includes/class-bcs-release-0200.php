@@ -108,8 +108,121 @@ final class BCS_Release_0200 {
 
             function popup(message,ok){
                 if(typeof window.bcsPopup0190==='function'){window.bcsPopup0190(message,ok);return;}
-                window.alert(message);
+                const result=document.getElementById('bcs-result-popup-0190');
+                if(!result)return;
+                result.className='bcs-result-popup-0190 '+(ok?'success':'error')+' show';
+                const icon=result.querySelector('.bcs-result-popup-0190__icon');
+                const title=result.querySelector('h3');
+                if(icon)icon.textContent=ok?'✓':'×';
+                if(title)title.textContent=message;
+                window.setTimeout(()=>result.classList.remove('show'),2000);
             }
+            function responseMessage(documentNode,fallback,ok){
+                const selector=ok?'.notice-success p,.notice-warning p':'.notice-error p';
+                const message=documentNode?.querySelector(selector)?.textContent?.trim();
+                return message||fallback;
+            }
+            function replaceRegistrationCard(documentNode){
+                const current=document.querySelector('.bcs-crm-layout');
+                const fresh=documentNode?.querySelector('.bcs-crm-layout');
+                if(!current||!fresh)return false;
+                current.replaceWith(fresh);
+                if(typeof window.bcsRestoreQuickActions0191==='function')window.bcsRestoreQuickActions0191();
+                window.setTimeout(()=>{
+                    if(typeof window.bcsRestoreQuickActions0191==='function')window.bcsRestoreQuickActions0191();
+                },50);
+                return true;
+            }
+            async function refreshRegistrationCard(){
+                const response=await fetch(window.location.href,{method:'GET',credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}});
+                if(!response.ok)throw new Error('Akcja została wykonana, ale nie udało się odświeżyć Karty Zgłoszenia.');
+                const html=await response.text();
+                const parsed=new DOMParser().parseFromString(html,'text/html');
+                if(!replaceRegistrationCard(parsed))throw new Error('Akcja została wykonana, ale serwer nie zwrócił aktualnej Karty Zgłoszenia.');
+                return parsed;
+            }
+            window.bcsRefreshRegistrationCard02017=refreshRegistrationCard;
+
+            async function runCardAction(target,request,label){
+                const control=target.matches('button,a')?target:target.querySelector('button[type="submit"],button:not([type]),input[type="submit"]');
+                if(control)control.setAttribute('aria-busy','true');
+                if('disabled' in (control||{}))control.disabled=true;
+                try{
+                    const response=await fetch(request.url,request.options);
+                    const finalUrl=new URL(response.url||request.url,window.location.href);
+                    const html=await response.text();
+                    const contentType=response.headers.get('content-type')||'';
+                    let message='';
+                    if(contentType.includes('application/json')){
+                        let json;
+                        try{json=JSON.parse(html)}catch(error){throw new Error('Serwer zwrócił nieprawidłową odpowiedź.');}
+                        if(!response.ok||!json.success)throw new Error(json?.data?.message||'Nie udało się wykonać działania.');
+                        message=json?.data?.message||label;
+                        await refreshRegistrationCard();
+                    }else{
+                        const parsed=new DOMParser().parseFromString(html,'text/html');
+                        const failed=finalUrl.searchParams.get('crm_done')==='0'
+                            || finalUrl.searchParams.get('done')==='0'
+                            || !!parsed.querySelector('.notice-error');
+                        if(!response.ok||failed)throw new Error(responseMessage(parsed,'Nie udało się wykonać działania.',false));
+                        if(!replaceRegistrationCard(parsed))await refreshRegistrationCard();
+                        message=responseMessage(parsed,label,true);
+                    }
+                    popup(message,true);
+                }catch(error){
+                    popup(error.message||'Nie udało się wykonać działania.',false);
+                    if('disabled' in (control||{}))control.disabled=false;
+                }finally{
+                    if(control)control.removeAttribute('aria-busy');
+                }
+            }
+
+            document.addEventListener('submit',function(event){
+                if(page!=='bcs-registrations'||!view)return;
+                const form=event.target;
+                if(!form.matches('.bcs-quick-actions form,.bcs-form-verification form'))return;
+                const submitter=event.submitter||form.querySelector('button[type="submit"],button:not([type]),input[type="submit"]');
+                if(!submitter)return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                if(form.dataset.confirm&&!window.confirm(form.dataset.confirm))return;
+                const label=(submitter.textContent||submitter.value||'Działanie').trim()+' — wykonano.';
+                if(form.matches('.bcs-stripe-link-action-02014')){
+                    runCardAction(submitter,{
+                        url:ajaxUrl,
+                        options:{
+                            method:'POST',credentials:'same-origin',
+                            headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8','X-Requested-With':'XMLHttpRequest'},
+                            body:new URLSearchParams({
+                                action:'bcs_send_stripe_link_02014',
+                                registration_id:String(form.querySelector('[name="registration_id"]')?.value||''),
+                                nonce:String(form.querySelector('[name="nonce"]')?.value||'')
+                            })
+                        }
+                    },label);
+                    return;
+                }
+                runCardAction(submitter,{
+                    url:form.action||window.location.href,
+                    options:{
+                        method:(form.method||'POST').toUpperCase(),
+                        credentials:'same-origin',
+                        headers:{'X-Requested-With':'XMLHttpRequest'},
+                        body:new FormData(form)
+                    }
+                },label);
+            },true);
+            document.addEventListener('click',function(event){
+                if(page!=='bcs-registrations'||!view)return;
+                const link=event.target.closest('.bcs-quick-actions a[href*="bcs_workflow_single"]');
+                if(!link)return;
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                runCardAction(link,{
+                    url:link.href,
+                    options:{method:'GET',credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}}
+                },(link.textContent||'Działanie').trim()+' — wykonano.');
+            },true);
             function registrationId(form){
                 return form.querySelector('[name="registration_id"]')?.value
                     || form.querySelector('[name="registration_ids[]"]')?.value

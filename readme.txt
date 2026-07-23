@@ -2,11 +2,16 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.16
+Stable tag: 0.20.17
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.17 =
+* Wszystkie szybkie czynności na Karcie Zgłoszenia działają przez AJAX, bez przeładowania strony.
+* Po akcji Karta Zgłoszenia jest aktualizowana na podstawie bieżącego stanu systemu.
+* Wynik każdej czynności jest pokazywany centralnie przez 2 sekundy: zielony ptaszek oznacza sukces, a czerwony krzyżyk błąd.
 
 = 0.20.16 =
 * Usunięto zdublowane zakończenie „Pozdrawiamy / Basketmania Camp” z wiadomości potwierdzającej Formularz Obozowy.
