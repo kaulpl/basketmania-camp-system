@@ -5,6 +5,41 @@ class BCS_CRM {
     public static function init(): void {
         add_action('admin_init', [__CLASS__, 'actions']);
         add_action('wp_ajax_bcs_list_quick_action_02010', [__CLASS__, 'ajax_list_quick_action']);
+        add_action('wp_ajax_bcs_card_action_02021', [__CLASS__, 'ajax_card_action']);
+    }
+
+    public static function ajax_card_action(): void {
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message'=>'Brak uprawnień.'], 403);
+        }
+
+        $id = absint($_POST['registration_id'] ?? 0);
+        $action = sanitize_key(wp_unslash($_POST['card_action'] ?? ''));
+        $nonce = sanitize_text_field(wp_unslash($_POST['nonce'] ?? ''));
+        if (!$id || !in_array($action, ['send_agreement','cancel_registration'], true)) {
+            wp_send_json_error(['message'=>'Brak danych wymaganych do wykonania działania.'], 422);
+        }
+
+        if ($action === 'send_agreement') {
+            if (!wp_verify_nonce($nonce, 'bcs_workflow_single_'.$id.'_send_agreement')) {
+                wp_send_json_error(['message'=>'Sesja wygasła. Odśwież Kartę Zgłoszenia i spróbuj ponownie.'], 403);
+            }
+            $ok = BCS_Workflow_Engine::execute('send_agreement', $id);
+            if (!$ok) {
+                wp_send_json_error([
+                    'message'=>BCS_Workflow::last_error() ?: 'Nie udało się wysłać umowy. Sprawdź etap zgłoszenia i ustawienia komunikacji.',
+                ], 409);
+            }
+            wp_send_json_success(['message'=>'Umowa została wysłana do podpisu.']);
+        }
+
+        if (!wp_verify_nonce($nonce, 'bcs_crm_'.$id)) {
+            wp_send_json_error(['message'=>'Sesja wygasła. Odśwież Kartę Zgłoszenia i spróbuj ponownie.'], 403);
+        }
+        if (!self::cancel_registration($id)) {
+            wp_send_json_error(['message'=>'Nie udało się anulować zgłoszenia. Mogło zostać anulowane wcześniej.'], 409);
+        }
+        wp_send_json_success(['message'=>'Zgłoszenie zostało anulowane.']);
     }
 
     public static function ajax_list_quick_action(): void {

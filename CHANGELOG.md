@@ -2,6 +2,13 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.21] - 2026-07-24
+
+### Naprawiono
+- wysyłanie umowy z Karty Zgłoszenia korzysta z dedykowanego endpointu AJAX zamiast żądania z przekierowaniem,
+- anulowanie zgłoszenia jawnie przekazuje klikniętą akcję do serwera,
+- obie czynności weryfikują właściwy nonce, zwracają czytelny wynik JSON i odświeżają Kartę Zgłoszenia bez przeładowania całej strony.
+
 ## [0.20.20] - 2026-07-23
 
 ### Dodano

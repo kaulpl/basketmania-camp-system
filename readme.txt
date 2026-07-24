@@ -2,11 +2,16 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.20
+Stable tag: 0.20.21
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.21 =
+* Naprawiono wysyłanie umowy z Karty Zgłoszenia przez dedykowaną akcję AJAX.
+* Naprawiono anulowanie zgłoszenia z Karty Zgłoszenia.
+* Obie akcje zwracają jednoznaczny wynik JSON, pokazują popup i odświeżają Kartę Zgłoszenia bez przeładowania strony.
 
 = 0.20.20 =
 * Każdy sukces, błąd i uzasadnione pominięcie automatycznego przypomnienia jest zapisywane w logach.
