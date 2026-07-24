@@ -11,11 +11,22 @@ final class BCS_Release_038 {
     }
 
     private static function strip_branding(string $html): string {
-        return trim((string)preg_replace(
-            '~\s*'.preg_quote(self::MARKER_START, '~').'.*?'.preg_quote(self::MARKER_END, '~').'\s*~s',
-            '',
-            $html
-        ));
+        /*
+         * W starszej implementacji usuwany był cały fragment pomiędzy markerami,
+         * a więc razem z właściwą treścią umowy. Przy kolejnym przebiegu dekoratora
+         * w bazie pozostawała wyłącznie sekcja dowodowa albo pusty dokument.
+         * Teraz zdejmujemy tylko opakowanie nagłówka i stopki, zachowując zawartość
+         * .bcs-agreement-content oraz wszystko, co znajduje się poza markerami.
+         */
+        $pattern = '~'.preg_quote(self::MARKER_START, '~').'.*?'
+            .'<div\b[^>]*class=("|\')[^"\']*\bbcs-agreement-content\b[^"\']*\1[^>]*>(.*?)</div>\s*'
+            .'<div\b[^>]*class=("|\')[^"\']*\bbcs-agreement-footer\b[^"\']*\3[^>]*>.*?</div>\s*</div>\s*'
+            .preg_quote(self::MARKER_END, '~').'~is';
+        $unwrapped = preg_replace($pattern, '$2', $html);
+        if (is_string($unwrapped) && $unwrapped !== $html) return trim($unwrapped);
+
+        // Bezpieczny fallback: nigdy więcej nie kasujemy zawartości dokumentu.
+        return trim(str_replace([self::MARKER_START, self::MARKER_END], '', $html));
     }
 
     private static function company_identity(object $row): string {
