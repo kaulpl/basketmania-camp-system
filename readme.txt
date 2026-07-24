@@ -2,11 +2,14 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.24
+Stable tag: 0.25
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.25 =
+* Zmieniono status potwierdzenia danych przez organizatora na mały zielony badge z ptaszkiem.
 
 = 0.20.24 =
 * Dodano wybór rzeczywistej daty ręcznie księgowanej wpłaty na liście i Karcie Zgłoszenia.
