@@ -21,7 +21,7 @@ class BCS_Invoices {
 
     private static function registration_row(int $registration_id): ?object {
         global $wpdb;
-        return $wpdb->get_row($wpdb->prepare("SELECT r.*, c.name camp_name, c.start_date, c.end_date, c.location, c.organizer_id, o.name organizer_name, o.address organizer_address, o.nip organizer_nip, o.regon organizer_regon, o.email organizer_email, o.phone organizer_phone, o.bank_name, o.bank_account, o.invoice_prefix organizer_invoice_prefix FROM ".BCS_DB::table('registrations')." r JOIN ".BCS_DB::table('camps')." c ON c.id=r.camp_id JOIN ".BCS_DB::table('organizers')." o ON o.id=c.organizer_id WHERE r.id=%d",$registration_id));
+        return $wpdb->get_row($wpdb->prepare("SELECT r.*, c.name camp_name, c.start_date, c.end_date, c.location, c.organizer_id, o.name organizer_name, o.address organizer_address, o.nip organizer_nip, o.regon organizer_regon, o.email organizer_email, o.phone organizer_phone, o.bank_name, o.bank_account, o.invoice_prefix organizer_invoice_prefix, (SELECT MAX(p.paid_at) FROM ".BCS_DB::table('payments')." p WHERE p.registration_id=r.id AND p.status='paid') paid_at FROM ".BCS_DB::table('registrations')." r JOIN ".BCS_DB::table('camps')." c ON c.id=r.camp_id JOIN ".BCS_DB::table('organizers')." o ON o.id=c.organizer_id WHERE r.id=%d",$registration_id));
     }
 
     public static function has_invoice(int $registration_id): bool {

@@ -2,6 +2,14 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.24] - 2026-07-24
+
+- Dodano modalny wybór daty ręcznej wpłaty na liście zgłoszeń i Karcie Zgłoszenia.
+- Domyślna data to dzień bieżący; daty przyszłe są blokowane w interfejsie i na serwerze.
+- Wybrana data jest zapisywana w płatności, logowana przy zgłoszeniu i prezentowana na fakturze.
+- Usunięto zdublowaną sekcję „Dane rejestracyjne”.
+- Tekstowy przycisk „Otwórz kartę CRM” zastąpiono pomarańczowym przyciskiem z białą ikoną.
+
 ## [0.20.23] - 2026-07-24
 
 - Usunięto kolumnę „Kontakt” z listy zgłoszeń.
