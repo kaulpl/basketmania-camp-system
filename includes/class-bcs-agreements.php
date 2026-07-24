@@ -167,6 +167,11 @@ class BCS_Agreements {
     }
 
     public static function default_template(): string {
-        return '<h1>Umowa uczestnictwa nr {{AGREEMENT_NUMBER}}</h1><p>Data zawarcia: {{AGREEMENT_DATE}}</p><p>Zawarta pomiędzy <strong>{{ORGANIZER_NAME}}</strong>, {{ORGANIZER_ADDRESS}}, NIP: {{ORGANIZER_NIP}}, reprezentowanym przez: {{ORGANIZER_REPRESENTATIVE}}, a rodzicem/opiekunem: <strong>{{PARENT_NAME}}</strong>, adres: {{PARENT_ADDRESS}}, e-mail: {{PARENT_EMAIL}}, telefon: {{PARENT_PHONE}}.</p><h2>Uczestnik</h2><p>{{CHILD_NAME}}, data urodzenia: {{CHILD_BIRTH_DATE}}.</p><h2>Przedmiot umowy</h2><p>Udział w turnusie <strong>{{CAMP_NAME}}</strong>, w terminie {{CAMP_DATES}}, miejsce: {{CAMP_LOCATION}}.</p><h2>Cena i płatność</h2><p>Łączna cena: <strong>{{TOTAL_AMOUNT}}</strong>.</p><p>Rachunek organizatora: <strong>{{BANK_ACCOUNT}}</strong> ({{BANK_NAME}}).</p><h2>Postanowienia</h2><p>Rodzic potwierdza prawdziwość danych, zapoznanie się z regulaminem oraz zobowiązuje się do terminowej zapłaty. Szczegółowe zasady rezygnacji, bezpieczeństwa i organizacji powinny zostać wpisane w zatwierdzonym wzorcu umowy w panelu administratora.</p>';
+        $path = BCS_DIR . 'templates/agreement-basketmania-camp-v0254.html';
+        if (is_readable($path)) {
+            $template = file_get_contents($path);
+            if (is_string($template) && trim($template) !== '') return $template;
+        }
+        return '<h1>Umowa uczestnictwa nr {{AGREEMENT_NUMBER}}</h1><p>Data zawarcia: {{AGREEMENT_DATE}}</p><p>Zawarta pomiędzy <strong>{{ORGANIZER_NAME}}</strong>, {{ORGANIZER_ADDRESS}}, NIP: {{ORGANIZER_NIP}}, reprezentowanym przez: {{ORGANIZER_REPRESENTATIVE}}, a rodzicem/opiekunem: <strong>{{PARENT_NAME}}</strong>, adres: {{PARENT_ADDRESS}}, e-mail: {{PARENT_EMAIL}}, telefon: {{PARENT_PHONE}}.</p><h2>Uczestnik</h2><p>{{CHILD_NAME}}, data urodzenia: {{CHILD_BIRTH_DATE}}.</p><h2>Przedmiot umowy</h2><p>Udział w turnusie <strong>{{CAMP_NAME}}</strong>, w terminie {{CAMP_DATES}}, miejsce: {{CAMP_LOCATION}}.</p><h2>Cena i płatność</h2><p>Łączna cena: <strong>{{TOTAL_AMOUNT}}</strong>.</p><p>Rachunek organizatora: <strong>{{BANK_ACCOUNT}}</strong> ({{BANK_NAME}}).</p>';
     }
 }
