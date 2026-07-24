@@ -187,6 +187,23 @@ final class BCS_Release_0200 {
                 event.stopImmediatePropagation();
                 if(form.dataset.confirm&&!window.confirm(form.dataset.confirm))return;
                 const label=(submitter.textContent||submitter.value||'Działanie').trim()+' — wykonano.';
+                const cardAction=submitter.name==='bcs_crm_action'?String(submitter.value||''):'';
+                if(cardAction==='cancel_registration'){
+                    runCardAction(submitter,{
+                        url:ajaxUrl,
+                        options:{
+                            method:'POST',credentials:'same-origin',
+                            headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8','X-Requested-With':'XMLHttpRequest'},
+                            body:new URLSearchParams({
+                                action:'bcs_card_action_02021',
+                                card_action:cardAction,
+                                registration_id:String(form.querySelector('[name="registration_id"]')?.value||view||''),
+                                nonce:String(form.querySelector('[name="_wpnonce"]')?.value||'')
+                            })
+                        }
+                    },label);
+                    return;
+                }
                 if(form.matches('.bcs-stripe-link-action-02014')){
                     runCardAction(submitter,{
                         url:ajaxUrl,
@@ -218,6 +235,24 @@ final class BCS_Release_0200 {
                 if(!link)return;
                 event.preventDefault();
                 event.stopImmediatePropagation();
+                const url=new URL(link.href,window.location.href);
+                const action=url.searchParams.get('workflow')||'';
+                if(action==='send_agreement'){
+                    runCardAction(link,{
+                        url:ajaxUrl,
+                        options:{
+                            method:'POST',credentials:'same-origin',
+                            headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8','X-Requested-With':'XMLHttpRequest'},
+                            body:new URLSearchParams({
+                                action:'bcs_card_action_02021',
+                                card_action:action,
+                                registration_id:String(url.searchParams.get('registration_id')||view||''),
+                                nonce:String(url.searchParams.get('_wpnonce')||'')
+                            })
+                        }
+                    },(link.textContent||'Działanie').trim()+' — wykonano.');
+                    return;
+                }
                 runCardAction(link,{
                     url:link.href,
                     options:{method:'GET',credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}}
