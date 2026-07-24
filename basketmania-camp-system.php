@@ -37,9 +37,6 @@ require_once BCS_DIR . 'includes/class-bcs-crm.php';
 require_once BCS_DIR . 'includes/class-bcs-communications.php';
 require_once BCS_DIR . 'includes/class-bcs-workflow.php';
 require_once BCS_DIR . 'includes/class-bcs-templates.php';
-require_once BCS_DIR . 'includes/class-bcs-settings.php';
-require_once BCS_DIR . 'includes/class-bcs-organizers.php';
-require_once BCS_DIR . 'includes/class-bcs-camps.php';
 
 register_activation_hook(__FILE__, ['BCS_DB', 'activate']);
 add_action('plugins_loaded', static function(): void {
@@ -50,5 +47,4 @@ add_action('plugins_loaded', static function(): void {
     BCS_Communications::init();
     BCS_Workflow_Engine::init();
     BCS_Templates::init();
-    BCS_Settings::init();
 });
