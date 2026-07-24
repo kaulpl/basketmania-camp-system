@@ -2,7 +2,7 @@
 if (!defined('ABSPATH')) exit;
 
 class BCS_DB {
-    public const DB_VERSION = '0.20.15';
+    public const DB_VERSION = '0.25.3';
     public static function init(): void {}
 
     public static function maybe_upgrade(): void {
@@ -80,6 +80,8 @@ class BCS_DB {
             parent_last_name VARCHAR(100) NOT NULL,
             parent_email VARCHAR(190) NOT NULL,
             parent_phone VARCHAR(30) NOT NULL,
+            parent_phone_alt VARCHAR(30) NULL,
+            parents_names TEXT NULL,
             parent_address TEXT NULL,
             parent_postal_code VARCHAR(20) NULL,
             parent_city VARCHAR(120) NULL,
@@ -89,14 +91,26 @@ class BCS_DB {
             child_last_name VARCHAR(100) NOT NULL,
             child_birth_date DATE NULL,
             child_height SMALLINT UNSIGNED NULL,
+            child_weight DECIMAL(5,2) NULL,
             child_pesel VARCHAR(20) NULL,
+            child_address TEXT NULL,
             child_club VARCHAR(190) NULL,
             shirt_size VARCHAR(20) NULL,
             medical_notes LONGTEXT NULL,
             dietary_notes LONGTEXT NULL,
+            special_educational_needs LONGTEXT NULL,
+            vaccination_tetanus VARCHAR(20) NULL,
+            vaccination_diphtheria VARCHAR(20) NULL,
+            vaccination_other TEXT NULL,
             stay_contact LONGTEXT NULL,
             authorized_pickup LONGTEXT NULL,
             camp_notes LONGTEXT NULL,
+            invoice_buyer_name VARCHAR(190) NULL,
+            invoice_street VARCHAR(190) NULL,
+            invoice_postal_code VARCHAR(20) NULL,
+            invoice_city VARCHAR(120) NULL,
+            invoice_nip VARCHAR(20) NULL,
+            invoice_notes TEXT NULL,
             total_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
             paid_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
             agreement_status VARCHAR(30) NOT NULL DEFAULT 'draft',

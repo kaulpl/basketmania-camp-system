@@ -1,3 +1,16 @@
+## [0.25.3] - 2026-07-24
+
+### Dodano
+- komplet danych opiekuna i uczestnika wymaganych przez umowę oraz kartę kwalifikacyjną,
+- drugi numer telefonu, imiona i nazwiska rodziców, adres uczestnika, wagę i specjalne potrzeby edukacyjne,
+- informacje o szczepieniach ochronnych,
+- kompletne dane nabywcy do faktury wraz z NIP i dodatkowymi informacjami.
+
+### Zmieniono
+- PDF Formularza Obozowego obejmuje wszystkie nowe dane,
+- generator umowy udostępnia nowe placeholdery,
+- faktura korzysta z dedykowanych danych nabywcy, a przy ich braku z danych opiekuna.
+
 ## [0.25.2] - 2026-07-24
 
 ### Zmieniono
