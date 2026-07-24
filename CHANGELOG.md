@@ -1,3 +1,10 @@
+## [0.25.5] - 2026-07-24
+
+### Naprawiono
+- usunięto odwołania startowe do nieistniejących plików `class-bcs-settings.php`, `class-bcs-organizers.php` i `class-bcs-camps.php`,
+- usunięto wywołanie nieistniejącej klasy `BCS_Settings`, które powodowało błąd krytyczny po aktualizacji,
+- przywrócono prawidłowe uruchamianie wtyczki po wdrożeniu wersji 0.25.4.
+
 ## [0.25.4] - 2026-07-24
 
 ### Dodano
