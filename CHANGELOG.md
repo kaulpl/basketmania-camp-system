@@ -2,6 +2,10 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.25.1] - 2026-07-24
+
+- Wydanie techniczne aktualizujące numer wersji wtyczki.
+
 ## [0.25] - 2026-07-24
 
 - Zmieniono oznaczenie „Dane potwierdzone przez organizatora” na mały zielony badge.
