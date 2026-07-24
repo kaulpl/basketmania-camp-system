@@ -316,8 +316,16 @@ class BCS_CRM {
         foreach($rows as $r){
             $milestones=self::milestone_badges($r);
             $due=max(0,(float)$r->total_amount-(float)$r->paid_amount);
-            $quick=self::list_quick_actions_html($r);
-            $row_classes=[]; if(!empty($r->requires_action))$row_classes[]='bcs-requires-action'; if(!empty($r->has_sent_invoice) || ($r->invoice_status??'')==='sent')$row_classes[]='bcs-registration-complete'; $row_class=$row_classes?' class="'.esc_attr(implode(' ',$row_classes)).'"':'';
+            $is_cancelled=((string)$r->status==='cancelled');
+            $quick=$is_cancelled?'':self::list_quick_actions_html($r);
+            $row_classes=[];
+            if($is_cancelled){
+                $row_classes[]='bcs-registration-cancelled';
+            } else {
+                if(!empty($r->requires_action))$row_classes[]='bcs-requires-action';
+                if(!empty($r->has_sent_invoice) || ($r->invoice_status??'')==='sent')$row_classes[]='bcs-registration-complete';
+            }
+            $row_class=$row_classes?' class="'.esc_attr(implode(' ',$row_classes)).'"':'';
             $action_marker = !empty($r->requires_action) ? '<span class="bcs-row-action-marker" title="To zgłoszenie wymaga działania administratora">Wymaga akcji</span>' : '';
             $search_blob = strtolower(trim($r->parent_first_name.' '.$r->parent_last_name.' '.$r->child_first_name.' '.$r->child_last_name.' '.$r->parent_email.' '.$r->parent_phone.' '.$r->camp_name.' '.($labels[$r->status]??$r->status)));
             $data_attrs = ' data-id="'.(int)$r->id.'" data-created="'.esc_attr((string)$r->created_at).'" data-client="'.esc_attr(strtolower(trim($r->parent_last_name.' '.$r->parent_first_name.' '.$r->child_last_name.' '.$r->child_first_name))).'" data-camp="'.esc_attr(strtolower((string)$r->camp_name)).'" data-camp-id="'.(int)$r->camp_id.'" data-stage="'.esc_attr(strtolower((string)($labels[$r->status]??$r->status))).'" data-status="'.esc_attr((string)$r->status).'" data-paid="'.esc_attr((string)(float)$r->paid_amount).'" data-updated="'.esc_attr((string)$r->updated_at).'" data-requires="'.(!empty($r->requires_action)?'1':'0').'" data-search="'.esc_attr($search_blob).'"';
