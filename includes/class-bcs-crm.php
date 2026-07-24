@@ -543,7 +543,7 @@ class BCS_CRM {
             ['Uwagi zdrowotne',$r->medical_notes],['Dieta i żywienie',$r->dietary_notes],['Kontakt podczas pobytu',$r->stay_contact],['Osoby upoważnione do odbioru',$r->authorized_pickup],['Dodatkowe informacje dla organizatora',$r->camp_notes],['Turnus',$r->camp_name],['Termin',$r->start_date.' – '.$r->end_date],['Miejsce',$r->location]
         ];
         $verified=!empty($r->form_verified_at);
-        $status='<span class="bcs-accordion-statuses">'.($verified?'<button type="button" class="button bcs-form-confirmed" disabled><span class="dashicons dashicons-yes-alt"></span> Dane potwierdzone przez Organizatora</button>':'').'<span class="bcs-accordion-hint">Rozwiń pełne dane</span></span>';
+        $status='<span class="bcs-accordion-statuses">'.($verified?'<span class="bcs-form-confirmed" role="status"><span class="bcs-form-confirmed__icon" aria-hidden="true">✓</span><span>Dane potwierdzone przez organizatora</span></span>':'').'<span class="bcs-accordion-hint">Rozwiń pełne dane</span></span>';
         $html='<section class="bcs-panel bcs-accordion-panel"><details><summary><span><span class="dashicons dashicons-clipboard"></span><strong>Dane z formularza zgłoszeniowego – obozowego</strong></span>'.$status.'</summary><div class="bcs-accordion-content"><div class="bcs-detail-grid bcs-form-preview-grid">';
         foreach($rows as [$label,$value]){$display=trim((string)$value)!==''?(string)$value:'—';$wide=in_array($label,['Uwagi zdrowotne','Dieta i żywienie'],true)?' bcs-detail-wide':'';$html.='<div class="bcs-detail-item'.$wide.'"><span>'.esc_html($label).'</span><strong>'.nl2br(esc_html($display)).'</strong></div>';}
         return $html.'</div></div></details></section>';
