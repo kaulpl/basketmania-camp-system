@@ -2,11 +2,18 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.23
+Stable tag: 0.20.24
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.24 =
+* Dodano wybór rzeczywistej daty ręcznie księgowanej wpłaty na liście i Karcie Zgłoszenia.
+* Zablokowano wybór przyszłej daty po stronie interfejsu i serwera.
+* Data płatności zapisana przy wpłacie jest wykorzystywana na fakturze.
+* Usunięto zdublowaną sekcję „Dane rejestracyjne” z Karty Zgłoszenia.
+* Zastąpiono tekstowy przycisk otwarcia CRM pomarańczowym przyciskiem z białą ikoną.
 
 = 0.20.23 =
 * Usunięto kolumnę Kontakt z listy zgłoszeń i ustalono stałą szerokość kolumny Postęp.
