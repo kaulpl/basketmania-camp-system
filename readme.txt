@@ -2,11 +2,15 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.20.21
+Stable tag: 0.20.22
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.20.22 =
+* Zmniejszono kółka postępu na liście zgłoszeń do rozmiaru standardowej ikony emoji.
+* Zachowano kolory etapów i podpowiedzi po najechaniu.
 
 = 0.20.21 =
 * Naprawiono wysyłanie umowy z Karty Zgłoszenia przez dedykowaną akcję AJAX.
