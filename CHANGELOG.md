@@ -1,3 +1,10 @@
+## [0.25.2] - 2026-07-24
+
+### Zmieniono
+- anulowane zgłoszenia na liście nie wyświetlają żadnych szybkich akcji,
+- cały wiersz anulowanego zgłoszenia ma delikatne czerwone tło i czerwony pasek po lewej stronie,
+- czerwone wyróżnienie anulowania ma pierwszeństwo przed zielonym wyróżnieniem rozliczonego zgłoszenia.
+
 # Changelog
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
