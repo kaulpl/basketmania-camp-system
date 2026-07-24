@@ -91,6 +91,13 @@
 .bcs-admin .button:not(.button-primary):not(.bcs-danger-button):hover,.bcs-admin .button:not(.button-primary):not(.bcs-danger-button):focus{border-color:var(--bcs-orange-dark)!important;color:#fff!important;background:var(--bcs-orange-dark)!important}
 .bcs-table th:nth-child(7),.bcs-table td:nth-child(7){text-align:center;white-space:nowrap}
 .bcs-table td:nth-child(7) .bcs-milestones{justify-content:center;margin-top:0;flex-wrap:nowrap}
+.bcs-table th:nth-child(7),.bcs-table td:nth-child(7){width:130px;min-width:130px;max-width:130px;box-sizing:border-box}
+.bcs-form-preview-sections{display:grid;gap:18px}
+.bcs-form-preview-section{margin:0}
+.bcs-form-preview-section h3{margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid #e2e8f0;color:#1e293b}
+.bcs-form-preview-section .bcs-preview-row{display:flex;flex-direction:column;gap:4px;min-width:0}
+.bcs-form-preview-section .bcs-preview-row b{color:#64748b;font-size:12px;line-height:1.3}
+.bcs-form-preview-section .bcs-preview-row span{color:#0f172a;line-height:1.45;white-space:normal;overflow-wrap:anywhere}
 
 /* 0.10.16: rozwijane moduły karty zgłoszenia i status zgodny z listą CRM */
 .bcs-stat-grid .bcs-badge{display:inline-flex;align-items:center;justify-content:center;line-height:1.25;padding:6px 10px;border-radius:999px;font-size:12px}

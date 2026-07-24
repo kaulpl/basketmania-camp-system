@@ -2,6 +2,13 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.23] - 2026-07-24
+
+- Usunięto kolumnę „Kontakt” z listy zgłoszeń.
+- Ustalono stałą szerokość kolumny „Postęp”, mieszczącą wszystkie wskaźniki.
+- Przycisk podglądu prezentuje kompletny Formularz Obozowy w sekcjach.
+- Usunięto ręczne składanie danych przez atrybuty HTML, które powodowało błędne podziały wierszy.
+
 ## [0.20.22] - 2026-07-24
 
 ### Zmieniono
