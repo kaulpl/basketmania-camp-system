@@ -463,6 +463,9 @@
 .bcs-registration-complete>td{background:#effaf2!important;border-top-color:#bbf7d0!important;border-bottom-color:#bbf7d0!important}
 .bcs-registration-complete>td:first-child{box-shadow:inset 4px 0 0 #16a34a}
 .bcs-registration-complete:hover>td{background:#e5f7e9!important}
+.bcs-registration-cancelled>td{background:#fff1f2!important;border-top-color:#fecdd3!important;border-bottom-color:#fecdd3!important}
+.bcs-registration-cancelled>td:first-child{box-shadow:inset 4px 0 0 #dc2626}
+.bcs-registration-cancelled:hover>td{background:#ffe4e6!important}
 .bcs-contact-email{appearance:none;border:0;background:transparent;padding:0;color:#2271b1;text-decoration:underline;cursor:pointer;font:inherit;text-align:left}
 .bcs-contact-email:hover,.bcs-contact-email:focus{color:#135e96;outline:none}
 .bcs-contact-modal{position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.72);padding:24px;display:flex;align-items:center;justify-content:center}
