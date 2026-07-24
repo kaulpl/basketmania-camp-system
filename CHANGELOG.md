@@ -2,6 +2,11 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.25] - 2026-07-24
+
+- Zmieniono oznaczenie „Dane potwierdzone przez organizatora” na mały zielony badge.
+- Dodano zielony ptaszek w okrągłym polu oraz zieloną kolorystykę napisu i obramowania.
+
 ## [0.20.24] - 2026-07-24
 
 - Dodano modalny wybór daty ręcznej wpłaty na liście zgłoszeń i Karcie Zgłoszenia.
