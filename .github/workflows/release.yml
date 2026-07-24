@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Wersja wydania, np. 0.26 lub 0.26.0'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -13,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout tagged version
+      - name: Checkout release source
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -22,15 +28,22 @@ jobs:
         id: version
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
-            echo "Invalid release tag: ${GITHUB_REF_NAME}" >&2
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            VERSION='${{ inputs.version }}'
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release version: ${VERSION}" >&2
             exit 1
           fi
+
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag_name=v$VERSION" >> "$GITHUB_OUTPUT"
           echo "zip_name=basketmania-camp-system-$VERSION.zip" >> "$GITHUB_OUTPUT"
 
-      - name: Verify plugin version matches tag
+      - name: Verify plugin version matches release
         shell: bash
         run: |
           VERSION='${{ steps.version.outputs.version }}'
@@ -50,8 +63,11 @@ jobs:
           find . \
             -path './vendor' -prune -o \
             -path './build' -prune -o \
-            -type f -name '*.php' -print0 |
-            xargs -0 -n1 php -l
+            -type f -name '*.php' -print0 | \
+            xargs -0 -r -n1 php -l
+
+      - name: Validate Composer configuration
+        run: composer validate --no-check-publish --no-interaction
 
       - name: Install production dependencies
         run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
@@ -60,19 +76,26 @@ jobs:
         run: php -r "require 'vendor/autoload.php'; if (!class_exists('Dompdf\\Dompdf')) { fwrite(STDERR, 'DOMPDF is missing from the release build.'); exit(1); }"
 
       - name: Prepare plugin directory
+        shell: bash
         run: |
+          rm -rf build
           mkdir -p build/basketmania-camp-system
           rsync -av \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='build' \
+            --exclude='tests' \
+            --exclude='phpunit.xml*' \
             ./ build/basketmania-camp-system/
 
       - name: Verify release package contents
+        shell: bash
         run: |
           test -f build/basketmania-camp-system/basketmania-camp-system.php
           test -f build/basketmania-camp-system/vendor/autoload.php
           test -d build/basketmania-camp-system/vendor/dompdf/dompdf
+          test -f build/basketmania-camp-system/includes/class-bcs-workflow-engine.php
+          test -f build/basketmania-camp-system/templates/agreement-default.html
 
       - name: Create ZIP
         working-directory: build
@@ -81,6 +104,8 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.tag_name }}
+          target_commitish: ${{ github.sha }}
           name: Basketmania Camp System ${{ steps.version.outputs.version }}
           files: build/${{ steps.version.outputs.zip_name }}
           generate_release_notes: true
