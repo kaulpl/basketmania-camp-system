@@ -91,7 +91,7 @@ class BCS_Invoices {
         $vars=[
             '{{LOGO_DATA_URI}}'=>self::logo_data_uri(),'{{INVOICE_NUMBER}}'=>$number,'{{ORGANIZER_NAME}}'=>esc_html($r->organizer_name),'{{ORGANIZER_ADDRESS}}'=>nl2br(esc_html($r->organizer_address)),
             '{{ORGANIZER_NIP}}'=>esc_html($r->organizer_nip),'{{ORGANIZER_EMAIL}}'=>esc_html($r->organizer_email),'{{ORGANIZER_PHONE}}'=>esc_html($r->organizer_phone),
-            '{{BUYER_NAME}}'=>esc_html(trim($r->parent_first_name.' '.$r->parent_last_name)),'{{BUYER_ADDRESS}}'=>nl2br(esc_html(BCS_Utils::registration_address($r))),
+            '{{BUYER_NAME}}'=>esc_html(trim((string)($r->invoice_buyer_name??''))!==''?(string)$r->invoice_buyer_name:trim($r->parent_first_name.' '.$r->parent_last_name)),'{{BUYER_ADDRESS}}'=>nl2br(esc_html(trim((string)($r->invoice_street??'')."\n".trim((string)($r->invoice_postal_code??'').' '.(string)($r->invoice_city??'')))?:BCS_Utils::registration_address($r))),'{{BUYER_NIP}}'=>esc_html((string)($r->invoice_nip??'')),'{{INVOICE_NOTES}}'=>nl2br(esc_html((string)($r->invoice_notes??''))),
             '{{ISSUE_PLACE}}'=>esc_html($r->location ?: 'Pelplin'),'{{ISSUE_DATE}}'=>BCS_Utils::today('d-m-Y'),'{{SALE_DATE}}'=>BCS_Utils::today('d-m-Y'),
             '{{PAYMENT_DATE}}'=>!empty($r->paid_at)?esc_html(wp_date('d-m-Y',strtotime($r->paid_at))):BCS_Utils::today('d-m-Y'),
             '{{CAMP_NAME}}'=>esc_html($r->camp_name),'{{CAMP_DATES}}'=>esc_html($r->start_date.' – '.$r->end_date),
