@@ -69,6 +69,7 @@ require_once BCS_DIR . 'includes/class-bcs-release-046.php';
 require_once BCS_DIR . 'includes/class-bcs-release-047.php';
 require_once BCS_DIR . 'includes/class-bcs-release-048.php';
 require_once BCS_DIR . 'includes/class-bcs-release-050.php';
+require_once BCS_DIR . 'includes/class-bcs-release-050-view.php';
 require_once BCS_DIR . 'includes/class-bcs-templates.php';
 require_once BCS_DIR . 'includes/class-bcs-pdf.php';
 require_once BCS_DIR . 'includes/class-bcs-camp-reports.php';
@@ -132,6 +133,7 @@ add_action('plugins_loaded', function () {
     BCS_Release_047::init();
     BCS_Release_048::init();
     BCS_Release_050::init();
+    BCS_Release_050_View::init();
     BCS_Templates::init();
     BCS_PDF::init();
     BCS_Camp_Reports::init();
