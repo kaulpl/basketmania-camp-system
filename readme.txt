@@ -2,11 +2,15 @@
 Contributors: basketmania
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.25.4
+Stable tag: 0.25.5
 
 System zapisów, CRM, panelu rodzica, umów, płatności, poczty i dokumentów Basketmania Camp.
 
 == Changelog ==
+
+= 0.25.5 =
+* Usunięto odwołania do nieistniejących plików klas, które powodowały błąd krytyczny po aktualizacji.
+* Przywrócono prawidłowe uruchamianie wtyczki po wdrożeniu wersji 0.25.4.
 
 = 0.25.4 =
 * Dodano kompletny, edytowalny wzór umowy Basketmania Camp wraz z kartą kwalifikacyjną uczestnika.
