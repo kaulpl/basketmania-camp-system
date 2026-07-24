@@ -2,6 +2,12 @@
 
 Wszystkie istotne zmiany w Basketmania Camp System są dokumentowane w tym pliku.
 
+## [0.20.22] - 2026-07-24
+
+### Zmieniono
+- zmniejszono kółka postępu na liście zgłoszeń do rozmiaru standardowej ikony emoji,
+- zachowano kolory etapów, stany oczekujące oraz podpowiedzi po najechaniu.
+
 ## [0.20.21] - 2026-07-24
 
 ### Naprawiono
