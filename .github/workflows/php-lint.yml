@@ -14,3 +14,5 @@ jobs:
         run: |
           find . -type f -name '*.php' -not -path './vendor/*' -print0 \
             | xargs -0 -n1 php -l
+      - name: Agreement renderer regression test
+        run: php tests/agreement-renderer-051-test.php
