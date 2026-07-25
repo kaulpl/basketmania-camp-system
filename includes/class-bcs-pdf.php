@@ -68,6 +68,9 @@ class BCS_PDF {
             if (class_exists('BCS_Release_055')) {
                 $html = BCS_Release_055::force_attachment_page($html);
             }
+            if (class_exists('BCS_Release_057')) {
+                $html = BCS_Release_057::prepare_agreement_html($html);
+            }
             $html = self::embed_local_assets($html);
 
             $options = new Dompdf\Options();

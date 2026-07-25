@@ -39,12 +39,19 @@ $fail = static function (string $message): void {
 };
 
 $bootstrap = file_get_contents(dirname(__DIR__).'/basketmania-camp-system.php');
+$pluginVersion = '';
+$constantVersion = '';
+if (is_string($bootstrap)) {
+    if (preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $match)) $pluginVersion = $match[1];
+    if (preg_match("/define\('BCS_VERSION',\s*'([0-9.]+)'\)/", $bootstrap, $match)) $constantVersion = $match[1];
+}
 if (!is_string($bootstrap)
-    || !str_contains($bootstrap, 'Version: 0.56')
-    || !str_contains($bootstrap, "define('BCS_VERSION', '0.56')")
+    || version_compare($pluginVersion, '0.56', '<')
+    || version_compare($constantVersion, '0.56', '<')
+    || $pluginVersion !== $constantVersion
     || !str_contains($bootstrap, 'class-bcs-release-056.php')
     || !str_contains($bootstrap, 'BCS_Release_056::init();')) {
-    $fail('Release 0.56 is not correctly loaded and initialized.');
+    $fail('Release 0.56 is not correctly loaded and retained by the current release.');
 }
 
 $template = BCS_Release_056::paid_template();
