@@ -28,8 +28,11 @@ final class BCS_Release_042 {
     }
 
     private static function locked(object $r): bool {
-        if ((string)($r->status ?? '') === 'cancelled') return true;
+        if (class_exists('BCS_Release_063')) {
+            return BCS_Release_063::form_editing_locked($r);
+        }
 
+        if ((string)($r->status ?? '') === 'cancelled') return true;
         $registration_status = (string)($r->agreement_status ?? '');
         $agreement_status = (string)($r->agreement_record_status ?? '');
         $agreement_locked = in_array($registration_status, ['pending','parent_signed','accepted'], true)
