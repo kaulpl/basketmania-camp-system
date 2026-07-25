@@ -16,3 +16,7 @@ jobs:
             | xargs -0 -n1 php -l
       - name: Agreement renderer regression test
         run: php tests/agreement-renderer-051-test.php
+      - name: Parent test autofill regression test
+        run: php tests/parent-test-autofill-053-test.php
+      - name: Check parent autofill JavaScript syntax
+        run: node --check assets/js/parent-test-autofill-053.js
