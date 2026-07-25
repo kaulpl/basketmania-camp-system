@@ -22,3 +22,5 @@ jobs:
         run: node --check assets/js/parent-test-autofill-053.js
       - name: Agreement preview regression test
         run: php tests/agreement-preview-054-test.php
+      - name: Agreement attachment page regression test
+        run: php tests/agreement-attachment-page-055-test.php

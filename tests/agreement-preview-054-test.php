@@ -9,8 +9,17 @@ $fail = static function (string $message): void {
     exit(1);
 };
 
-if (!str_contains($bootstrap, "Version: 0.54") || !str_contains($bootstrap, "BCS_VERSION', '0.54")) {
-    $fail('Plugin version was not bumped to 0.54.');
+$pluginVersion = '';
+$constantVersion = '';
+if (is_string($bootstrap)) {
+    if (preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $match)) $pluginVersion = $match[1];
+    if (preg_match("/define\('BCS_VERSION',\s*'([0-9.]+)'\)/", $bootstrap, $match)) $constantVersion = $match[1];
+}
+if (!version_compare($pluginVersion, '0.54', '>=') || !version_compare($constantVersion, '0.54', '>=')) {
+    $fail('Plugin version must remain at least 0.54.');
+}
+if ($pluginVersion !== $constantVersion) {
+    $fail('Plugin header and BCS_VERSION are not synchronized.');
 }
 if (!str_contains($bootstrap, "class-bcs-release-054.php") || !str_contains($bootstrap, 'BCS_Release_054::init();')) {
     $fail('Release 0.54 is not loaded and initialized.');
