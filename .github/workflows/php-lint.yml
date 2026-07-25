@@ -26,3 +26,5 @@ jobs:
         run: php tests/agreement-attachment-page-055-test.php
       - name: Paid email button regression test
         run: php tests/paid-email-button-056-test.php
+      - name: Release 0.57 regression test
+        run: php tests/release-057-regression-test.php
