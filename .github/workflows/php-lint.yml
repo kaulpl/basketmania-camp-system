@@ -44,3 +44,5 @@ jobs:
         run: php tests/release-062-form-edit-address-test.php
       - name: Release 0.63 draft_sent form editing test
         run: php tests/release-063-draft-form-edit-test.php
+      - name: Release 0.64 operational fixes test
+        run: php tests/release-064-operations-test.php
