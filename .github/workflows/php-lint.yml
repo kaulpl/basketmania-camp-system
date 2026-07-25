@@ -36,3 +36,7 @@ jobs:
         run: php tests/release-060-card-form-test.php
       - name: Check 0.60 card form JavaScript syntax
         run: node --check assets/js/card-form-060.js
+      - name: Release 0.61 agreement send notification test
+        run: php tests/release-061-agreement-send-notification-test.php
+      - name: Check 0.61 agreement send JavaScript syntax
+        run: node --check assets/js/agreement-send-061.js
