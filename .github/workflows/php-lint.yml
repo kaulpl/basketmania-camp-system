@@ -40,3 +40,5 @@ jobs:
         run: php tests/release-061-agreement-send-notification-test.php
       - name: Check 0.61 agreement send JavaScript syntax
         run: node --check assets/js/agreement-send-061.js
+      - name: Release 0.62 form editing and participant address test
+        run: php tests/release-062-form-edit-address-test.php
