@@ -46,3 +46,7 @@ jobs:
         run: php tests/release-063-draft-form-edit-test.php
       - name: Release 0.64 operational fixes test
         run: php tests/release-064-operations-test.php
+      - name: Release 0.65 shirt size and logs test
+        run: php tests/release-065-shirt-size-logs-test.php
+      - name: Check 0.65 shirt size JavaScript syntax
+        run: node --check assets/js/shirt-size-select-065.js
