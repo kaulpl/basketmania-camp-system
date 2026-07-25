@@ -15,8 +15,15 @@ $fail = static function(string $message): void {
     exit(1);
 };
 
-if (!str_contains($bootstrap, '* Version: 0.64') || !str_contains($bootstrap, "define('BCS_VERSION', '0.64')")) {
-    $fail('Plugin version declarations are not synchronized at 0.64.');
+$headerVersion = '';
+$constantVersion = '';
+if (preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $match)) $headerVersion = $match[1];
+if (preg_match("/define\('BCS_VERSION',\s*'([0-9.]+)'\)/", $bootstrap, $match)) $constantVersion = $match[1];
+if (version_compare($headerVersion, '0.64', '<') || version_compare($constantVersion, '0.64', '<')) {
+    $fail('Plugin version declarations are older than 0.64.');
+}
+if ($headerVersion !== $constantVersion) {
+    $fail('Plugin header and BCS_VERSION are not synchronized.');
 }
 if (!str_contains($bootstrap, 'class-bcs-release-064.php') || !str_contains($bootstrap, 'BCS_Release_064::init();')) {
     $fail('Release 0.64 is not loaded and initialized.');
