@@ -5,7 +5,7 @@ class BCS_PDF {
     public static function init(): void {}
 
     public static function available(): bool {
-        if (class_exists('Dompdf\\Dompdf')) return true;
+        if (class_exists('Dompdf\Dompdf')) return true;
         $paths = [
             BCS_DIR.'vendor/autoload.php',
             WP_CONTENT_DIR.'/vendor/autoload.php',
@@ -14,7 +14,7 @@ class BCS_PDF {
         foreach ($paths as $path) {
             if (!file_exists($path)) continue;
             require_once $path;
-            if (class_exists('Dompdf\\Dompdf')) return true;
+            if (class_exists('Dompdf\Dompdf')) return true;
         }
         return false;
     }
@@ -42,7 +42,11 @@ class BCS_PDF {
     public static function generate(string $html, string $path, string $title='Dokument'): bool {
         if (!self::available()) return false;
         try {
+            if (class_exists('BCS_Release_052')) {
+                $html = BCS_Release_052::prepare_pdf_html($html, $title);
+            }
             $html = self::embed_local_assets($html);
+
             $options = new Dompdf\Options();
             $options->set('isRemoteEnabled', false);
             $options->set('defaultFont', 'DejaVu Sans');
