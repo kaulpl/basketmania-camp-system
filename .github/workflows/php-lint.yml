@@ -34,7 +34,7 @@ jobs:
         run: php tests/release-059-card-form-test.php
       - name: Release 0.60 grouped card form behavior test
         run: php tests/release-060-card-form-test.php
-      - name: Check 0.60 card form JavaScript syntax
+      - name: Check card form JavaScript syntax
         run: node --check assets/js/card-form-060.js
       - name: Release 0.61 agreement send notification test
         run: php tests/release-061-agreement-send-notification-test.php
@@ -42,3 +42,5 @@ jobs:
         run: node --check assets/js/agreement-send-061.js
       - name: Release 0.62 form editing and participant address test
         run: php tests/release-062-form-edit-address-test.php
+      - name: Release 0.63 draft_sent form editing test
+        run: php tests/release-063-draft-form-edit-test.php

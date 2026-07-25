@@ -35,8 +35,8 @@ if (is_string($bootstrap)) {
     if (preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $match)) $headerVersion = $match[1];
     if (preg_match("/define\('BCS_VERSION',\s*'([0-9.]+)'\)/", $bootstrap, $match)) $constantVersion = $match[1];
 }
-if ($headerVersion !== '0.62' || $constantVersion !== '0.62') {
-    $fail('Plugin version declarations are not synchronized at 0.62.');
+if (version_compare($headerVersion, '0.62', '<') || $headerVersion !== $constantVersion) {
+    $fail('Plugin version is below 0.62 or version declarations differ.');
 }
 if (!str_contains((string)$bootstrap, 'class-bcs-release-062.php') || !str_contains((string)$bootstrap, 'BCS_Release_062::init();')) {
     $fail('Release 0.62 is not loaded and initialized.');
@@ -68,19 +68,20 @@ if (!str_contains($html, 'Sportowa 1') || !str_contains($html, '83-130 Pelplin')
 
 $row->agreement_status = 'pending';
 $row->agreement_record_status = 'pending';
+$row->status = 'agreement_sent';
 $lockedHtml = BCS_Release_060::render_card_html($row);
 if (str_contains($lockedHtml, 'bcs-card-form-edit-060')) {
     $fail('Edit action remains available after the agreement is sent for signature.');
 }
 
 foreach ([
-    "in_array(\$registration_status, ['pending','parent_signed','accepted'], true)",
+    "BCS_Release_063::form_editing_locked(\$r)",
     "\$values['child_address'] = BCS_Utils::registration_address(\$r)",
     "\$data['child_address'] = \$data['parent_address']",
     "BCS_Agreements::build_for_registration(\$id, 'draft', false)",
 ] as $required) {
     if (!str_contains((string)$release042, $required)) {
-        $fail('Administrator edit flow is missing required 0.62 behavior: '.$required);
+        $fail('Administrator edit flow is missing required 0.62+ behavior: '.$required);
     }
 }
 
