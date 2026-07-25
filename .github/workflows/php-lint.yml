@@ -20,3 +20,5 @@ jobs:
         run: php tests/parent-test-autofill-053-test.php
       - name: Check parent autofill JavaScript syntax
         run: node --check assets/js/parent-test-autofill-053.js
+      - name: Agreement preview regression test
+        run: php tests/agreement-preview-054-test.php
