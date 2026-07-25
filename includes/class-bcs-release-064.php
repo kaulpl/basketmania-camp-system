@@ -213,7 +213,7 @@ final class BCS_Release_064 {
         <script id="bcs-parent-signed-action-064">
         (() => {
             const apply = () => {
-                document.querySelectorAll('tr[data-status="agreement_parent_signed"], tr').forEach((row) => {
+                document.querySelectorAll('tr').forEach((row) => {
                     const text = (row.textContent || '').toLocaleLowerCase('pl-PL');
                     if (row.dataset.status !== 'agreement_parent_signed' && !text.includes('oczekuje na podpis organizatora')) return;
                     row.classList.add('bcs-requires-action');
@@ -226,7 +226,7 @@ final class BCS_Release_064 {
                         if (first) first.appendChild(marker);
                     }
                     if (marker) {
-                        marker.textContent = 'Wymagające akcji!';
+                        if (marker.textContent !== 'Wymagające akcji!') marker.textContent = 'Wymagające akcji!';
                         marker.title = 'Rodzic podpisał umowę — wymagany podpis Organizatora';
                     }
                 });
