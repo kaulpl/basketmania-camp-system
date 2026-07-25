@@ -12,12 +12,18 @@ $bootstrap = file_get_contents($root.'/basketmania-camp-system.php');
 $release = file_get_contents($root.'/includes/class-bcs-release-058.php');
 $legacy = file_get_contents($root.'/includes/class-bcs-release-0200.php');
 
-if (!is_string($bootstrap)
-    || !str_contains($bootstrap, 'Version: 0.58')
-    || !str_contains($bootstrap, "define('BCS_VERSION', '0.58')")
-    || !str_contains($bootstrap, 'class-bcs-release-058.php')
-    || !str_contains($bootstrap, 'BCS_Release_058::init();')) {
-    $fail('Release 0.58 is not correctly loaded and initialized.');
+$headerVersion = '';
+$constantVersion = '';
+if (is_string($bootstrap)) {
+    if (preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $match)) $headerVersion = $match[1];
+    if (preg_match("/define\('BCS_VERSION',\s*'([0-9.]+)'\)/", $bootstrap, $match)) $constantVersion = $match[1];
+}
+if (version_compare($headerVersion, '0.58', '<')
+    || version_compare($constantVersion, '0.58', '<')
+    || $headerVersion !== $constantVersion
+    || !str_contains((string)$bootstrap, 'class-bcs-release-058.php')
+    || !str_contains((string)$bootstrap, 'BCS_Release_058::init();')) {
+    $fail('Release 0.58 is not correctly loaded and preserved.');
 }
 
 if (!is_string($legacy)
@@ -31,7 +37,7 @@ if (!is_string($release)
     || !str_contains($release, 'input[name="bcs_crm_action"]')
     || !str_contains($release, "action.value = 'verify_form'")
     || !str_contains($release, 'bcs-form-verification-inline-058')) {
-    $fail('The card verification block is not moved into the camp-form accordion with a persistent action field.');
+    $fail('The 0.58 compatibility layer for card verification is missing.');
 }
 
 foreach ([
