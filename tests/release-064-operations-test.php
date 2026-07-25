@@ -7,6 +7,7 @@ define('ABSPATH', __DIR__.'/');
 $root = dirname(__DIR__);
 $bootstrap = (string)file_get_contents($root.'/basketmania-camp-system.php');
 $releaseSource = (string)file_get_contents($root.'/includes/class-bcs-release-064.php');
+$invoiceSource = (string)file_get_contents($root.'/includes/class-bcs-invoices.php');
 require_once $root.'/includes/class-bcs-release-064.php';
 
 $fail = static function(string $message): void {
@@ -42,9 +43,14 @@ foreach ([
     "remove_action('template_redirect', ['BCS_Documents', 'public_download'])",
     "BCS_Invoices::record_parent_download",
     "parent_portal_or_email_link_064",
-    "downloaded_at",
 ] as $required) {
     if (!str_contains($releaseSource, $required)) $fail('Invoice download tracking is incomplete: '.$required);
+}
+foreach ([
+    'downloaded_at=COALESCE(downloaded_at,%s)',
+    'download_count=download_count+1',
+] as $required) {
+    if (!str_contains($invoiceSource, $required)) $fail('Invoice download persistence is incomplete: '.$required);
 }
 foreach ([
     "paid_amount>=total_amount",
