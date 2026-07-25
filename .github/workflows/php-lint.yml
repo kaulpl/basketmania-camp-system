@@ -32,3 +32,7 @@ jobs:
         run: php tests/release-058-form-verification-test.php
       - name: Release 0.59 grouped card form behavior test
         run: php tests/release-059-card-form-test.php
+      - name: Release 0.60 grouped card form behavior test
+        run: php tests/release-060-card-form-test.php
+      - name: Check 0.60 card form JavaScript syntax
+        run: node --check assets/js/card-form-060.js
