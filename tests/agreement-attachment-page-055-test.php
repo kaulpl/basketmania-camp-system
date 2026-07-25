@@ -23,11 +23,17 @@ $fail = static function (string $message): void {
     exit(1);
 };
 
-if (!is_string($bootstrap) || !str_contains($bootstrap, 'Version: 0.55')) {
-    $fail('plugin version is not 0.55');
+$pluginVersion = '';
+$constantVersion = '';
+if (is_string($bootstrap)) {
+    if (preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $match)) $pluginVersion = $match[1];
+    if (preg_match("/define\('BCS_VERSION',\s*'([0-9.]+)'\)/", $bootstrap, $match)) $constantVersion = $match[1];
 }
-if (!str_contains($bootstrap, "define('BCS_VERSION', '0.55')")) {
-    $fail('BCS_VERSION is not 0.55');
+if (!version_compare($pluginVersion, '0.55', '>=')) {
+    $fail('plugin version is lower than 0.55');
+}
+if (!version_compare($constantVersion, '0.55', '>=') || $pluginVersion !== $constantVersion) {
+    $fail('BCS_VERSION is lower than 0.55 or differs from the plugin header');
 }
 if (!str_contains($bootstrap, 'class-bcs-release-055.php') || !str_contains($bootstrap, 'BCS_Release_055::init()')) {
     $fail('release 0.55 is not loaded and initialized');
