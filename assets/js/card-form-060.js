@@ -8,6 +8,10 @@
     let busy = false;
 
     const popup = (message, ok = true) => {
+        if (typeof window.bcsNotify === 'function') {
+            window.bcsNotify(message, ok);
+            return;
+        }
         if (typeof window.bcsPopup0190 === 'function') {
             window.bcsPopup0190(message, ok);
             return;
@@ -29,9 +33,9 @@
         document.querySelectorAll('.bcs-crm-layout section.bcs-form-verification').forEach((section) => section.remove());
     };
 
-    const mount = (html) => {
-        const panel = findPanel();
-        const content = panel?.querySelector('.bcs-accordion-content');
+    const mount = (html, targetContent = null) => {
+        const content = targetContent || getContent();
+        const panel = content?.closest('.bcs-accordion-panel') || findPanel();
         if (!panel || !content) return false;
 
         const title = panel.querySelector('summary strong');
@@ -69,14 +73,14 @@
         return json.data || {};
     };
 
-    const refreshDisplay = async () => {
+    const refreshDisplay = async (targetContent = null) => {
         const data = await post({
             action: cfg.displayAction,
             registration_id: cfg.registrationId,
             nonce: cfg.crmNonce,
         });
         lastDisplayHtml = String(data.html || '');
-        mount(lastDisplayHtml);
+        mount(lastDisplayHtml, targetContent);
         return data;
     };
 
@@ -104,7 +108,7 @@
         return wrapper;
     };
 
-    const renderEditor = (values) => {
+    const renderEditor = (values, targetContent) => {
         const root = document.createElement('form');
         root.className = 'bcs-card-form-editor-060';
         root.noValidate = true;
@@ -134,13 +138,24 @@
         actions.innerHTML = '<button type="button" class="button bcs-card-form-cancel-060">Anuluj</button><button type="submit" class="button button-primary">Zapisz dane</button>';
         root.appendChild(actions);
 
-        const content = getContent();
-        if (content) content.replaceChildren(root);
+        if (targetContent) targetContent.replaceChildren(root);
     };
 
-    const openEditor = async () => {
+    const openEditor = async (button) => {
         if (busy) return;
+        const targetContent = button?.closest('.bcs-accordion-content') || getContent();
+        if (!targetContent) {
+            popup('Nie znaleziono sekcji Formularza Obozowego. Odśwież Kartę Zgłoszenia.', false);
+            return;
+        }
+
         busy = true;
+        const originalLabel = button?.innerHTML || '';
+        if (button) {
+            button.disabled = true;
+            button.textContent = 'Otwieranie edycji…';
+        }
+
         try {
             const data = await post({
                 action: cfg.getAction,
@@ -151,10 +166,14 @@
                 popup(data.message || 'Edycja danych jest już zablokowana.', false);
                 return;
             }
-            renderEditor(data.values || {});
+            renderEditor(data.values || {}, targetContent);
         } catch (error) {
             popup(error.message || 'Nie udało się otworzyć edycji formularza.', false);
         } finally {
+            if (button && button.isConnected) {
+                button.disabled = false;
+                button.innerHTML = originalLabel;
+            }
             busy = false;
         }
     };
@@ -162,6 +181,7 @@
     const saveEditor = async (form) => {
         if (busy) return;
         busy = true;
+        const targetContent = form.closest('.bcs-accordion-content') || getContent();
         const submit = form.querySelector('button[type="submit"]');
         if (submit) {
             submit.disabled = true;
@@ -179,7 +199,7 @@
 
         try {
             const result = await post(data);
-            await refreshDisplay();
+            await refreshDisplay(targetContent);
             popup(result.message || 'Dane Formularza Obozowego zostały zapisane.', true);
         } catch (error) {
             popup(error.message || 'Nie udało się zapisać danych.', false);
@@ -195,6 +215,7 @@
     const verifyForm = async (form) => {
         if (busy) return;
         busy = true;
+        const targetContent = form.closest('.bcs-accordion-content') || getContent();
         const button = form.querySelector('button[type="submit"]');
         if (button) {
             button.disabled = true;
@@ -208,7 +229,7 @@
                 quick_action: 'verify_form',
                 nonce: cfg.crmNonce,
             });
-            await refreshDisplay();
+            await refreshDisplay(targetContent);
             popup(data.message || 'Formularz Obozowy został zaakceptowany.', true);
             window.setTimeout(() => window.location.reload(), 700);
         } catch (error) {
@@ -227,7 +248,7 @@
         if (edit) {
             event.preventDefault();
             event.stopImmediatePropagation();
-            openEditor();
+            openEditor(edit);
             return;
         }
 
@@ -235,7 +256,8 @@
         if (cancel) {
             event.preventDefault();
             event.stopImmediatePropagation();
-            mount(lastDisplayHtml);
+            const targetContent = cancel.closest('.bcs-accordion-content') || getContent();
+            mount(lastDisplayHtml, targetContent);
         }
     }, true);
 
@@ -259,7 +281,9 @@
     const ensureMounted = () => {
         const content = getContent();
         if (!content) return;
-        if (!content.querySelector('.bcs-card-form-root-060')) mount(lastDisplayHtml);
+        if (!content.querySelector('.bcs-card-form-root-060') && !content.querySelector('.bcs-card-form-editor-060')) {
+            mount(lastDisplayHtml, content);
+        }
     };
 
     const start = () => {
