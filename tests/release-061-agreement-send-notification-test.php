@@ -50,7 +50,8 @@ if (!str_contains((string)$script, 'window.bcsNotify061 = notify') || !str_conta
 if (!str_contains((string)$script, 'notify(data.message || cfg.successFallback, true, 2000)') || !str_contains((string)$script, 'notify(error.message || cfg.errorFallback, false, 2000)')) {
     $fail('Success and failure notifications are not both set to two seconds.');
 }
-if (preg_match('/(^|[^.])\balert\s*\(/m', (string)$script)) {
+$executableScript = preg_replace('~/\*.*?\*/|//[^\r\n]*~s', '', (string)$script);
+if (preg_match('/(^|[^\w.])alert\s*\(/m', (string)$executableScript)) {
     $fail('The new agreement send script still invokes a native alert.');
 }
 if (!str_contains((string)$style, '.bcs-result-popup-061.is-success') || !str_contains((string)$style, '.bcs-result-popup-061.is-error')) {
