@@ -14,8 +14,16 @@ $assert = static function (bool $condition, string $message): void {
     }
 };
 
-$assert(is_string($bootstrap) && str_contains($bootstrap, "Version: 0.53"), 'plugin version is 0.53');
-$assert(str_contains($bootstrap, "define('BCS_VERSION', '0.53')"), 'BCS_VERSION is 0.53');
+$pluginVersion = '';
+$constantVersion = '';
+if (is_string($bootstrap)) {
+    if (preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $match)) $pluginVersion = $match[1];
+    if (preg_match("/define\('BCS_VERSION',\s*'([0-9.]+)'\)/", $bootstrap, $match)) $constantVersion = $match[1];
+}
+
+$assert(version_compare($pluginVersion, '0.53', '>='), 'plugin version is at least 0.53');
+$assert(version_compare($constantVersion, '0.53', '>='), 'BCS_VERSION is at least 0.53');
+$assert($pluginVersion === $constantVersion, 'plugin header and BCS_VERSION remain synchronized');
 $assert(str_contains($bootstrap, "class-bcs-release-053.php"), 'release 0.53 is loaded');
 $assert(str_contains($bootstrap, "BCS_Release_053::init()"), 'release 0.53 is initialized');
 
