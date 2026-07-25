@@ -11,8 +11,10 @@ final class BCS_Utils {
 $root = dirname(__DIR__);
 $bootstrap = (string)file_get_contents($root.'/basketmania-camp-system.php');
 $releaseSource = (string)file_get_contents($root.'/includes/class-bcs-release-065.php');
+$contextSource = (string)file_get_contents($root.'/includes/class-bcs-release-065-log-context.php');
 $script = (string)file_get_contents($root.'/assets/js/shirt-size-select-065.js');
 require_once $root.'/includes/class-bcs-release-065.php';
+require_once $root.'/includes/class-bcs-release-065-log-context.php';
 
 $fail = static function(string $message): void {
     fwrite(STDERR, "FAIL: {$message}\n");
@@ -22,8 +24,8 @@ $fail = static function(string $message): void {
 if (!str_contains($bootstrap, '* Version: 0.65') || !str_contains($bootstrap, "define('BCS_VERSION', '0.65')")) {
     $fail('Plugin version declarations are not synchronized at 0.65.');
 }
-if (!str_contains($bootstrap, 'class-bcs-release-065.php') || !str_contains($bootstrap, 'BCS_Release_065::init();')) {
-    $fail('Release 0.65 is not loaded and initialized.');
+foreach (['class-bcs-release-065.php','BCS_Release_065::init();','class-bcs-release-065-log-context.php','BCS_Release_065_Log_Context::init();'] as $required) {
+    if (!str_contains($bootstrap, $required)) $fail('Release 0.65 component is not loaded: '.$required);
 }
 
 $sizes = BCS_Release_065::shirt_sizes();
@@ -52,10 +54,19 @@ if (BCS_Release_065::event_label('email_send_result', ['success'=>false]) !== 'N
 if (BCS_Release_065::event_label('unknown_technical_event') !== 'Zdarzenie systemowe') {
     $fail('Unknown technical events can still expose an English event name.');
 }
+if (BCS_Release_065_Log_Context::infer_template('Basketmania Camp: Umowa do podpisu') !== 'agreement_sent') {
+    $fail('Email subject is not assigned to the agreement business action.');
+}
+if (BCS_Release_065_Log_Context::infer_template('Basketmania Camp: Faktura FV/2026/1') !== 'invoice_issued') {
+    $fail('Invoice email subject is not assigned to invoice delivery.');
+}
+if (!str_contains($contextSource, "_context_inferred_by") || !str_contains($contextSource, 'cleanup_recent_duplicates')) {
+    $fail('Inferred email context is not persisted before log cleanup.');
+}
 
 $rows = [
     (object)['id'=>7,'registration_id'=>12,'agreement_id'=>0,'event_type'=>'communication_sent','event_data'=>'{"template":"agreement_sent","channel":"both","success":true}','created_at'=>'2026-07-26 11:00:02'],
-    (object)['id'=>6,'registration_id'=>12,'agreement_id'=>0,'event_type'=>'email_send_result','event_data'=>'{"subject":"Umowa do podpisu","success":true}','created_at'=>'2026-07-26 11:00:01'],
+    (object)['id'=>6,'registration_id'=>12,'agreement_id'=>0,'event_type'=>'email_send_result','event_data'=>'{"subject":"Umowa do podpisu","template":"agreement_sent","success":true}','created_at'=>'2026-07-26 11:00:01'],
     (object)['id'=>4,'registration_id'=>11,'agreement_id'=>0,'event_type'=>'crm_invoice','event_data'=>'{}','created_at'=>'2026-07-26 10:00:03'],
     (object)['id'=>3,'registration_id'=>11,'agreement_id'=>0,'event_type'=>'invoice_generated_manually','event_data'=>'{}','created_at'=>'2026-07-26 10:00:02'],
     (object)['id'=>2,'registration_id'=>11,'agreement_id'=>0,'event_type'=>'invoice_created','event_data'=>'{"invoice_number":"FV/2026/1"}','created_at'=>'2026-07-26 10:00:01'],
