@@ -5,7 +5,7 @@ class BCS_PDF {
     public static function init(): void {}
 
     public static function available(): bool {
-        if (class_exists('Dompdf\\Dompdf')) return true;
+        if (class_exists('Dompdf\Dompdf')) return true;
         $paths = [
             BCS_DIR.'vendor/autoload.php',
             WP_CONTENT_DIR.'/vendor/autoload.php',
@@ -14,7 +14,7 @@ class BCS_PDF {
         foreach ($paths as $path) {
             if (!file_exists($path)) continue;
             require_once $path;
-            if (class_exists('Dompdf\\Dompdf')) return true;
+            if (class_exists('Dompdf\Dompdf')) return true;
         }
         return false;
     }
@@ -39,10 +39,34 @@ class BCS_PDF {
         );
     }
 
+    private static function agreement_registration_context(): int {
+        $request_id = absint($_GET['registration'] ?? $_POST['registration_id'] ?? 0);
+        if ($request_id) return $request_id;
+
+        foreach (debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 8) as $frame) {
+            if (($frame['class'] ?? '') !== 'BCS_Documents') continue;
+            if (($frame['function'] ?? '') !== 'agreement_pdf') continue;
+            return absint($frame['args'][0] ?? 0);
+        }
+        return 0;
+    }
+
     public static function generate(string $html, string $path, string $title='Dokument'): bool {
         if (!self::available()) return false;
         try {
+            if (class_exists('BCS_Release_052')) {
+                $registration_id = self::agreement_registration_context();
+                $had_request_id = array_key_exists('registration', $_GET);
+                $previous_request_id = $_GET['registration'] ?? null;
+                if ($registration_id) $_GET['registration'] = $registration_id;
+                $html = BCS_Release_052::prepare_pdf_html($html, $title);
+                if ($registration_id) {
+                    if ($had_request_id) $_GET['registration'] = $previous_request_id;
+                    else unset($_GET['registration']);
+                }
+            }
             $html = self::embed_local_assets($html);
+
             $options = new Dompdf\Options();
             $options->set('isRemoteEnabled', false);
             $options->set('defaultFont', 'DejaVu Sans');
