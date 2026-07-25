@@ -28,7 +28,7 @@ if (!is_string($legacy)
 
 if (!is_string($release)
     || !str_contains($release, "add_action('admin_footer', [__CLASS__, 'admin_footer'], 5)")
-    || !str_contains($release, 'input[name=\"bcs_crm_action\"]')
+    || !str_contains($release, 'input[name="bcs_crm_action"]')
     || !str_contains($release, "action.value = 'verify_form'")
     || !str_contains($release, 'bcs-form-verification-inline-058')) {
     $fail('The card verification block is not moved into the camp-form accordion with a persistent action field.');
