@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Basketmania Camp System
  * Description: Niezależny system zapisów, CRM, umów potwierdzanych kodem SMS, płatności Stripe i dokumentów dla Basketmania Camp.
- * Version: 0.50
+ * Version: 0.51
  * Author: Basketmania Camp
  * Text Domain: basketmania-camp
  * Requires at least: 6.5
@@ -11,7 +11,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('BCS_VERSION', '0.50');
+define('BCS_VERSION', '0.51');
 define('BCS_FILE', __FILE__);
 define('BCS_DIR', plugin_dir_path(__FILE__));
 define('BCS_URL', plugin_dir_url(__FILE__));
@@ -68,8 +68,7 @@ require_once BCS_DIR . 'includes/class-bcs-release-045.php';
 require_once BCS_DIR . 'includes/class-bcs-release-046.php';
 require_once BCS_DIR . 'includes/class-bcs-release-047.php';
 require_once BCS_DIR . 'includes/class-bcs-release-048.php';
-require_once BCS_DIR . 'includes/class-bcs-release-050.php';
-require_once BCS_DIR . 'includes/class-bcs-release-050-view.php';
+require_once BCS_DIR . 'includes/class-bcs-release-051.php';
 require_once BCS_DIR . 'includes/class-bcs-templates.php';
 require_once BCS_DIR . 'includes/class-bcs-pdf.php';
 require_once BCS_DIR . 'includes/class-bcs-camp-reports.php';
@@ -122,7 +121,6 @@ add_action('plugins_loaded', function () {
     BCS_Release_032_List_Hotfix::init();
     BCS_Release_036::init();
     BCS_Release_037::init();
-    BCS_Release_038::init();
     BCS_Release_040::init();
     BCS_Release_041::init();
     BCS_Release_042::init();
@@ -132,8 +130,7 @@ add_action('plugins_loaded', function () {
     BCS_Release_046::init();
     BCS_Release_047::init();
     BCS_Release_048::init();
-    BCS_Release_050::init();
-    BCS_Release_050_View::init();
+    BCS_Release_051::init();
     BCS_Templates::init();
     BCS_PDF::init();
     BCS_Camp_Reports::init();
