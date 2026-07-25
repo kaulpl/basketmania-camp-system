@@ -28,3 +28,5 @@ jobs:
         run: php tests/paid-email-button-056-test.php
       - name: Release 0.57 regression test
         run: php tests/release-057-regression-test.php
+      - name: Release 0.58 form verification regression test
+        run: php tests/release-058-form-verification-test.php
