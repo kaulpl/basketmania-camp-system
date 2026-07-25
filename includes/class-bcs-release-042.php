@@ -10,40 +10,114 @@ final class BCS_Release_042 {
 
     private static function fields(): array {
         return [
-            'parent_first_name'=>['Imię opiekuna','text'],'parent_last_name'=>['Nazwisko opiekuna','text'],'parents_names'=>['Imiona i nazwiska rodziców','text'],'parent_email'=>['E-mail','email'],'parent_phone'=>['Telefon I','text'],'parent_phone_alt'=>['Telefon II','text'],'parent_postal_code'=>['Kod pocztowy','text'],'parent_city'=>['Miejscowość','text'],'parent_street'=>['Ulica','text'],'parent_house_number'=>['Nr domu / lokalu','text'],'child_first_name'=>['Imię uczestnika','text'],'child_last_name'=>['Nazwisko uczestnika','text'],'child_address'=>['Adres uczestnika (jeżeli inny)','textarea'],'child_birth_date'=>['Data urodzenia','date'],'child_pesel'=>['PESEL','text'],'child_height'=>['Wzrost (cm)','number'],'child_weight'=>['Waga (kg)','number'],'shirt_size'=>['Rozmiar stroju','text'],'child_club'=>['Klub','text'],'special_educational_needs'=>['Specjalne potrzeby edukacyjne','textarea'],'medical_notes'=>['Uwagi zdrowotne','textarea'],'dietary_notes'=>['Dieta i żywienie','textarea'],'vaccination_tetanus'=>['Szczepienie przeciw tężcowi – rok','text'],'vaccination_diphtheria'=>['Szczepienie przeciw błonicy – rok','text'],'vaccination_other'=>['Inne szczepienia','textarea'],'stay_contact'=>['Kontakt podczas pobytu','textarea'],'authorized_pickup'=>['Osoby upoważnione do odbioru','textarea'],'camp_notes'=>['Dodatkowe informacje dla organizatora','textarea'],'invoice_requested'=>['Faktura','checkbox'],'invoice_buyer_name'=>['Nabywca faktury','text'],'invoice_street'=>['Ulica do faktury','text'],'invoice_postal_code'=>['Kod pocztowy do faktury','text'],'invoice_city'=>['Miejscowość do faktury','text'],'invoice_nip'=>['NIP nabywcy','text'],'invoice_notes'=>['Dodatkowe dane na fakturze','textarea'],
+            'parent_first_name'=>['Imię opiekuna','text'],'parent_last_name'=>['Nazwisko opiekuna','text'],'parents_names'=>['Imiona i nazwiska rodziców','text'],'parent_email'=>['E-mail','email'],'parent_phone'=>['Telefon I','text'],'parent_phone_alt'=>['Telefon II','text'],'parent_postal_code'=>['Kod pocztowy','text'],'parent_city'=>['Miejscowość','text'],'parent_street'=>['Ulica','text'],'parent_house_number'=>['Nr domu / lokalu','text'],'child_first_name'=>['Imię uczestnika','text'],'child_last_name'=>['Nazwisko uczestnika','text'],'child_address'=>['Adres uczestnika','textarea'],'child_birth_date'=>['Data urodzenia','date'],'child_pesel'=>['PESEL','text'],'child_height'=>['Wzrost (cm)','number'],'child_weight'=>['Waga (kg)','number'],'shirt_size'=>['Rozmiar stroju','text'],'child_club'=>['Klub','text'],'special_educational_needs'=>['Specjalne potrzeby edukacyjne','textarea'],'medical_notes'=>['Uwagi zdrowotne','textarea'],'dietary_notes'=>['Dieta i żywienie','textarea'],'vaccination_tetanus'=>['Szczepienie przeciw tężcowi – rok','text'],'vaccination_diphtheria'=>['Szczepienie przeciw błonicy – rok','text'],'vaccination_other'=>['Inne szczepienia','textarea'],'stay_contact'=>['Kontakt podczas pobytu','textarea'],'authorized_pickup'=>['Osoby upoważnione do odbioru','textarea'],'camp_notes'=>['Dodatkowe informacje dla organizatora','textarea'],'invoice_requested'=>['Faktura','checkbox'],'invoice_buyer_name'=>['Nabywca faktury','text'],'invoice_street'=>['Ulica do faktury','text'],'invoice_postal_code'=>['Kod pocztowy do faktury','text'],'invoice_city'=>['Miejscowość do faktury','text'],'invoice_nip'=>['NIP nabywcy','text'],'invoice_notes'=>['Dodatkowe dane na fakturze','textarea'],
         ];
     }
 
     private static function row(int $id): ?object {
         global $wpdb;
-        return $wpdb->get_row($wpdb->prepare("SELECT r.*,a.status agreement_record_status, EXISTS(SELECT 1 FROM ".BCS_DB::table('agreement_versions')." av WHERE av.registration_id=r.id AND av.stage IN ('sent','signed')) has_final_agreement, EXISTS(SELECT 1 FROM ".BCS_DB::table('invoices')." i WHERE i.registration_id=r.id AND i.status IN ('generated','sent')) has_invoice FROM ".BCS_DB::table('registrations')." r LEFT JOIN ".BCS_DB::table('agreements')." a ON a.id=r.agreement_id WHERE r.id=%d LIMIT 1",$id));
+        return $wpdb->get_row($wpdb->prepare(
+            "SELECT r.*,a.status agreement_record_status,
+                    EXISTS(SELECT 1 FROM ".BCS_DB::table('agreement_versions')." av WHERE av.registration_id=r.id AND av.stage IN ('sent','signed')) has_final_agreement,
+                    EXISTS(SELECT 1 FROM ".BCS_DB::table('invoices')." i WHERE i.registration_id=r.id AND i.status IN ('generated','sent')) has_invoice
+             FROM ".BCS_DB::table('registrations')." r
+             LEFT JOIN ".BCS_DB::table('agreements')." a ON a.id=r.agreement_id
+             WHERE r.id=%d LIMIT 1",
+            $id
+        )) ?: null;
     }
 
     private static function locked(object $r): bool {
-        $agreement_locked=!empty($r->has_final_agreement)||in_array((string)($r->agreement_record_status??''),['pending','parent_signed','accepted'],true);
-        $invoice_locked=!empty($r->has_invoice)||in_array((string)($r->invoice_status??''),['generated','sent'],true);
-        return $agreement_locked||$invoice_locked;
+        if ((string)($r->status ?? '') === 'cancelled') return true;
+
+        $registration_status = (string)($r->agreement_status ?? '');
+        $agreement_status = (string)($r->agreement_record_status ?? '');
+        $agreement_locked = in_array($registration_status, ['pending','parent_signed','accepted'], true)
+            || in_array($agreement_status, ['pending','accepted'], true);
+        $invoice_locked = !empty($r->has_invoice)
+            || in_array((string)($r->invoice_status ?? ''), ['generated','sent'], true);
+        return $agreement_locked || $invoice_locked;
+    }
+
+    private static function parent_address(array $data, object $fallback): string {
+        $address = BCS_Utils::compose_address($data);
+        if ($address !== '') return $address;
+        return BCS_Utils::registration_address($fallback);
     }
 
     public static function ajax_get_form(): void {
-        if(!current_user_can('manage_options'))wp_send_json_error(['message'=>'Brak uprawnień.'],403);
-        check_ajax_referer('bcs_042_camp_form','nonce');$id=absint($_POST['registration_id']??0);$r=self::row($id);
-        if(!$r)wp_send_json_error(['message'=>'Nie znaleziono zgłoszenia.'],404);
-        $values=[];foreach(self::fields() as $key=>$meta)$values[$key]=$key==='invoice_requested'?(int)!empty($r->{$key}):(string)($r->{$key}??'');
-        wp_send_json_success(['values'=>$values,'locked'=>self::locked($r),'message'=>self::locked($r)?'Edycja jest zablokowana, ponieważ wygenerowano finalną umowę albo fakturę.':'']);
+        if (!current_user_can('manage_options')) wp_send_json_error(['message'=>'Brak uprawnień.'],403);
+        check_ajax_referer('bcs_042_camp_form','nonce');
+        $id = absint($_POST['registration_id'] ?? 0);
+        $r = self::row($id);
+        if (!$r) wp_send_json_error(['message'=>'Nie znaleziono zgłoszenia.'],404);
+
+        $values = [];
+        foreach (self::fields() as $key => $meta) {
+            $values[$key] = $key === 'invoice_requested' ? (int)!empty($r->{$key}) : (string)($r->{$key} ?? '');
+        }
+        if (trim((string)$values['child_address']) === '') {
+            $values['child_address'] = BCS_Utils::registration_address($r);
+        }
+
+        $locked = self::locked($r);
+        wp_send_json_success([
+            'values'=>$values,
+            'locked'=>$locked,
+            'message'=>$locked ? 'Edycja jest zablokowana, ponieważ umowa została już wysłana do podpisu albo wygenerowano fakturę.' : '',
+        ]);
     }
 
     public static function ajax_save_form(): void {
-        if(!current_user_can('manage_options'))wp_send_json_error(['message'=>'Brak uprawnień.'],403);
-        check_ajax_referer('bcs_042_camp_form','nonce');$id=absint($_POST['registration_id']??0);$r=self::row($id);
-        if(!$r)wp_send_json_error(['message'=>'Nie znaleziono zgłoszenia.'],404);
-        if(self::locked($r))wp_send_json_error(['message'=>'Nie można aktualizować danych formularza po wygenerowaniu finalnej umowy albo faktury.'],409);
-        $data=[];foreach(self::fields() as $key=>$meta){$type=$meta[1];if($type==='checkbox')$data[$key]=!empty($_POST[$key])?1:0;elseif($type==='email')$data[$key]=sanitize_email(wp_unslash($_POST[$key]??''));elseif($type==='number')$data[$key]=max(0,(float)str_replace(',','.',(string)wp_unslash($_POST[$key]??0)));elseif($type==='textarea')$data[$key]=sanitize_textarea_field(wp_unslash($_POST[$key]??''));else$data[$key]=sanitize_text_field(wp_unslash($_POST[$key]??''));}
-        foreach(['parent_first_name','parent_last_name','parent_email','parent_phone','child_first_name','child_last_name'] as $required){if(trim((string)$data[$required])==='')wp_send_json_error(['message'=>'Uzupełnij wymagane pole: '.self::fields()[$required][0].'.'],422);}
-        $data['updated_at']=BCS_Utils::now();global $wpdb;$ok=$wpdb->update(BCS_DB::table('registrations'),$data,['id'=>$id]);
-        if($ok===false)wp_send_json_error(['message'=>'Nie udało się zapisać danych.'],500);
-        BCS_Utils::log('camp_form_edited_by_admin_ajax',['fields'=>array_keys($data)],$id,(int)$r->agreement_id);
-        wp_send_json_success(['message'=>'Dane formularza obozowego zostały zapisane.']);
+        if (!current_user_can('manage_options')) wp_send_json_error(['message'=>'Brak uprawnień.'],403);
+        check_ajax_referer('bcs_042_camp_form','nonce');
+        $id = absint($_POST['registration_id'] ?? 0);
+        $r = self::row($id);
+        if (!$r) wp_send_json_error(['message'=>'Nie znaleziono zgłoszenia.'],404);
+        if (self::locked($r)) wp_send_json_error(['message'=>'Nie można aktualizować danych Formularza Obozowego po wysłaniu umowy do podpisu.'],409);
+
+        $data = [];
+        foreach (self::fields() as $key => $meta) {
+            $type = $meta[1];
+            if ($type === 'checkbox') $data[$key] = !empty($_POST[$key]) ? 1 : 0;
+            elseif ($type === 'email') $data[$key] = sanitize_email(wp_unslash($_POST[$key] ?? ''));
+            elseif ($type === 'number') $data[$key] = max(0,(float)str_replace(',','.',(string)wp_unslash($_POST[$key] ?? 0)));
+            elseif ($type === 'textarea') $data[$key] = sanitize_textarea_field(wp_unslash($_POST[$key] ?? ''));
+            else $data[$key] = sanitize_text_field(wp_unslash($_POST[$key] ?? ''));
+        }
+
+        foreach (['parent_first_name','parent_last_name','parent_email','parent_phone','child_first_name','child_last_name'] as $required) {
+            if (trim((string)$data[$required]) === '') {
+                wp_send_json_error(['message'=>'Uzupełnij wymagane pole: '.self::fields()[$required][0].'.'],422);
+            }
+        }
+
+        $data['parent_address'] = self::parent_address($data, $r);
+        if (trim((string)$data['child_address']) === '') {
+            $data['child_address'] = $data['parent_address'];
+        }
+        $data['updated_at'] = BCS_Utils::now();
+
+        global $wpdb;
+        $ok = $wpdb->update(BCS_DB::table('registrations'), $data, ['id'=>$id]);
+        if ($ok === false) wp_send_json_error(['message'=>'Nie udało się zapisać danych.'],500);
+
+        $draft_refreshed = false;
+        if (!empty($r->form_verified_at)) {
+            $draft_refreshed = (bool)BCS_Agreements::build_for_registration($id, 'draft', false);
+        }
+
+        BCS_Utils::log('camp_form_edited_by_admin_ajax', [
+            'fields'=>array_keys($data),
+            'participant_address_fallback'=>trim((string)($_POST['child_address'] ?? '')) === '',
+            'agreement_draft_refreshed'=>$draft_refreshed,
+        ], $id, (int)$r->agreement_id);
+
+        wp_send_json_success([
+            'message'=>$draft_refreshed
+                ? 'Dane Formularza Obozowego zostały zapisane, a draft umowy został odświeżony.'
+                : 'Dane Formularza Obozowego zostały zapisane.',
+        ]);
     }
 
     public static function admin_footer(): void {

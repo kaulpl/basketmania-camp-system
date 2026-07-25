@@ -20,8 +20,8 @@ if (is_string($bootstrap)) {
     if (preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $match)) $headerVersion = $match[1];
     if (preg_match("/define\('BCS_VERSION',\s*'([0-9.]+)'\)/", $bootstrap, $match)) $constantVersion = $match[1];
 }
-if ($headerVersion !== '0.61' || $constantVersion !== '0.61') {
-    $fail('Plugin version declarations are not synchronized at 0.61.');
+if (version_compare($headerVersion, '0.61', '<') || $headerVersion !== $constantVersion) {
+    $fail('Plugin version is not 0.61 or later, or version declarations differ.');
 }
 if (!str_contains((string)$bootstrap, 'class-bcs-release-061.php') || !str_contains((string)$bootstrap, 'BCS_Release_061::init();')) {
     $fail('Release 0.61 is not loaded and initialized.');

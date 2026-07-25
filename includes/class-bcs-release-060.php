@@ -51,6 +51,22 @@ final class BCS_Release_060 {
         )) ?: null;
     }
 
+    private static function participant_address(object $r): string {
+        $child = trim((string)($r->child_address ?? ''));
+        if ($child !== '') return $child;
+
+        $parts = [];
+        $street = trim((string)($r->parent_street ?? ''));
+        $number = trim((string)($r->parent_house_number ?? ''));
+        if ($street !== '' || $number !== '') $parts[] = trim($street.' '.$number);
+        $postal = trim((string)($r->parent_postal_code ?? ''));
+        $city = trim((string)($r->parent_city ?? ''));
+        if ($postal !== '' || $city !== '') $parts[] = trim($postal.' '.$city);
+        if ($parts) return implode("\n", $parts);
+
+        return trim((string)($r->parent_address ?? ''));
+    }
+
     private static function display_sections(object $r): array {
         return [
             'Rodzic / opiekun prawny' => [
@@ -66,7 +82,7 @@ final class BCS_Release_060 {
             ],
             'Uczestnik obozu' => [
                 ['Imię i nazwisko', trim((string)$r->child_first_name.' '.(string)$r->child_last_name)],
-                ['Adres uczestnika, jeżeli inny', $r->child_address ?? '', true],
+                ['Adres uczestnika', self::participant_address($r), true],
                 ['Data urodzenia', $r->child_birth_date ?? ''],
                 ['PESEL', $r->child_pesel ?? ''],
                 ['Wzrost', !empty($r->child_height) ? (string)$r->child_height.' cm' : ''],
@@ -121,7 +137,7 @@ final class BCS_Release_060 {
             ['title'=>'Uczestnik obozu', 'fields'=>[
                 ['name'=>'child_first_name','label'=>'Imię uczestnika','type'=>'text'],
                 ['name'=>'child_last_name','label'=>'Nazwisko uczestnika','type'=>'text'],
-                ['name'=>'child_address','label'=>'Adres uczestnika, jeżeli inny','type'=>'textarea','wide'=>true],
+                ['name'=>'child_address','label'=>'Adres uczestnika','type'=>'textarea','wide'=>true],
                 ['name'=>'child_birth_date','label'=>'Data urodzenia','type'=>'date'],
                 ['name'=>'child_pesel','label'=>'PESEL','type'=>'text'],
                 ['name'=>'child_height','label'=>'Wzrost (cm)','type'=>'number'],
@@ -161,15 +177,23 @@ final class BCS_Release_060 {
     }
 
     private static function editing_locked(object $r): bool {
-        $agreement_locked = !empty($r->has_final_agreement)
-            || in_array((string)($r->agreement_record_status ?? ''), ['pending','parent_signed','accepted'], true);
+        if ((string)($r->status ?? '') === 'cancelled') return true;
+
+        /*
+         * Źródłem prawdy jest bieżący stan zgłoszenia i bieżącej umowy.
+         * Historyczna wersja "sent" nie blokuje ponownej edycji po wycofaniu umowy.
+         */
+        $registration_status = (string)($r->agreement_status ?? '');
+        $agreement_status = (string)($r->agreement_record_status ?? '');
+        $agreement_locked = in_array($registration_status, ['pending','parent_signed','accepted'], true)
+            || in_array($agreement_status, ['pending','accepted'], true);
         $invoice_locked = !empty($r->has_invoice)
             || in_array((string)($r->invoice_status ?? ''), ['generated','sent'], true);
         return $agreement_locked || $invoice_locked;
     }
 
     public static function render_card_html(object $r): string {
-        $html = '<div class="bcs-card-form-root-060" data-bcs-card-form-version="060">'
+        $html = '<div class="bcs-card-form-root-060" data-bcs-card-form-version="062">'
             .'<div class="bcs-card-form-toolbar-060">'
             .'<div><strong>Pełne dane Formularza Obozowego</strong><span>Dane są pogrupowane tak samo jak w podglądzie na Liście Zgłoszeń.</span></div>';
         if (!self::editing_locked($r)) {
