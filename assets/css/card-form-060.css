@@ -1,0 +1,18 @@
+.bcs-card-form-root-060{display:block}
+.bcs-card-form-toolbar-060{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 20px;padding:14px 16px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}
+.bcs-card-form-toolbar-060>div{display:flex;flex-direction:column;gap:3px}.bcs-card-form-toolbar-060>div>strong{color:#172033}.bcs-card-form-toolbar-060>div>span{font-size:12px;color:#64748b}
+.bcs-card-form-sections-060{display:flex;flex-direction:column;gap:24px}
+.bcs-card-form-section-060{margin:0}.bcs-card-form-section-060 h3{margin:0 0 11px;padding:0 0 8px;border-bottom:2px solid #f97316;color:#172033;font-size:16px}
+.bcs-card-form-grid-060,.bcs-card-form-editor-grid-060{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+.bcs-card-form-item-060{padding:11px 13px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;min-width:0}
+.bcs-card-form-item-060.is-wide,.bcs-card-form-field-060.is-wide{grid-column:1/-1}
+.bcs-card-form-item-060 span,.bcs-card-form-field-060>span{display:block;margin-bottom:4px;font-size:12px;color:#64748b}
+.bcs-card-form-item-060 strong{display:block;color:#172033;line-height:1.45;overflow-wrap:anywhere}
+.bcs-form-verification-inline-060{margin:26px 0 0;padding:20px;border:1px solid #fdba74;border-radius:10px;background:#fff7ed}
+.bcs-form-verification-inline-060 h3{margin:0 0 8px;color:#9a3412}.bcs-form-verification-inline-060 p{margin:0;color:#7c2d12;line-height:1.5}
+.bcs-form-verification-inline-060 form{display:flex;justify-content:flex-end;margin-top:16px}
+.bcs-form-verified-060{display:flex;align-items:center;gap:12px;margin-top:24px;padding:16px 18px;border:1px solid #86efac;border-radius:10px;background:#f0fdf4;color:#166534}
+.bcs-form-verified-060>.dashicons{font-size:24px;width:24px;height:24px}.bcs-form-verified-060>div{display:flex;flex-direction:column;gap:2px}.bcs-form-verified-060>div>span{font-size:12px}
+.bcs-card-form-field-060{display:flex;flex-direction:column;gap:5px;min-width:0}.bcs-card-form-field-060 input:not([type=checkbox]),.bcs-card-form-field-060 textarea{width:100%}.bcs-card-form-field-060 textarea{min-height:92px;resize:vertical}
+.bcs-card-form-editor-actions-060{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid #e2e8f0}
+@media(max-width:700px){.bcs-card-form-toolbar-060{align-items:stretch;flex-direction:column}.bcs-card-form-grid-060,.bcs-card-form-editor-grid-060{grid-template-columns:1fr}.bcs-card-form-item-060.is-wide,.bcs-card-form-field-060.is-wide{grid-column:auto}.bcs-form-verification-inline-060 form{justify-content:stretch}.bcs-form-verification-inline-060 button,.bcs-card-form-toolbar-060 button{width:100%;justify-content:center}.bcs-card-form-editor-actions-060{flex-direction:column-reverse}.bcs-card-form-editor-actions-060 button{width:100%}}
