@@ -71,6 +71,10 @@ class BCS_PDF {
             if (class_exists('BCS_Release_057')) {
                 $html = BCS_Release_057::prepare_agreement_html($html);
             }
+            if (class_exists('BCS_Release_066')) {
+                // Ostatnia warstwa układu: białe tło, powtarzalny nagłówek i stopka.
+                $html = BCS_Release_066::prepare_agreement_html($html);
+            }
             $html = self::embed_local_assets($html);
 
             $options = new Dompdf\Options();
