@@ -23,6 +23,7 @@ if (!is_readable($autoload)) {
 }
 require_once $autoload;
 require_once $root.'/includes/class-bcs-agreement-pdf-v2.php';
+require_once $root.'/includes/class-bcs-release-071.php';
 require_once $root.'/includes/class-bcs-agreement-pdf-v2-finalizer.php';
 
 $paragraph = '<p>Organizator zapewnia bezpieczne warunki wypoczynku, opiekę wychowawczą, zakwaterowanie, wyżywienie oraz realizację programu sportowego zgodnie z umową.</p>';
@@ -64,7 +65,34 @@ if (str_contains($html, 'Załącznik nr 1 - Karta kwalifikacyjna uczestnika wypo
     exit(1);
 }
 
-$htmlPath = getenv('BCS_TEST_HTML_PATH') ?: sys_get_temp_dir().'/agreement-v2-0.70.html';
+$layoutDom = new DOMDocument('1.0', 'UTF-8');
+libxml_use_internal_errors(true);
+$layoutDom->loadHTML($html, LIBXML_HTML_NODEFDTD);
+libxml_clear_errors();
+$layoutXpath = new DOMXPath($layoutDom);
+$evidenceTable = $layoutXpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' bcs-v2-evidence-table ')]")->item(0);
+if (!$evidenceTable instanceof DOMElement) {
+    fwrite(STDERR, "FAIL: The 0.71 evidence table was not created before Dompdf rendering.\n");
+    exit(1);
+}
+$evidenceRows = $layoutXpath->query('./tbody/tr|./tr', $evidenceTable);
+if ($evidenceRows->length !== 2) {
+    fwrite(STDERR, "FAIL: The evidence table does not have exactly two rows.\n");
+    exit(1);
+}
+$expectedRoles = ['parent', 'organizer'];
+foreach ($evidenceRows as $index => $row) {
+    if (!$row instanceof DOMElement || $row->getAttribute('data-evidence-role') !== $expectedRoles[$index]) {
+        fwrite(STDERR, "FAIL: Evidence rows are not ordered Parent first, Organizer second.\n");
+        exit(1);
+    }
+    if ($layoutXpath->query('./td|./th', $row)->length !== 1) {
+        fwrite(STDERR, "FAIL: An evidence row contains more than one column.\n");
+        exit(1);
+    }
+}
+
+$htmlPath = getenv('BCS_TEST_HTML_PATH') ?: sys_get_temp_dir().'/agreement-v2-0.71.html';
 if (file_put_contents($htmlPath, $html) === false) {
     fwrite(STDERR, "FAIL: Final V2 HTML artifact could not be saved.\n");
     exit(1);
@@ -93,10 +121,10 @@ if (!str_starts_with($output, '%PDF-') || strlen($output) < 10000) {
     exit(1);
 }
 
-$path = getenv('BCS_TEST_PDF_PATH') ?: sys_get_temp_dir().'/agreement-v2-0.70.pdf';
+$path = getenv('BCS_TEST_PDF_PATH') ?: sys_get_temp_dir().'/agreement-v2-0.71.pdf';
 if (file_put_contents($path, $output) === false || !is_readable($path)) {
     fwrite(STDERR, "FAIL: Rendered PDF artifact could not be saved.\n");
     exit(1);
 }
 
-echo "Release 0.70 Dompdf render passed ({$pageCount} pages): {$path}\n";
+echo "Release 0.71 Dompdf render passed ({$pageCount} pages): {$path}\n";
