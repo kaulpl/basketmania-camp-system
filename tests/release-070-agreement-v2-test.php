@@ -28,8 +28,13 @@ $fail = static function(string $message): void {
     exit(1);
 };
 
-if (!str_contains($bootstrap, '* Version: 0.70') || !str_contains($bootstrap, "define('BCS_VERSION', '0.70')")) {
-    $fail('Plugin version declarations are not synchronized at 0.70.');
+preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $headerVersion);
+preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $bootstrap, $constantVersion);
+$currentVersion = $headerVersion[1] ?? '';
+if ($currentVersion === ''
+    || ($constantVersion[1] ?? '') !== $currentVersion
+    || version_compare($currentVersion, '0.70', '<')) {
+    $fail('Plugin version declarations must be synchronized at 0.70 or newer.');
 }
 foreach (['class-bcs-agreement-pdf-v2.php', 'BCS_Agreement_PDF_V2::init();'] as $needle) {
     if (!str_contains($bootstrap, $needle)) $fail('Agreement V2 is not loaded: '.$needle);
