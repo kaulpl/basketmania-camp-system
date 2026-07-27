@@ -79,7 +79,7 @@ foreach ([
 ] as $needle) if (!str_contains($prepared,$needle)) $fail('Prepared agreement is missing: '.$needle);
 
 $attachmentPos=strpos($prepared,'class="bcs-attachment-page-068"');
-$proofPos=strpos($prepared,'bcs-proof-page-068');
+$proofPos=$attachmentPos===false ? false : strpos($prepared,'bcs-proof-page-068',$attachmentPos+1);
 if ($attachmentPos===false || $proofPos===false || $attachmentPos >= $proofPos) $fail('Attachment and proof sections are not ordered as separate pages.');
 
 $pdf=new TestPdf068();
