@@ -23,6 +23,7 @@ if (!is_readable($autoload)) {
 }
 require_once $autoload;
 require_once $root.'/includes/class-bcs-agreement-pdf-v2.php';
+require_once $root.'/includes/class-bcs-agreement-pdf-v2-finalizer.php';
 
 $paragraph = '<p>Organizator zapewnia bezpieczne warunki wypoczynku, opiekę wychowawczą, zakwaterowanie, wyżywienie oraz realizację programu sportowego zgodnie z umową.</p>';
 $main = '<div class="bcs-agreement"><h1>UMOWA UDZIAŁU W OBOZIE KOSZYKARSKIM BASKETMANIA CAMP</h1>'
@@ -42,7 +43,18 @@ $main = '<div class="bcs-agreement"><h1>UMOWA UDZIAŁU W OBOZIE KOSZYKARSKIM BAS
     .'<table><tr><th>Potwierdzenie Organizatora</th><th>Potwierdzenie Rodzica / Opiekuna</th></tr>'
     .'<tr><td>Status: potwierdzona kodem SMS</td><td>Status: potwierdzona kodem SMS</td></tr></table></div>';
 $source = '<!doctype html><html lang="pl"><head><meta charset="utf-8"><style>@page{margin:0}</style></head><body>'.$main.'</body></html>';
-$html = BCS_Agreement_PDF_V2::prepare_pdf_html($source, 'Umowa testowa', 0);
+$html = BCS_Agreement_PDF_V2_Finalizer::finalize(
+    BCS_Agreement_PDF_V2::prepare_pdf_html($source, 'Umowa testowa', 0)
+);
+
+if (!str_contains($html, '@page{margin:32mm 15mm 20mm 15mm;}')) {
+    fwrite(STDERR, "FAIL: Final Dompdf HTML does not contain the safe page margins.\n");
+    exit(1);
+}
+if (str_contains($html, 'Załącznik nr 1 - Karta kwalifikacyjna uczestnika wypoczynku')) {
+    fwrite(STDERR, "FAIL: Redundant attachment reference was not removed before rendering.\n");
+    exit(1);
+}
 
 $options = new Dompdf\Options();
 $options->set('isRemoteEnabled', false);
