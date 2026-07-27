@@ -65,11 +65,14 @@ jobs:
       - name: Release 0.70 real Dompdf render
         env:
           BCS_TEST_PDF_PATH: /tmp/agreement-v2-0.70.pdf
+          BCS_TEST_HTML_PATH: /tmp/agreement-v2-0.70.html
         run: php tests/release-070-dompdf-render-test.php
-      - name: Upload agreement V2 PDF preview
+      - name: Upload agreement V2 preview artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: agreement-v2-0.70-preview
-          path: /tmp/agreement-v2-0.70.pdf
+          path: |
+            /tmp/agreement-v2-0.70.pdf
+            /tmp/agreement-v2-0.70.html
           if-no-files-found: ignore
