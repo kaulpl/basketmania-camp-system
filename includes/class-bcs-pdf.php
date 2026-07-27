@@ -1,6 +1,11 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
+if (!class_exists('BCS_Agreement_PDF_V2_Finalizer')
+    && is_readable(BCS_DIR.'includes/class-bcs-agreement-pdf-v2-finalizer.php')) {
+    require_once BCS_DIR.'includes/class-bcs-agreement-pdf-v2-finalizer.php';
+}
+
 class BCS_PDF {
     public static function init(): void {}
 
@@ -66,6 +71,9 @@ class BCS_PDF {
                     $title,
                     self::agreement_registration_context()
                 );
+                if (class_exists('BCS_Agreement_PDF_V2_Finalizer')) {
+                    $html = BCS_Agreement_PDF_V2_Finalizer::finalize($html);
+                }
             } else {
                 // Pozostałe dokumenty oraz awaryjna kompatybilność zachowują dawny pipeline.
                 if (class_exists('BCS_Release_052')) {
