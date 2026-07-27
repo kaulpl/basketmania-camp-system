@@ -19,7 +19,9 @@ $root = dirname(__DIR__);
 $bootstrap = (string)file_get_contents($root.'/basketmania-camp-system.php');
 $pdfSource = (string)file_get_contents($root.'/includes/class-bcs-pdf.php');
 $rendererSource = (string)file_get_contents($root.'/includes/class-bcs-agreement-pdf-v2.php');
+$finalizerSource = (string)file_get_contents($root.'/includes/class-bcs-agreement-pdf-v2-finalizer.php');
 require_once $root.'/includes/class-bcs-agreement-pdf-v2.php';
+require_once $root.'/includes/class-bcs-agreement-pdf-v2-finalizer.php';
 
 $fail = static function(string $message): void {
     fwrite(STDERR, "FAIL: {$message}\n");
@@ -48,7 +50,9 @@ $sample = '<!doctype html><html lang="pl"><head>'
     .'</div><div class="proof bcs-proof-page-069"><h2>Sekcja dowodowa zawarcia umowy</h2><p>SMS rodzica</p></div>'
     .'</div></body></html>';
 
-$prepared = BCS_Agreement_PDF_V2::prepare_pdf_html($sample, 'Umowa testowa', 0);
+$prepared = BCS_Agreement_PDF_V2_Finalizer::finalize(
+    BCS_Agreement_PDF_V2::prepare_pdf_html($sample, 'Umowa testowa', 0)
+);
 foreach ([
     'id="bcs-agreement-v2-style"',
     'class="bcs-agreement-v2"',
@@ -57,7 +61,7 @@ foreach ([
     'class="bcs-v2-content"',
     'class="bcs-v2-attachment"',
     'bcs-v2-evidence',
-    '@page{margin:32mm 15mm 20mm 15mm}',
+    '@page{margin:32mm 15mm 20mm 15mm;}',
     'position:fixed;top:-25mm',
     'position:fixed;bottom:-15mm',
     'page-break-before:always;break-before:page',
@@ -70,6 +74,9 @@ if (str_contains($prepared, 'old-logo.png') || str_contains($prepared, '@media s
     $fail('Legacy header or CSS leaked into the V2 PDF.');
 }
 if (str_contains($prepared, 'style="margin:0"')) $fail('Legacy inline styles were not removed.');
+if (str_contains($prepared, 'Załącznik nr 1 - Karta kwalifikacyjna uczestnika wypoczynku')) {
+    $fail('Redundant attachment reference can create an almost empty page before the attachment.');
+}
 
 $dom = new DOMDocument('1.0', 'UTF-8');
 libxml_use_internal_errors(true);
@@ -113,10 +120,11 @@ if (!str_contains($preview, 'bcs-v2-header') || !str_contains($preview, 'bcs-v2-
 foreach ([
     '$useAgreementV2 = class_exists(\'BCS_Agreement_PDF_V2\')',
     'BCS_Agreement_PDF_V2::prepare_pdf_html(',
+    'BCS_Agreement_PDF_V2_Finalizer::finalize($html)',
     'if ($useAgreementV2) {',
     'if (!$useAgreementV2) {',
 ] as $needle) {
-    if (!str_contains($pdfSource, $needle)) $fail('BCS_PDF does not route agreements through V2: '.$needle);
+    if (!str_contains($pdfSource, $needle)) $fail('BCS_PDF does not route agreements through finalized V2: '.$needle);
 }
 $v2Position = strpos($pdfSource, 'BCS_Agreement_PDF_V2::prepare_pdf_html');
 $legacyPosition = strpos($pdfSource, 'BCS_Release_052::prepare_pdf_html');
@@ -125,6 +133,9 @@ if ($v2Position === false || $legacyPosition === false || $v2Position >= $legacy
 }
 if (!str_contains($rendererSource, "remove_action('admin_post_bcs_agreement_view', ['BCS_Release_069'")) {
     $fail('V2 did not replace the legacy agreement preview handler.');
+}
+if (!str_contains($finalizerSource, '@page{margin:32mm 15mm 20mm 15mm;}')) {
+    $fail('V2 finalizer does not enforce the Dompdf-compatible @page declaration.');
 }
 if (str_contains($rendererSource, 'page_script') || str_contains($rendererSource, 'apply_canvas_header_footer')) {
     $fail('V2 still depends on Canvas overlays.');
