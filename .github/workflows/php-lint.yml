@@ -52,3 +52,5 @@ jobs:
         run: node --check assets/js/shirt-size-select-065.js
       - name: Release 0.66 agreement layout test
         run: php tests/release-066-agreement-layout-test.php
+      - name: Release 0.67 repeated header and footer test
+        run: php tests/release-067-repeated-header-footer-test.php
