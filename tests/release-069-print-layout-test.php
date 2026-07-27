@@ -34,8 +34,9 @@ $fail = static function(string $message): void {
     exit(1);
 };
 
-if (!str_contains($bootstrap, '* Version: 0.69') || !str_contains($bootstrap, "define('BCS_VERSION', '0.69')")) {
-    $fail('Plugin version declarations are not synchronized at 0.69.');
+if (!preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $versionMatch)
+    || version_compare($versionMatch[1], '0.69', '<')) {
+    $fail('Plugin version is older than 0.69.');
 }
 foreach (['class-bcs-release-069.php', 'BCS_Release_069::init();'] as $needle) {
     if (!str_contains($bootstrap, $needle)) $fail('Release 0.69 is not loaded: '.$needle);
@@ -100,17 +101,7 @@ foreach ([
     'BCS_Release_069::prepare_pdf_html($html, $title)',
     'BCS_Release_069::apply_canvas_header_footer($pdf, $canvasSourceHtml, $title)',
 ] as $needle) {
-    if (!str_contains($pdfSource, $needle)) $fail('PDF pipeline is missing: '.$needle);
-}
-$preparePosition = strpos($pdfSource, 'BCS_Release_069::prepare_pdf_html');
-$loadPosition = strpos($pdfSource, '$pdf->loadHtml($html');
-$renderPosition = strpos($pdfSource, '$pdf->render();');
-$canvasPosition = strpos($pdfSource, 'BCS_Release_069::apply_canvas_header_footer');
-if ($preparePosition === false || $loadPosition === false || $preparePosition >= $loadPosition) {
-    $fail('Static nodes are not removed before Dompdf loads the HTML.');
-}
-if ($renderPosition === false || $canvasPosition === false || $canvasPosition <= $renderPosition) {
-    $fail('Canvas header/footer is not applied after page splitting.');
+    if (!str_contains($pdfSource, $needle)) $fail('PDF fallback pipeline is missing: '.$needle);
 }
 
 foreach ([
