@@ -4,16 +4,23 @@ if (!defined('ABSPATH')) exit;
 /**
  * Końcowa normalizacja dokumentu V2 przed przekazaniem do Dompdf.
  *
- * Dompdf 3.x wymaga średnika w ostatniej deklaracji @page. Bez niego ignorował
- * margines całej strony, przez co elementy fixed wypadały poza arkusz. Usuwamy
- * również techniczne, powtórzone zdanie o Załączniku bezpośrednio przed jego
- * osobną stroną, aby nie tworzyło pustej strony z jednym wierszem.
+ * Dompdf traktuje `margin` elementu BODY jak margines strony. Ustawienie
+ * `body{margin:0}` kasowało więc wartości z @page i wypychało stały nagłówek
+ * oraz stopkę poza arkusz. Finalizer pozostawia margines wyłącznie w @page,
+ * dodaje jednoznaczny średnik deklaracji i usuwa redundantny wiersz przed
+ * osobną stroną Załącznika nr 1.
  */
 final class BCS_Agreement_PDF_V2_Finalizer {
     public static function finalize(string $html): string {
         $html = str_replace(
             '@page{margin:32mm 15mm 20mm 15mm}',
             '@page{margin:32mm 15mm 20mm 15mm;}',
+            $html
+        );
+
+        $html = str_replace(
+            'html,body{margin:0;padding:0;background:#fff;color:#172033;font-family:"DejaVu Sans",Arial,sans-serif;font-size:10pt;line-height:1.38}',
+            'html{margin:0;padding:0;background:#fff}body{padding:0;background:#fff;color:#172033;font-family:"DejaVu Sans",Arial,sans-serif;font-size:10pt;line-height:1.38}',
             $html
         );
 
