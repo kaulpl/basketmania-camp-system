@@ -61,7 +61,8 @@ foreach ([
     'class="bcs-v2-content"',
     'class="bcs-v2-attachment"',
     'bcs-v2-evidence',
-    '@page{margin:32mm 15mm 20mm 15mm;}',
+    '@page{margin:0;}',
+    'body{margin:32mm 15mm 20mm 15mm;',
     'position:fixed;top:-25mm',
     'position:fixed;bottom:-15mm',
     'page-break-before:always;break-before:page',
@@ -134,8 +135,8 @@ if ($v2Position === false || $legacyPosition === false || $v2Position >= $legacy
 if (!str_contains($rendererSource, "remove_action('admin_post_bcs_agreement_view', ['BCS_Release_069'")) {
     $fail('V2 did not replace the legacy agreement preview handler.');
 }
-if (!str_contains($finalizerSource, '@page{margin:32mm 15mm 20mm 15mm;}')) {
-    $fail('V2 finalizer does not enforce the Dompdf-compatible @page declaration.');
+if (!str_contains($finalizerSource, 'body{margin:32mm 15mm 20mm 15mm;')) {
+    $fail('V2 finalizer does not enforce safe margins directly on BODY.');
 }
 if (str_contains($rendererSource, 'page_script') || str_contains($rendererSource, 'apply_canvas_header_footer')) {
     $fail('V2 still depends on Canvas overlays.');
