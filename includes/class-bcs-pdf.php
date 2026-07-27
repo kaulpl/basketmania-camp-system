@@ -72,8 +72,12 @@ class BCS_PDF {
                 $html = BCS_Release_057::prepare_agreement_html($html);
             }
             if (class_exists('BCS_Release_066')) {
-                // Ostatnia warstwa układu: białe tło, powtarzalny nagłówek i stopka.
                 $html = BCS_Release_066::prepare_agreement_html($html);
+            }
+            if (class_exists('BCS_Release_067')) {
+                // Końcowa warstwa HTML ukrywa statyczne elementy nagłówka/stopki w wydruku
+                // i przywraca pomarańczowe akcenty treści umowy.
+                $html = BCS_Release_067::prepare_agreement_html($html);
             }
             $html = self::embed_local_assets($html);
 
@@ -86,6 +90,13 @@ class BCS_PDF {
             $pdf->setPaper('A4', 'portrait');
             $pdf->loadHtml($html, 'UTF-8');
             $pdf->render();
+
+            if (class_exists('BCS_Release_067')) {
+                // Canvas::page_script wykonuje callback dla każdej strony już po podziale
+                // dokumentu, dzięki czemu nagłówek i stopka nie zależą od przepływu HTML.
+                BCS_Release_067::apply_canvas_header_footer($pdf, $html, $title);
+            }
+
             return file_put_contents($path, $pdf->output()) !== false;
         } catch (Throwable $e) {
             BCS_Utils::log('pdf_error', ['message'=>$e->getMessage(), 'title'=>$title]);
