@@ -51,8 +51,18 @@ if (!str_contains($html, '@page{margin:32mm 15mm 20mm 15mm;}')) {
     fwrite(STDERR, "FAIL: Final Dompdf HTML does not contain the safe page margins.\n");
     exit(1);
 }
+if (str_contains($html, 'html,body{margin:0') || str_contains($html, 'body{margin:0')) {
+    fwrite(STDERR, "FAIL: BODY still resets Dompdf page margins to zero.\n");
+    exit(1);
+}
 if (str_contains($html, 'Załącznik nr 1 - Karta kwalifikacyjna uczestnika wypoczynku')) {
     fwrite(STDERR, "FAIL: Redundant attachment reference was not removed before rendering.\n");
+    exit(1);
+}
+
+$htmlPath = getenv('BCS_TEST_HTML_PATH') ?: sys_get_temp_dir().'/agreement-v2-0.70.html';
+if (file_put_contents($htmlPath, $html) === false) {
+    fwrite(STDERR, "FAIL: Final V2 HTML artifact could not be saved.\n");
     exit(1);
 }
 
