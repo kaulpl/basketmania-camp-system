@@ -16,8 +16,15 @@ $fail = static function(string $message): void {
     exit(1);
 };
 
-if (!str_contains($bootstrap, '* Version: 0.66') || !str_contains($bootstrap, "define('BCS_VERSION', '0.66')")) {
-    $fail('Plugin version declarations are not synchronized at 0.66.');
+$pluginVersion = '';
+$constantVersion = '';
+if (preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $match)) $pluginVersion = $match[1];
+if (preg_match("/define\('BCS_VERSION',\s*'([0-9.]+)'\)/", $bootstrap, $match)) $constantVersion = $match[1];
+if (!version_compare($pluginVersion, '0.66', '>=') || !version_compare($constantVersion, '0.66', '>=')) {
+    $fail('Plugin version must remain at least 0.66.');
+}
+if ($pluginVersion !== $constantVersion) {
+    $fail('Plugin header and BCS_VERSION are not synchronized.');
 }
 if (!str_contains($bootstrap, 'class-bcs-release-066.php') || !str_contains($bootstrap, 'BCS_Release_066::init();')) {
     $fail('Release 0.66 is not loaded and initialized.');
@@ -71,7 +78,7 @@ foreach ([
 }
 
 if (!str_contains($pdfSource, 'BCS_Release_066::prepare_agreement_html($html)')) {
-    $fail('The 0.66 decorator is not the final agreement layer before PDF rendering.');
+    $fail('The 0.66 decorator is missing from PDF rendering.');
 }
 $release057 = strpos($pdfSource, 'BCS_Release_057::prepare_agreement_html');
 $release066 = strpos($pdfSource, 'BCS_Release_066::prepare_agreement_html');
