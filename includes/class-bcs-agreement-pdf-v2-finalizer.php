@@ -5,9 +5,9 @@ if (!defined('ABSPATH')) exit;
  * Końcowa normalizacja dokumentu V2 przed przekazaniem do Dompdf.
  *
  * W Dompdf 3.x margines BODY jest stosowany jako margines każdej strony.
- * Używamy więc jawnego marginesu BODY, zamiast polegać na kolidujących
- * interpretacjach @page. Stały nagłówek i stopka są pozycjonowane względem
- * tego bezpiecznego obszaru i nie są nakładane po renderowaniu.
+ * Używamy jawnego marginesu BODY, natomiast stały nagłówek i stopkę ustawiamy
+ * dodatnimi współrzędnymi względem fizycznej kartki. Dzięki temu elementy są
+ * powtarzane, widoczne i nie nachodzą na obszar treści.
  */
 final class BCS_Agreement_PDF_V2_Finalizer {
     public static function finalize(string $html): string {
@@ -20,6 +20,17 @@ final class BCS_Agreement_PDF_V2_Finalizer {
         $html = str_replace(
             'html,body{margin:0;padding:0;background:#fff;color:#172033;font-family:"DejaVu Sans",Arial,sans-serif;font-size:10pt;line-height:1.38}',
             'html{margin:0;padding:0;background:#fff}body{margin:32mm 15mm 20mm 15mm;padding:0;background:#fff;color:#172033;font-family:"DejaVu Sans",Arial,sans-serif;font-size:10pt;line-height:1.38}',
+            $html
+        );
+
+        $html = str_replace(
+            'position:fixed;top:-25mm;',
+            'position:fixed;top:4mm;',
+            $html
+        );
+        $html = str_replace(
+            'position:fixed;bottom:-15mm;',
+            'position:fixed;bottom:4mm;',
             $html
         );
 
