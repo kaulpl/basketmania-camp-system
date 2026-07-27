@@ -7,10 +7,8 @@ define('BCS_DIR', dirname(__DIR__).'/');
 
 final class BCS_Release_066 {
     public static function logo_data_uri(): string {
-        // Poprawny mały PNG używany wyłącznie przez test adaptera Canvas.
         return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZKQAAAABJRU5ErkJggg==';
     }
-
     public static function render_agreement_view(): void {}
     public static function render_version_preview(): void {}
 }
@@ -23,10 +21,8 @@ final class TestFontMetrics067 {
 final class TestCanvas067 {
     public int $currentPage = 0;
     public array $calls = [];
-
     public function get_width(): float { return 595.28; }
     public function get_height(): float { return 841.89; }
-
     public function page_script(callable $callback): void {
         $metrics = new TestFontMetrics067();
         for ($page = 1; $page <= 3; $page++) {
@@ -34,23 +30,11 @@ final class TestCanvas067 {
             $callback($page, 3, $this, $metrics);
         }
     }
-
-    private function record(string $type, array $args): void {
-        $this->calls[$this->currentPage][] = ['type'=>$type, 'args'=>$args];
-    }
-
-    public function image(string $path, float $x, float $y, float $width, float $height): void {
-        $this->record('image', compact('path','x','y','width','height'));
-    }
-    public function line(float $x1, float $y1, float $x2, float $y2, array $color, float $width): void {
-        $this->record('line', compact('x1','y1','x2','y2','color','width'));
-    }
-    public function filled_rectangle(float $x, float $y, float $width, float $height, array $color): void {
-        $this->record('filled_rectangle', compact('x','y','width','height','color'));
-    }
-    public function text(float $x, float $y, string $text, mixed $font, float $size, array $color): void {
-        $this->record('text', compact('x','y','text','font','size','color'));
-    }
+    private function record(string $type, array $args): void { $this->calls[$this->currentPage][] = ['type'=>$type, 'args'=>$args]; }
+    public function image(string $path, float $x, float $y, float $width, float $height): void { $this->record('image', compact('path','x','y','width','height')); }
+    public function line(float $x1, float $y1, float $x2, float $y2, array $color, float $width): void { $this->record('line', compact('x1','y1','x2','y2','color','width')); }
+    public function filled_rectangle(float $x, float $y, float $width, float $height, array $color): void { $this->record('filled_rectangle', compact('x','y','width','height','color')); }
+    public function text(float $x, float $y, string $text, mixed $font, float $size, array $color): void { $this->record('text', compact('x','y','text','font','size','color')); }
 }
 
 final class TestPdf067 {
@@ -71,9 +55,14 @@ $fail = static function(string $message): void {
     exit(1);
 };
 
-if (!str_contains($bootstrap, '* Version: 0.67') || !str_contains($bootstrap, "define('BCS_VERSION', '0.67')")) {
-    $fail('Plugin version declarations are not synchronized at 0.67.');
+$pluginVersion = '';
+$constantVersion = '';
+if (preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $match)) $pluginVersion = $match[1];
+if (preg_match("/define\('BCS_VERSION',\s*'([0-9.]+)'\)/", $bootstrap, $match)) $constantVersion = $match[1];
+if (!version_compare($pluginVersion, '0.67', '>=') || !version_compare($constantVersion, '0.67', '>=')) {
+    $fail('Plugin version must remain at least 0.67.');
 }
+if ($pluginVersion !== $constantVersion) $fail('Plugin header and BCS_VERSION are not synchronized.');
 foreach (['class-bcs-release-067.php','BCS_Release_067::init();'] as $required) {
     if (!str_contains($bootstrap, $required)) $fail('Release 0.67 is not loaded: '.$required);
 }
@@ -116,9 +105,7 @@ foreach ([1,2,3] as $page) {
     $images = array_values(array_filter($pdf->canvas->calls[$page], static fn(array $call): bool => $call['type'] === 'image'));
     $image = $images[0]['args'] ?? [];
     $expectedX = (595.28 - 112.0) / 2;
-    if (abs((float)($image['x'] ?? 0) - $expectedX) > 0.01) {
-        $fail("Header logo is not centered on page {$page}.");
-    }
+    if (abs((float)($image['x'] ?? 0) - $expectedX) > 0.01) $fail("Header logo is not centered on page {$page}.");
 }
 
 foreach ([
