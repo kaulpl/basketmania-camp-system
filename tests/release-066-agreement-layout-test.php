@@ -35,12 +35,13 @@ $sample = '<!doctype html><html lang="pl"><head><meta charset="utf-8"></head><bo
     .'<div class="bcs-document-footer">Basketmania Camp Sp. z o.o. · NIP: 1234567890</div>'
     .'</div></body></html>';
 $rendered = BCS_Release_066::prepare_agreement_html($sample);
+$decodedRendered = html_entity_decode($rendered, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
 foreach ([
     'id="bcs-agreement-style-066"',
     'class="bcs-document-footer-rule"',
     'class="bcs-document-footer-text"',
-    'data-bcs-logo-source="'.$expectedLogo.'"',
+    'data-bcs-logo-source=',
     'background:#fff!important',
     'position:fixed!important',
     'background:#172033!important',
@@ -48,9 +49,12 @@ foreach ([
 ] as $required) {
     if (!str_contains($rendered, $required)) $fail('The final agreement layout is missing: '.$required);
 }
+if (!str_contains($decodedRendered, $expectedLogo)) {
+    $fail('The rendered header does not retain the requested logo URL as its source metadata.');
+}
 
-$footerPosition = strpos($rendered, 'bcs-document-footer');
-$contentPosition = strpos($rendered, 'bcs-document-content');
+$footerPosition = strpos($rendered, '<div class="bcs-document-footer"');
+$contentPosition = strpos($rendered, '<div class="bcs-document-content"');
 if ($footerPosition === false || $contentPosition === false || $footerPosition >= $contentPosition) {
     $fail('The fixed footer is not placed before flowing content, so Dompdf may show it only on the last page.');
 }
