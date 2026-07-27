@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install PDF dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress --no-dev
       - name: Check PHP syntax
         run: |
           find . -type f -name '*.php' -not -path './vendor/*' -print0 \
@@ -58,3 +60,16 @@ jobs:
         run: php tests/release-068-agreement-pagination-test.php
       - name: Release 0.69 print layout test
         run: php tests/release-069-print-layout-test.php
+      - name: Release 0.70 agreement V2 structure test
+        run: php tests/release-070-agreement-v2-test.php
+      - name: Release 0.70 real Dompdf render
+        env:
+          BCS_TEST_PDF_PATH: /tmp/agreement-v2-0.70.pdf
+        run: php tests/release-070-dompdf-render-test.php
+      - name: Upload agreement V2 PDF preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agreement-v2-0.70-preview
+          path: /tmp/agreement-v2-0.70.pdf
+          if-no-files-found: ignore
