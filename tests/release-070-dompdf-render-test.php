@@ -47,8 +47,12 @@ $html = BCS_Agreement_PDF_V2_Finalizer::finalize(
     BCS_Agreement_PDF_V2::prepare_pdf_html($source, 'Umowa testowa', 0)
 );
 
-if (!str_contains($html, '@page{margin:32mm 15mm 20mm 15mm;}')) {
-    fwrite(STDERR, "FAIL: Final Dompdf HTML does not contain the safe page margins.\n");
+if (!str_contains($html, '@page{margin:0;}')) {
+    fwrite(STDERR, "FAIL: Final Dompdf HTML does not reset @page before applying BODY margins.\n");
+    exit(1);
+}
+if (!str_contains($html, 'body{margin:32mm 15mm 20mm 15mm;')) {
+    fwrite(STDERR, "FAIL: Final Dompdf HTML does not contain explicit safe BODY margins.\n");
     exit(1);
 }
 if (str_contains($html, 'html,body{margin:0') || str_contains($html, 'body{margin:0')) {
