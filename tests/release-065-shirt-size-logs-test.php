@@ -21,8 +21,15 @@ $fail = static function(string $message): void {
     exit(1);
 };
 
-if (!str_contains($bootstrap, '* Version: 0.65') || !str_contains($bootstrap, "define('BCS_VERSION', '0.65')")) {
-    $fail('Plugin version declarations are not synchronized at 0.65.');
+$pluginVersion = '';
+$constantVersion = '';
+if (preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $match)) $pluginVersion = (string)$match[1];
+if (preg_match("/define\('BCS_VERSION',\s*'([0-9.]+)'\)/", $bootstrap, $match)) $constantVersion = (string)$match[1];
+if (!version_compare($pluginVersion, '0.65', '>=') || !version_compare($constantVersion, '0.65', '>=')) {
+    $fail('Plugin version must remain at least 0.65.');
+}
+if ($pluginVersion !== $constantVersion) {
+    $fail('Plugin header and BCS_VERSION are not synchronized.');
 }
 foreach (['class-bcs-release-065.php','BCS_Release_065::init();','class-bcs-release-065-log-context.php','BCS_Release_065_Log_Context::init();'] as $required) {
     if (!str_contains($bootstrap, $required)) $fail('Release 0.65 component is not loaded: '.$required);
