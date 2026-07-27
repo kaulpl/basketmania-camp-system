@@ -51,7 +51,12 @@ require_once $root.'/includes/class-bcs-release-068.php';
 
 $fail=static function(string $message): void { fwrite(STDERR,"FAIL: {$message}\n"); exit(1); };
 
-if (!str_contains($bootstrap,'* Version: 0.68') || !str_contains($bootstrap,"define('BCS_VERSION', '0.68')")) $fail('Version 0.68 is not synchronized.');
+if (!preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $versionMatch)
+    || version_compare($versionMatch[1], '0.68', '<')
+    || !preg_match("/define\('BCS_VERSION',\s*'([0-9.]+)'\)/", $bootstrap, $constantMatch)
+    || version_compare($constantMatch[1], '0.68', '<')) {
+    $fail('Plugin version is older than 0.68.');
+}
 foreach (['class-bcs-release-068.php','BCS_Release_068::init();'] as $needle) if (!str_contains($bootstrap,$needle)) $fail('Release 0.68 is not loaded: '.$needle);
 
 $sample='<!doctype html><html lang="pl"><head><style id="old-a">@page{margin:0} body{color:#000}</style><style id="old-b">@page{margin:29mm 14mm 24mm 14mm}</style></head><body>'
