@@ -41,6 +41,10 @@ final class BCS_Agreement_PDF_V2_Finalizer {
             1
         ) ?? $html;
 
+        if (class_exists('BCS_Release_071')) {
+            $html = BCS_Release_071::normalize_evidence_layout($html);
+        }
+
         return $html;
     }
 }

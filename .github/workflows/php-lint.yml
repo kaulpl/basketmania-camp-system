@@ -62,17 +62,19 @@ jobs:
         run: php tests/release-069-print-layout-test.php
       - name: Release 0.70 agreement V2 structure test
         run: php tests/release-070-agreement-v2-test.php
-      - name: Release 0.70 real Dompdf render
+      - name: Release 0.71 evidence layout test
+        run: php tests/release-071-evidence-layout-test.php
+      - name: Release 0.71 real Dompdf render
         env:
-          BCS_TEST_PDF_PATH: /tmp/agreement-v2-0.70.pdf
-          BCS_TEST_HTML_PATH: /tmp/agreement-v2-0.70.html
+          BCS_TEST_PDF_PATH: /tmp/agreement-v2-0.71.pdf
+          BCS_TEST_HTML_PATH: /tmp/agreement-v2-0.71.html
         run: php tests/release-070-dompdf-render-test.php
       - name: Upload agreement V2 preview artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: agreement-v2-0.70-preview
+          name: agreement-v2-0.71-preview
           path: |
-            /tmp/agreement-v2-0.70.pdf
-            /tmp/agreement-v2-0.70.html
+            /tmp/agreement-v2-0.71.pdf
+            /tmp/agreement-v2-0.71.html
           if-no-files-found: ignore
