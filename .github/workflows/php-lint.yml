@@ -54,3 +54,5 @@ jobs:
         run: php tests/release-066-agreement-layout-test.php
       - name: Release 0.67 repeated header and footer test
         run: php tests/release-067-repeated-header-footer-test.php
+      - name: Release 0.68 agreement pagination test
+        run: php tests/release-068-agreement-pagination-test.php
