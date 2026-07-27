@@ -78,9 +78,15 @@ class BCS_PDF {
                 $html = BCS_Release_067::prepare_agreement_html($html);
             }
             if (class_exists('BCS_Release_068')) {
-                // Finalna warstwa usuwa kolidujące reguły @page, rezerwuje bezpieczne
-                // marginesy oraz grupuje Załącznik nr 1 i dowody SMS na osobnych stronach.
                 $html = BCS_Release_068::prepare_agreement_html($html);
+            }
+
+            // Zachowujemy kompletny HTML wyłącznie jako źródło danych stopki dla Canvas.
+            // Do właściwego renderowania PDF w 0.69 trafia wersja bez statycznego nagłówka
+            // i stopki, więc nie mogą już pojawić się drugi raz na pierwszej stronie.
+            $canvasSourceHtml = $html;
+            if (class_exists('BCS_Release_069')) {
+                $html = BCS_Release_069::prepare_pdf_html($html, $title);
             }
             $html = self::embed_local_assets($html);
 
@@ -88,13 +94,18 @@ class BCS_PDF {
             $options->set('isRemoteEnabled', false);
             $options->set('defaultFont', 'DejaVu Sans');
             $options->set('chroot', WP_CONTENT_DIR);
+            // Dompdf domyślnie używa medium „screen”. To uruchamiało reguły @media screen,
+            // pokazywało statyczny nagłówek/stopkę i wyłączało podziały stron Załącznika.
+            $options->set('defaultMediaType', 'print');
 
             $pdf = new Dompdf\Dompdf($options);
             $pdf->setPaper('A4', 'portrait');
             $pdf->loadHtml($html, 'UTF-8');
             $pdf->render();
 
-            if (class_exists('BCS_Release_068')) {
+            if (class_exists('BCS_Release_069')) {
+                BCS_Release_069::apply_canvas_header_footer($pdf, $canvasSourceHtml, $title);
+            } elseif (class_exists('BCS_Release_068')) {
                 BCS_Release_068::apply_canvas_header_footer($pdf, $html, $title);
             } elseif (class_exists('BCS_Release_067')) {
                 BCS_Release_067::apply_canvas_header_footer($pdf, $html, $title);
