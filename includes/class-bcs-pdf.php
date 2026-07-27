@@ -75,9 +75,12 @@ class BCS_PDF {
                 $html = BCS_Release_066::prepare_agreement_html($html);
             }
             if (class_exists('BCS_Release_067')) {
-                // Końcowa warstwa HTML ukrywa statyczne elementy nagłówka/stopki w wydruku
-                // i przywraca pomarańczowe akcenty treści umowy.
                 $html = BCS_Release_067::prepare_agreement_html($html);
+            }
+            if (class_exists('BCS_Release_068')) {
+                // Finalna warstwa usuwa kolidujące reguły @page, rezerwuje bezpieczne
+                // marginesy oraz grupuje Załącznik nr 1 i dowody SMS na osobnych stronach.
+                $html = BCS_Release_068::prepare_agreement_html($html);
             }
             $html = self::embed_local_assets($html);
 
@@ -91,9 +94,9 @@ class BCS_PDF {
             $pdf->loadHtml($html, 'UTF-8');
             $pdf->render();
 
-            if (class_exists('BCS_Release_067')) {
-                // Canvas::page_script wykonuje callback dla każdej strony już po podziale
-                // dokumentu, dzięki czemu nagłówek i stopka nie zależą od przepływu HTML.
+            if (class_exists('BCS_Release_068')) {
+                BCS_Release_068::apply_canvas_header_footer($pdf, $html, $title);
+            } elseif (class_exists('BCS_Release_067')) {
                 BCS_Release_067::apply_canvas_header_footer($pdf, $html, $title);
             }
 
