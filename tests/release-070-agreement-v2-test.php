@@ -63,8 +63,8 @@ foreach ([
     'bcs-v2-evidence',
     '@page{margin:0;}',
     'body{margin:32mm 15mm 20mm 15mm;',
-    'position:fixed;top:-25mm',
-    'position:fixed;bottom:-15mm',
+    'position:fixed;top:4mm',
+    'position:fixed;bottom:4mm',
     'page-break-before:always;break-before:page',
     'font-size:9pt',
 ] as $needle) {
@@ -135,8 +135,8 @@ if ($v2Position === false || $legacyPosition === false || $v2Position >= $legacy
 if (!str_contains($rendererSource, "remove_action('admin_post_bcs_agreement_view', ['BCS_Release_069'")) {
     $fail('V2 did not replace the legacy agreement preview handler.');
 }
-if (!str_contains($finalizerSource, 'body{margin:32mm 15mm 20mm 15mm;')) {
-    $fail('V2 finalizer does not enforce safe margins directly on BODY.');
+foreach (['body{margin:32mm 15mm 20mm 15mm;', 'position:fixed;top:4mm;', 'position:fixed;bottom:4mm;'] as $needle) {
+    if (!str_contains($finalizerSource, $needle)) $fail('V2 finalizer is missing: '.$needle);
 }
 if (str_contains($rendererSource, 'page_script') || str_contains($rendererSource, 'apply_canvas_header_footer')) {
     $fail('V2 still depends on Canvas overlays.');
