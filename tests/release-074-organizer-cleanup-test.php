@@ -55,14 +55,13 @@ foreach ([
     'KSeF API 2.0 – TEST',
     'name="bcs_ksef_panel_present"',
     'name="ksef_token"',
-    'bcs_ksef_test_connection_072',
     'Zapisz ustawienia',
 ] as $needle) {
     if (!str_contains($editor, $needle)) $fail('The single Organizer form is incomplete: '.$needle);
 }
 
-if (!str_contains($release, 'position:sticky') || !str_contains($release, 'bcs-organizer-actions-074')) {
-    $fail('The single action bar is not present.');
+foreach (['bcs-ksef-test-074', 'bcs_ksef_test_connection_072', 'position:sticky', 'bcs-organizer-actions-074'] as $needle) {
+    if (!str_contains($release, $needle)) $fail('The Organizer editor behavior is incomplete: '.$needle);
 }
 
 echo "Release 0.74 Organizer cleanup checks passed.\n";
