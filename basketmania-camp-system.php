@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Basketmania Camp System
  * Description: Niezależny system zapisów, CRM, umów potwierdzanych kodem SMS, płatności Stripe i dokumentów dla Basketmania Camp.
- * Version: 0.74
+ * Version: 0.75
  * Author: Basketmania Camp
  * Text Domain: basketmania-camp
  * Requires at least: 6.5
@@ -11,7 +11,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('BCS_VERSION', '0.74');
+define('BCS_VERSION', '0.75');
 define('BCS_FILE', __FILE__);
 define('BCS_DIR', plugin_dir_path(__FILE__));
 define('BCS_URL', plugin_dir_url(__FILE__));
@@ -94,12 +94,17 @@ require_once BCS_DIR . 'includes/class-bcs-release-071.php';
 require_once BCS_DIR . 'includes/class-bcs-ksef-config.php';
 require_once BCS_DIR . 'includes/class-bcs-ksef-secret.php';
 require_once BCS_DIR . 'includes/class-bcs-ksef-install.php';
+require_once BCS_DIR . 'includes/class-bcs-ksef-crypto.php';
 require_once BCS_DIR . 'includes/class-bcs-ksef-client.php';
+require_once BCS_DIR . 'includes/class-bcs-ksef-auth.php';
 require_once BCS_DIR . 'includes/class-bcs-ksef-fa3.php';
+require_once BCS_DIR . 'includes/class-bcs-ksef-service.php';
 require_once BCS_DIR . 'includes/class-bcs-ksef-admin.php';
 require_once BCS_DIR . 'includes/class-bcs-release-072.php';
 require_once BCS_DIR . 'includes/class-bcs-release-073.php';
 require_once BCS_DIR . 'includes/class-bcs-release-074.php';
+require_once BCS_DIR . 'includes/class-bcs-release-075-organizer.php';
+require_once BCS_DIR . 'includes/class-bcs-release-075.php';
 require_once BCS_DIR . 'includes/class-bcs-templates.php';
 require_once BCS_DIR . 'includes/class-bcs-pdf.php';
 require_once BCS_DIR . 'includes/class-bcs-camp-reports.php';
@@ -187,6 +192,8 @@ add_action('plugins_loaded', function () {
     BCS_Release_072::init();
     BCS_Release_073::init();
     BCS_Release_074::init();
+    BCS_Release_075_Organizer::init();
+    BCS_Release_075::init();
     BCS_Templates::init();
     BCS_PDF::init();
     BCS_Camp_Reports::init();
