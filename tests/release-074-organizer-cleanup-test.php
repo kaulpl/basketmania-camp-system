@@ -11,8 +11,11 @@ $fail = static function(string $message): void {
     exit(1);
 };
 
-if (!str_contains($bootstrap, '* Version: 0.74') || !str_contains($bootstrap, "define('BCS_VERSION', '0.74')")) {
-    $fail('Plugin version declarations are not synchronized at 0.74.');
+preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $headerVersion);
+preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $bootstrap, $constantVersion);
+$currentVersion = $headerVersion[1] ?? '';
+if ($currentVersion === '' || ($constantVersion[1] ?? '') !== $currentVersion || version_compare($currentVersion, '0.74', '<')) {
+    $fail('Plugin version declarations must be synchronized at 0.74 or newer.');
 }
 foreach (['class-bcs-release-074.php', 'BCS_Release_074::init();'] as $needle) {
     if (!str_contains($bootstrap, $needle)) $fail('Release 0.74 is not loaded: '.$needle);
@@ -31,37 +34,15 @@ foreach ([
 
 $editorStart = strpos($release, 'private static function editor');
 $editorEnd = strpos($release, 'private static function input', $editorStart ?: 0);
-if ($editorStart === false || $editorEnd === false || $editorEnd <= $editorStart) {
-    $fail('Could not isolate the Organizer editor implementation.');
-}
+if ($editorStart === false || $editorEnd === false || $editorEnd <= $editorStart) $fail('Could not isolate the Organizer editor implementation.');
 $editor = substr($release, $editorStart, $editorEnd - $editorStart);
+if (substr_count($editor, '<form ') !== 1 || substr_count($editor, '</form>') !== 1) $fail('The Organizer editor must contain exactly one form.');
+if (substr_count($editor, 'name="bcs_save_organizer" value="1"') !== 1) $fail('The Organizer editor must contain exactly one Save button.');
+if (str_contains($editor, 'form="bcs-organizer-form-')) $fail('The Organizer editor must not use an external duplicate Save button.');
 
-if (substr_count($editor, '<form ') !== 1 || substr_count($editor, '</form>') !== 1) {
-    $fail('The Organizer editor must contain exactly one form.');
-}
-if (substr_count($editor, 'name="bcs_save_organizer" value="1"') !== 1) {
-    $fail('The Organizer editor must contain exactly one Save button.');
-}
-if (str_contains($editor, 'form="bcs-organizer-form-')) {
-    $fail('The Organizer editor must not use an external duplicate Save button.');
-}
-
-foreach ([
-    'id="bcs-organizer-form-074"',
-    'Wszystkie ustawienia podmiotu znajdują się w jednym formularzu.',
-    'Dane Organizatora',
-    'Rozliczenia i dokumenty',
-    '<strong>Stripe</strong>',
-    'KSeF API 2.0 – TEST',
-    'name="bcs_ksef_panel_present"',
-    'name="ksef_token"',
-    'Zapisz ustawienia',
-] as $needle) {
+foreach (['id="bcs-organizer-form-074"','Wszystkie ustawienia podmiotu znajdują się w jednym formularzu.','Dane Organizatora','Rozliczenia i dokumenty','<strong>Stripe</strong>','KSeF API 2.0 – TEST','name="bcs_ksef_panel_present"','name="ksef_token"','Zapisz ustawienia'] as $needle) {
     if (!str_contains($editor, $needle)) $fail('The single Organizer form is incomplete: '.$needle);
 }
-
-foreach (['bcs-ksef-test-074', 'bcs_ksef_test_connection_072', 'position:sticky', 'bcs-organizer-actions-074'] as $needle) {
-    if (!str_contains($release, $needle)) $fail('The Organizer editor behavior is incomplete: '.$needle);
-}
+foreach (['bcs-ksef-test-074','bcs_ksef_test_connection_072','position:sticky','bcs-organizer-actions-074'] as $needle) if (!str_contains($release, $needle)) $fail('The Organizer editor behavior is incomplete: '.$needle);
 
 echo "Release 0.74 Organizer cleanup checks passed.\n";
