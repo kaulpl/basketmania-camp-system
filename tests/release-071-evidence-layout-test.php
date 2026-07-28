@@ -16,8 +16,11 @@ $fail = static function(string $message): void {
     exit(1);
 };
 
-if (!str_contains($bootstrap, '* Version: 0.71') || !str_contains($bootstrap, "define('BCS_VERSION', '0.71')")) {
-    $fail('Plugin version declarations are not synchronized at 0.71.');
+preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $headerVersion);
+preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $bootstrap, $constantVersion);
+$currentVersion = $headerVersion[1] ?? '';
+if ($currentVersion === '' || ($constantVersion[1] ?? '') !== $currentVersion || version_compare($currentVersion, '0.71', '<')) {
+    $fail('Plugin version declarations must be synchronized at 0.71 or newer.');
 }
 foreach (['class-bcs-release-071.php', 'BCS_Release_071::init();'] as $needle) {
     if (!str_contains($bootstrap, $needle)) $fail('Release 0.71 is not loaded: '.$needle);
