@@ -1,9 +1,9 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-/** Niezależna migracja fundamentu KSeF, bez zmiany historycznej wersji głównej bazy. */
+/** Niezależna migracja modułu KSeF, bez zmiany historycznej wersji głównej bazy. */
 final class BCS_KSeF_Install {
-    private const DB_VERSION = '0.72.0';
+    private const DB_VERSION = '0.75.0';
     private const OPTION = 'bcs_ksef_db_version';
 
     public static function maybe_upgrade(): void {
@@ -60,14 +60,19 @@ final class BCS_KSeF_Install {
         self::add_column($invoices, 'seller_snapshot', "LONGTEXT NULL");
         self::add_column($invoices, 'buyer_snapshot', "LONGTEXT NULL");
         self::add_column($invoices, 'invoice_items_snapshot', "LONGTEXT NULL");
+        self::add_column($invoices, 'ksef_status_code', "VARCHAR(30) NULL");
+        self::add_column($invoices, 'ksef_status_description', "TEXT NULL");
+        self::add_column($invoices, 'ksef_public_key_id', "VARCHAR(190) NULL");
+        self::add_column($invoices, 'ksef_remote_xml_path', "TEXT NULL");
         self::add_index($invoices, 'ksef_status', 'ksef_status');
         self::add_index($invoices, 'ksef_invoice_reference', 'ksef_invoice_reference');
+        self::add_index($invoices, 'ksef_number', 'ksef_number');
 
         dbDelta("CREATE TABLE {$operations} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             invoice_id BIGINT UNSIGNED NULL,
             organizer_id BIGINT UNSIGNED NOT NULL,
-            operation_type VARCHAR(60) NOT NULL,
+            operation_type VARCHAR(100) NOT NULL,
             status VARCHAR(30) NOT NULL,
             reference_number VARCHAR(190) NULL,
             response_data LONGTEXT NULL,
