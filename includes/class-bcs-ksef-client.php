@@ -11,7 +11,7 @@ final class BCS_KSeF_Client {
 
     /** @return array{success:bool,http_code:int,data:array,message:string} */
     public function challenge(): array {
-        return $this->request('POST', '/auth/challenge', []);
+        return $this->request('POST', '/auth/challenge');
     }
 
     /** @return array{success:bool,http_code:int,data:array,message:string} */
