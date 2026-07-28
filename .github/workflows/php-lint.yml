@@ -68,6 +68,8 @@ jobs:
         run: php tests/release-072-ksef-foundation-test.php
       - name: Release 0.73 Organizer view test
         run: php tests/release-073-organizer-view-test.php
+      - name: Release 0.74 Organizer cleanup test
+        run: php tests/release-074-organizer-cleanup-test.php
       - name: Release 0.71 real Dompdf render
         env:
           BCS_TEST_PDF_PATH: /tmp/agreement-v2-0.71.pdf
