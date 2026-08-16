@@ -8,6 +8,7 @@ define('BCS_DIR', dirname(__DIR__).'/');
 $root = dirname(__DIR__);
 $bootstrap = (string)file_get_contents($root.'/basketmania-camp-system.php');
 $release = (string)file_get_contents($root.'/includes/class-bcs-release-076.php');
+$compat = (string)file_get_contents($root.'/includes/class-bcs-release-076-compat.php');
 $flow = (string)file_get_contents($root.'/includes/class-bcs-ksef-invoice-flow.php');
 $testDocuments = (string)file_get_contents($root.'/includes/class-bcs-ksef-test-document-service.php');
 $auth = (string)file_get_contents($root.'/includes/class-bcs-ksef-auth.php');
@@ -21,7 +22,7 @@ $fail = static function(string $message): void {
 };
 
 if (!str_contains($bootstrap, '* Version: 0.76') || !str_contains($bootstrap, "define('BCS_VERSION', '0.76')")) $fail('Plugin version declarations are not synchronized at 0.76.');
-foreach (['class-bcs-ksef-invoice-flow.php','class-bcs-ksef-test-document-service.php','class-bcs-release-076.php','BCS_KSeF_Invoice_Flow::init();','BCS_Release_076::init();'] as $needle) if (!str_contains($bootstrap, $needle)) $fail('Release 0.76 bootstrap is incomplete: '.$needle);
+foreach (['class-bcs-ksef-invoice-flow.php','class-bcs-ksef-test-document-service.php','class-bcs-release-076.php','class-bcs-release-076-compat.php','BCS_KSeF_Invoice_Flow::init();','BCS_Release_076::init();','BCS_Release_076_Compat::init();'] as $needle) if (!str_contains($bootstrap, $needle)) $fail('Release 0.76 bootstrap is incomplete: '.$needle);
 
 foreach (["DB_VERSION = '0.76.1'",'ksef_production_token_ciphertext','ksef_production_token_nonce','ksef_environment_used','ksef_delivery_completed_at',"BCS_DB::table('ksef_test_documents')"] as $needle) if (!str_contains($install, $needle)) $fail('Full KSeF database support is incomplete: '.$needle);
 
@@ -36,6 +37,7 @@ foreach (['ksef_test_documents','TEST-KSEF/','Nabywca Testowy','Sprzedawca Testo
 foreach (['Generuj fakturę','Generowanie i wysyłka do KSeF','bcs_ksef_generate_invoice_full_076','KSeF TEST','opłaconych zgłoszeń','Generuj testową fakturę KSeF','Wyślij do KSeF TEST','Testuj cały proces','Właściwe faktury wygenerowane przez CRM i przekazane do KSeF','Status KSeF','Numer KSeF','PRODUKCJA – api.ksef.mf.gov.pl'] as $needle) if (!str_contains($release, $needle)) $fail('Release 0.76 UI is incomplete: '.$needle);
 
 foreach (["remove_action('admin_init', ['BCS_KSeF_Admin', 'save_organizer_fields'], 5)",'ksef_production_token','ksef_environment','intercept_list_invoice_ajax','handle_classic_invoice_actions'] as $needle) if (!str_contains($release, $needle)) $fail('Legacy invoice/KSeF paths are not fully intercepted: '.$needle);
+foreach (['wp_ajax_bcs_057_generate_invoice','admin_post_bcs_workflow_single','BCS_KSeF_Invoice_Flow::generate_and_submit'] as $needle) if (!str_contains($compat, $needle)) $fail('Legacy invoice endpoints are not routed through KSeF: '.$needle);
 
 if (!str_contains($release, "r.total_amount>0 AND r.paid_amount>=r.total_amount")) $fail('KSeF TEST must list fully paid registrations.');
 if (!str_contains($release, "LEFT JOIN '.BCS_DB::table('ksef_test_documents')")) $fail('KSeF TEST page must use independent test documents.');
