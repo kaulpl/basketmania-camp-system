@@ -82,6 +82,8 @@ jobs:
         run: php tests/release-079-otp-autofill-test.php
       - name: Release 0.80 invoice buyer/KSeF consistency test
         run: php tests/release-080-invoice-buyer-ksef-test.php
+      - name: Release 0.81 form confirmation/date/KSeF help test
+        run: php tests/release-081-form-confirmation-date-ksef-help-test.php
       - name: Release 0.71 real Dompdf render
         env:
           BCS_TEST_PDF_PATH: /tmp/agreement-v2-0.71.pdf
