@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) exit;
 
 /** Niezależna migracja modułu KSeF, bez zmiany historycznej wersji głównej bazy. */
 final class BCS_KSeF_Install {
-    private const DB_VERSION = '0.75.0';
+    private const DB_VERSION = '0.76.1';
     private const OPTION = 'bcs_ksef_db_version';
 
     public static function maybe_upgrade(): void {
@@ -30,6 +30,7 @@ final class BCS_KSeF_Install {
         $organizers = BCS_DB::table('organizers');
         $invoices = BCS_DB::table('invoices');
         $operations = BCS_DB::table('ksef_operations');
+        $testDocuments = BCS_DB::table('ksef_test_documents');
 
         self::add_column($organizers, 'ksef_enabled', "TINYINT(1) NOT NULL DEFAULT 0");
         self::add_column($organizers, 'ksef_environment', "VARCHAR(20) NOT NULL DEFAULT 'test'");
@@ -40,6 +41,9 @@ final class BCS_KSeF_Install {
         self::add_column($organizers, 'ksef_token_ciphertext', "LONGTEXT NULL");
         self::add_column($organizers, 'ksef_token_nonce', "VARCHAR(255) NULL");
         self::add_column($organizers, 'ksef_token_configured_at', "DATETIME NULL");
+        self::add_column($organizers, 'ksef_production_token_ciphertext', "LONGTEXT NULL");
+        self::add_column($organizers, 'ksef_production_token_nonce', "VARCHAR(255) NULL");
+        self::add_column($organizers, 'ksef_production_token_configured_at', "DATETIME NULL");
         self::add_column($organizers, 'ksef_anonymize_test', "TINYINT(1) NOT NULL DEFAULT 1");
         self::add_column($organizers, 'ksef_last_test_at', "DATETIME NULL");
         self::add_column($organizers, 'ksef_last_test_status', "VARCHAR(30) NULL");
@@ -64,9 +68,16 @@ final class BCS_KSeF_Install {
         self::add_column($invoices, 'ksef_status_description', "TEXT NULL");
         self::add_column($invoices, 'ksef_public_key_id', "VARCHAR(190) NULL");
         self::add_column($invoices, 'ksef_remote_xml_path', "TEXT NULL");
+        self::add_column($invoices, 'ksef_environment_used', "VARCHAR(20) NULL");
+        self::add_column($invoices, 'ksef_delivery_completed_at', "DATETIME NULL");
+        self::add_column($invoices, 'ksef_test_status', "VARCHAR(30) NULL");
+        self::add_column($invoices, 'ksef_tested_at', "DATETIME NULL");
+        self::add_column($invoices, 'ksef_test_message', "TEXT NULL");
+        self::add_column($invoices, 'ksef_test_details', "LONGTEXT NULL");
         self::add_index($invoices, 'ksef_status', 'ksef_status');
         self::add_index($invoices, 'ksef_invoice_reference', 'ksef_invoice_reference');
         self::add_index($invoices, 'ksef_number', 'ksef_number');
+        self::add_index($invoices, 'ksef_test_status', 'ksef_test_status');
 
         dbDelta("CREATE TABLE {$operations} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -85,6 +96,39 @@ final class BCS_KSeF_Install {
             KEY organizer_id (organizer_id),
             KEY status (status),
             KEY created_at (created_at)
+        ) {$charset};");
+
+        dbDelta("CREATE TABLE {$testDocuments} (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            registration_id BIGINT UNSIGNED NOT NULL,
+            organizer_id BIGINT UNSIGNED NOT NULL,
+            invoice_number VARCHAR(190) NOT NULL,
+            issue_date DATE NOT NULL,
+            gross_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+            net_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+            vat_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+            vat_rate DECIMAL(6,2) NOT NULL DEFAULT 0,
+            status VARCHAR(30) NOT NULL DEFAULT 'not_generated',
+            xml_path TEXT NULL,
+            xml_hash CHAR(64) NULL,
+            session_reference VARCHAR(190) NULL,
+            invoice_reference VARCHAR(190) NULL,
+            ksef_number VARCHAR(190) NULL,
+            status_code VARCHAR(30) NULL,
+            status_description TEXT NULL,
+            error_code VARCHAR(100) NULL,
+            error_message TEXT NULL,
+            remote_xml_path TEXT NULL,
+            sent_at DATETIME NULL,
+            accepted_at DATETIME NULL,
+            last_checked_at DATETIME NULL,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY registration_id (registration_id),
+            KEY organizer_id (organizer_id),
+            KEY status (status),
+            KEY ksef_number (ksef_number)
         ) {$charset};");
 
         update_option(self::OPTION, self::DB_VERSION, false);

@@ -1,16 +1,22 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-/** Pełny przepływ pojedynczej faktury w środowisku KSeF TEST. */
+/** Pełny przepływ pojedynczej faktury w aktywnym środowisku KSeF. */
 final class BCS_KSeF_Service {
     private static function invoice(int $invoiceId): ?object {
         global $wpdb;
         return $wpdb->get_row($wpdb->prepare(
             'SELECT i.*, o.name organizer_name, o.ksef_enabled, o.ksef_environment, o.ksef_context_nip, '
-            .'o.ksef_token_ciphertext, o.ksef_token_nonce, o.ksef_token_configured_at '
+            .'o.ksef_token_ciphertext, o.ksef_token_nonce, o.ksef_token_configured_at, '
+            .'o.ksef_production_token_ciphertext, o.ksef_production_token_nonce, o.ksef_production_token_configured_at '
             .'FROM '.BCS_DB::table('invoices').' i JOIN '.BCS_DB::table('organizers').' o ON o.id=i.organizer_id WHERE i.id=%d',
             $invoiceId
         )) ?: null;
+    }
+
+    private static function environment(object $invoice): string {
+        $stored = trim((string)($invoice->ksef_environment_used ?? ''));
+        return BCS_KSeF_Config::allowed_environment($stored !== '' ? $stored : (string)($invoice->ksef_environment ?? 'test'));
     }
 
     private static function update(int $invoiceId, array $data): void {
@@ -25,19 +31,25 @@ final class BCS_KSeF_Service {
             'ksef_error_message'=>$message,
             'ksef_last_checked_at'=>BCS_Utils::now(),
         ]);
-        BCS_KSeF_FA3::operation((int)$invoice->id, (int)$invoice->organizer_id, 'Obsługa faktury w KSeF TEST', 'error', null, [], $code, $message);
-        return ['success'=>false, 'message'=>$message, 'status'=>$status];
+        BCS_KSeF_FA3::operation((int)$invoice->id, (int)$invoice->organizer_id, 'Obsługa faktury w KSeF', 'error', null, ['environment'=>self::environment($invoice)], $code, $message);
+        return ['success'=>false, 'message'=>$message, 'status'=>$status, 'environment'=>self::environment($invoice)];
     }
 
-    /** Wysyła przygotowany XML jako fakturę do KSeF TEST. */
+    /** Wysyła przygotowany XML jako fakturę do środowiska wybranego dla Organizatora. */
     public static function send(int $invoiceId): array {
         $invoice = self::invoice($invoiceId);
         if (!$invoice) return ['success'=>false, 'message'=>'Nie znaleziono faktury.'];
         if ((int)$invoice->ksef_enabled !== 1) return self::fail($invoice, 'KSeF nie jest włączony dla Organizatora.', 'KSEF_DISABLED');
-        if (BCS_KSeF_Config::allowed_environment((string)$invoice->ksef_environment) !== 'test') return self::fail($invoice, 'Wersja 0.75 zezwala wyłącznie na środowisko KSeF TEST.', 'ENVIRONMENT_BLOCKED');
-        if (!empty($invoice->ksef_number) && (string)$invoice->ksef_status === 'accepted') {
-            return ['success'=>true, 'message'=>'Faktura jest już przyjęta w KSeF TEST.', 'status'=>'accepted', 'ksef_number'=>(string)$invoice->ksef_number];
+        $environment = self::environment($invoice);
+        if (!BCS_KSeF_Secret::configured($invoice, $environment)) {
+            return self::fail($invoice, 'Brak tokenu KSeF dla środowiska '.BCS_KSeF_Config::label($environment).'.', 'TOKEN_MISSING');
         }
+        if (!empty($invoice->ksef_number) && (string)$invoice->ksef_status === 'accepted') {
+            return ['success'=>true, 'message'=>'Faktura jest już przyjęta w KSeF '.BCS_KSeF_Config::label($environment).'.', 'status'=>'accepted', 'ksef_number'=>(string)$invoice->ksef_number, 'environment'=>$environment];
+        }
+
+        self::update($invoiceId, ['ksef_environment_used'=>$environment]);
+        $invoice->ksef_environment_used = $environment;
 
         if (empty($invoice->ksef_xml_path) || !is_file((string)$invoice->ksef_xml_path)) {
             $prepared = BCS_KSeF_FA3::prepare_and_save($invoiceId);
@@ -55,10 +67,11 @@ final class BCS_KSeF_Service {
             'ksef_error_message'=>null,
             'ksef_attempts'=>(int)$invoice->ksef_attempts + 1,
             'ksef_sent_at'=>BCS_Utils::now(),
+            'ksef_environment_used'=>$environment,
         ]);
-        BCS_KSeF_FA3::operation($invoiceId, (int)$invoice->organizer_id, 'Rozpoczęcie wysyłki faktury KSeF', 'processing');
+        BCS_KSeF_FA3::operation($invoiceId, (int)$invoice->organizer_id, 'Rozpoczęcie wysyłki faktury KSeF', 'processing', null, ['environment'=>$environment]);
 
-        $auth = BCS_KSeF_Auth::authenticate($invoice);
+        $auth = BCS_KSeF_Auth::authenticate($invoice, $environment);
         if (empty($auth['success'])) return self::fail($invoice, 'Uwierzytelnienie KSeF nie powiodło się: '.(string)$auth['message'], 'AUTH_FAILED');
 
         try {
@@ -105,8 +118,9 @@ final class BCS_KSeF_Service {
                 'ksef_reference'=>$invoiceReference,
                 'ksef_public_key_id'=>$symmetricKeyCertificate['publicKeyId'],
                 'ksef_last_checked_at'=>BCS_Utils::now(),
+                'ksef_environment_used'=>$environment,
             ]);
-            BCS_KSeF_FA3::operation($invoiceId, (int)$invoice->organizer_id, 'Przesłanie faktury do KSeF TEST', 'processing', $invoiceReference, ['session_reference'=>$sessionReference]);
+            BCS_KSeF_FA3::operation($invoiceId, (int)$invoice->organizer_id, 'Przesłanie faktury do KSeF', 'processing', $invoiceReference, ['session_reference'=>$sessionReference,'environment'=>$environment]);
 
             $client->close_online_session($sessionReference, $accessToken);
             for ($attempt = 0; $attempt < 8; $attempt++) {
@@ -114,7 +128,7 @@ final class BCS_KSeF_Service {
                 $status = self::apply_status($invoiceId, $invoice, $client->session_invoice_status($sessionReference, $invoiceReference, $accessToken));
                 if (($status['status'] ?? '') !== 'processing') return $status;
             }
-            return ['success'=>true, 'message'=>'Faktura została przesłana do KSeF TEST i nadal jest przetwarzana. Użyj „Odśwież status”.', 'status'=>'processing'];
+            return ['success'=>true, 'message'=>'Faktura została przesłana do KSeF '.BCS_KSeF_Config::label($environment).' i nadal jest przetwarzana.', 'status'=>'processing', 'environment'=>$environment];
         } catch (Throwable $exception) {
             return self::fail($invoice, $exception->getMessage(), 'SEND_FAILED');
         }
@@ -124,12 +138,14 @@ final class BCS_KSeF_Service {
         $invoice = self::invoice($invoiceId);
         if (!$invoice) return ['success'=>false, 'message'=>'Nie znaleziono faktury.'];
         if (empty($invoice->ksef_session_reference) || empty($invoice->ksef_invoice_reference)) return self::fail($invoice, 'Brak referencji sesji lub faktury KSeF.', 'REFERENCE_MISSING');
-        $auth = BCS_KSeF_Auth::authenticate($invoice);
+        $environment = self::environment($invoice);
+        $auth = BCS_KSeF_Auth::authenticate($invoice, $environment);
         if (empty($auth['success'])) return self::fail($invoice, 'Nie udało się uwierzytelnić w KSeF: '.(string)$auth['message'], 'AUTH_FAILED');
         return self::apply_status($invoiceId, $invoice, $auth['client']->session_invoice_status((string)$invoice->ksef_session_reference, (string)$invoice->ksef_invoice_reference, (string)$auth['access_token']));
     }
 
     private static function apply_status(int $invoiceId, object $invoice, array $response): array {
+        $environment = self::environment($invoice);
         if (!$response['success']) return self::fail($invoice, 'Nie udało się pobrać statusu faktury: '.$response['message'], 'STATUS_FAILED');
         $data = $response['data'];
         $code = (int)($data['status']['code'] ?? 0);
@@ -148,10 +164,11 @@ final class BCS_KSeF_Service {
                 'ksef_status_description'=>$description,
                 'ksef_error_code'=>null,
                 'ksef_error_message'=>null,
+                'ksef_environment_used'=>$environment,
             ]);
-            BCS_KSeF_FA3::operation($invoiceId, (int)$invoice->organizer_id, 'Przyjęcie faktury przez KSeF TEST', 'success', $ksefNumber, ['status_code'=>$code,'description'=>$description]);
-            self::save_upo_if_available($invoiceId, $invoice, $data);
-            return ['success'=>true, 'message'=>'Faktura została przyjęta w KSeF TEST. Numer KSeF: '.$ksefNumber, 'status'=>'accepted', 'ksef_number'=>$ksefNumber];
+            BCS_KSeF_FA3::operation($invoiceId, (int)$invoice->organizer_id, 'Przyjęcie faktury przez KSeF', 'success', $ksefNumber, ['status_code'=>$code,'description'=>$description,'environment'=>$environment]);
+            self::save_upo_if_available($invoiceId, $invoice, $data, $environment);
+            return ['success'=>true, 'message'=>'Faktura została przyjęta w KSeF '.BCS_KSeF_Config::label($environment).'. Numer KSeF: '.$ksefNumber, 'status'=>'accepted', 'ksef_number'=>$ksefNumber, 'environment'=>$environment];
         }
         if ($code >= 400) return self::fail($invoice, 'KSeF odrzucił fakturę: '.$description.' ('.$code.').', (string)$code, 'rejected');
 
@@ -161,15 +178,16 @@ final class BCS_KSeF_Service {
             'ksef_status_code'=>(string)$code,
             'ksef_status_description'=>$description,
         ]);
-        return ['success'=>true, 'message'=>'KSeF przetwarza fakturę: '.$description.($code ? ' ('.$code.').' : ''), 'status'=>'processing'];
+        return ['success'=>true, 'message'=>'KSeF przetwarza fakturę: '.$description.($code ? ' ('.$code.').' : ''), 'status'=>'processing', 'environment'=>$environment];
     }
 
-    /** Pobiera z KSeF źródłowy XML przyjętej faktury i zapisuje go do chronionego katalogu dokumentów. */
+    /** Pobiera z KSeF źródłowy XML przyjętej faktury. */
     public static function fetch_remote_xml(int $invoiceId): array {
         $invoice = self::invoice($invoiceId);
         if (!$invoice) return ['success'=>false, 'message'=>'Nie znaleziono faktury.'];
         if (empty($invoice->ksef_number)) return ['success'=>false, 'message'=>'Faktura nie ma jeszcze numeru KSeF.'];
-        $auth = BCS_KSeF_Auth::authenticate($invoice);
+        $environment = self::environment($invoice);
+        $auth = BCS_KSeF_Auth::authenticate($invoice, $environment);
         if (empty($auth['success'])) return ['success'=>false, 'message'=>'Nie udało się uwierzytelnić w KSeF: '.(string)$auth['message']];
         $response = $auth['client']->invoice_xml((string)$invoice->ksef_number, (string)$auth['access_token']);
         if (!$response['success'] || trim((string)$response['raw']) === '') return ['success'=>false, 'message'=>'Nie udało się pobrać faktury z KSeF: '.$response['message']];
@@ -178,14 +196,14 @@ final class BCS_KSeF_Service {
         $path = $directory.'/05-ksef-pobrana-'.sanitize_file_name(str_replace(['/',':'], '-', (string)$invoice->ksef_number)).'.xml';
         if (file_put_contents($path, (string)$response['raw'], LOCK_EX) === false) return ['success'=>false, 'message'=>'Nie udało się zapisać faktury pobranej z KSeF.'];
         self::update($invoiceId, ['ksef_remote_xml_path'=>$path, 'ksef_last_checked_at'=>BCS_Utils::now()]);
-        BCS_KSeF_FA3::operation($invoiceId, (int)$invoice->organizer_id, 'Pobranie faktury z KSeF TEST', 'success', (string)$invoice->ksef_number);
-        return ['success'=>true, 'message'=>'Pobrano fakturę bezpośrednio z KSeF TEST.', 'xml'=>(string)$response['raw'], 'path'=>$path];
+        BCS_KSeF_FA3::operation($invoiceId, (int)$invoice->organizer_id, 'Pobranie faktury z KSeF', 'success', (string)$invoice->ksef_number, ['environment'=>$environment]);
+        return ['success'=>true, 'message'=>'Pobrano fakturę bezpośrednio z KSeF '.BCS_KSeF_Config::label($environment).'.', 'xml'=>(string)$response['raw'], 'path'=>$path, 'environment'=>$environment];
     }
 
-    private static function save_upo_if_available(int $invoiceId, object $invoice, array $data): void {
+    private static function save_upo_if_available(int $invoiceId, object $invoice, array $data, string $environment): void {
         $url = (string)($data['upoDownloadUrl'] ?? '');
         if ($url === '') return;
-        $client = new BCS_KSeF_Client('test');
+        $client = new BCS_KSeF_Client($environment);
         $result = $client->download_url($url);
         if (!$result['success'] || $result['raw'] === '') return;
         $directory = BCS_Document_Engine::uploads_dir().'/registration-'.(int)$invoice->registration_id;

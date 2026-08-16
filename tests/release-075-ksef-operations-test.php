@@ -19,7 +19,12 @@ $fail = static function(string $message): void {
     exit(1);
 };
 
-if (!str_contains($bootstrap, '* Version: 0.75') || !str_contains($bootstrap, "define('BCS_VERSION', '0.75')")) $fail('Plugin version declarations are not synchronized at 0.75.');
+preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $headerVersion);
+preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $bootstrap, $constantVersion);
+$currentVersion = $headerVersion[1] ?? '';
+if ($currentVersion === '' || ($constantVersion[1] ?? '') !== $currentVersion || version_compare($currentVersion, '0.75', '<')) {
+    $fail('Plugin version declarations must be synchronized at 0.75 or newer.');
+}
 foreach (['class-bcs-ksef-crypto.php','class-bcs-ksef-auth.php','class-bcs-ksef-service.php','class-bcs-release-075-organizer.php','class-bcs-release-075.php','BCS_Release_075_Organizer::init();','BCS_Release_075::init();'] as $needle) {
     if (!str_contains($bootstrap, $needle)) $fail('KSeF 0.75 bootstrap is incomplete: '.$needle);
 }
@@ -43,9 +48,11 @@ foreach (["remove_action(\$hook, ['BCS_KSeF_Admin', 'page'])",'bcs_ksef_generate
 foreach (['Token KSeF TEST jest już zapisany i zaszyfrowany','Nie musisz ponownie wypełniać pola tokenu','Pozostaw je puste, aby zachować dotychczasowy token','Wpisanie nowego tokenu zastąpi poprzedni'] as $needle) {
     if (!str_contains($organizer, $needle)) $fail('Saved-token notice is incomplete: '.$needle);
 }
-foreach (["DB_VERSION = '0.75.0'",'ksef_status_code','ksef_status_description','ksef_public_key_id','ksef_remote_xml_path'] as $needle) {
+foreach (['ksef_status_code','ksef_status_description','ksef_public_key_id','ksef_remote_xml_path'] as $needle) {
     if (!str_contains($install, $needle)) $fail('KSeF database migration is incomplete: '.$needle);
 }
+preg_match("/DB_VERSION\s*=\s*'([^']+)'/", $install, $dbVersion);
+if (empty($dbVersion[1]) || version_compare($dbVersion[1], '0.75.0', '<')) $fail('KSeF DB version must be 0.75.0 or newer.');
 
 require_once $root.'/includes/class-bcs-ksef-crypto.php';
 if (!function_exists('openssl_pkey_new')) $fail('OpenSSL is required for KSeF cryptography tests.');

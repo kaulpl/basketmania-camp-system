@@ -1,7 +1,7 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-/** Szyfrowanie tokenu KSeF poza mechanizmem zwykłych opcji WordPressa. */
+/** Szyfrowanie tokenów KSeF poza mechanizmem zwykłych opcji WordPressa. */
 final class BCS_KSeF_Secret {
     private static function key(): string {
         $material = BCS_KSeF_Config::master_key_material();
@@ -36,8 +36,27 @@ final class BCS_KSeF_Secret {
         return $plain;
     }
 
-    public static function configured(object $organizer): bool {
+    public static function configured(object $organizer, string $environment = 'test'): bool {
+        $environment = BCS_KSeF_Config::allowed_environment($environment);
+        if ($environment === 'production') {
+            return trim((string)($organizer->ksef_production_token_ciphertext ?? '')) !== ''
+                && trim((string)($organizer->ksef_production_token_nonce ?? '')) !== '';
+        }
         return trim((string)($organizer->ksef_token_ciphertext ?? '')) !== ''
             && trim((string)($organizer->ksef_token_nonce ?? '')) !== '';
+    }
+
+    public static function decrypt_for_environment(object $organizer, string $environment): string {
+        $environment = BCS_KSeF_Config::allowed_environment($environment);
+        if ($environment === 'production') {
+            return self::decrypt(
+                (string)($organizer->ksef_production_token_ciphertext ?? ''),
+                (string)($organizer->ksef_production_token_nonce ?? '')
+            );
+        }
+        return self::decrypt(
+            (string)($organizer->ksef_token_ciphertext ?? ''),
+            (string)($organizer->ksef_token_nonce ?? '')
+        );
     }
 }

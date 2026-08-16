@@ -1,10 +1,7 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-/**
- * Stała, jawna konfiguracja KSeF API 2.0.
- * W wydaniu 0.72 interfejs administracyjny dopuszcza wyłącznie środowisko TEST.
- */
+/** Jawna konfiguracja środowisk KSeF API 2.0. */
 final class BCS_KSeF_Config {
     public const API_VERSION = '2.7.0';
     public const TEST_BASE_URL = 'https://api-test.ksef.mf.gov.pl/v2';
@@ -25,14 +22,19 @@ final class BCS_KSeF_Config {
         ];
     }
 
-    /** W 0.72 celowo blokujemy możliwość wyboru DEMO i PRODUKCJI. */
+    /** Operacyjnie obsługujemy TEST i PRODUKCJĘ. DEMO pozostaje zarezerwowane. */
     public static function allowed_environment(string $environment): string {
-        return $environment === 'test' ? 'test' : 'test';
+        return $environment === 'production' ? 'production' : 'test';
     }
 
     public static function base_url(string $environment = 'test'): string {
         $environment = self::allowed_environment($environment);
         return (string)self::environments()[$environment]['base_url'];
+    }
+
+    public static function label(string $environment): string {
+        $environment = self::allowed_environment($environment);
+        return (string)self::environments()[$environment]['label'];
     }
 
     public static function master_key_material(): string {
