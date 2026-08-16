@@ -9,7 +9,7 @@ final class BCS_KSeF_FA3 {
         global $wpdb;
         $sql = "SELECT i.*, r.parent_first_name, r.parent_last_name, r.parent_address,
                        r.parent_street, r.parent_house_number, r.parent_postal_code, r.parent_city,
-                       r.invoice_buyer_name, r.invoice_street, r.invoice_postal_code, r.invoice_city,
+                       r.invoice_requested, r.invoice_buyer_name, r.invoice_street, r.invoice_postal_code, r.invoice_city,
                        r.invoice_nip, r.invoice_notes, r.child_first_name, r.child_last_name,
                        c.name camp_name, c.start_date, c.end_date, c.location,
                        o.name organizer_name, o.legal_form organizer_legal_form, o.address organizer_address,
@@ -51,17 +51,29 @@ final class BCS_KSeF_FA3 {
             'address_l1' => $anonymize ? 'ul. Testowa 1' : trim((string)($row->ksef_address_l1 ?: $row->organizer_address)),
             'address_l2' => $anonymize ? '00-001 Miasto Testowe' : trim((string)$row->ksef_address_l2),
         ];
-        $buyer = [
-            'nip' => $anonymize ? '' : self::clean_nip((string)$row->invoice_nip),
-            'name' => $anonymize ? 'Nabywca Testowy' : trim((string)($row->invoice_buyer_name ?: ($row->parent_first_name.' '.$row->parent_last_name))),
-            'country_code' => 'PL',
-            'address_l1' => $anonymize ? 'ul. Przykładowa 2' : trim((string)$row->invoice_street),
-            'address_l2' => $anonymize ? '00-002 Miasto Testowe' : trim((string)$row->invoice_postal_code.' '.(string)$row->invoice_city),
-        ];
-        if (!$anonymize && $buyer['address_l1'] === '') {
-            $buyer['address_l1'] = trim((string)$row->parent_street.' '.(string)$row->parent_house_number);
-            $buyer['address_l2'] = trim((string)$row->parent_postal_code.' '.(string)$row->parent_city);
+
+        $storedBuyer = json_decode((string)($row->buyer_snapshot ?? ''), true);
+        $storedCanonical = is_array($storedBuyer)
+            && (string)($storedBuyer['source_version'] ?? '') === '0.80'
+            && empty($storedBuyer['anonymized'])
+            && in_array((string)($storedBuyer['source'] ?? ''), ['invoice_form','parent'], true);
+        $buyer = $storedCanonical
+            ? $storedBuyer
+            : BCS_Invoices::buyer_snapshot_from_registration($row);
+        unset($buyer['errors']);
+
+        if ($anonymize) {
+            $buyer['nip'] = '';
+            $buyer['name'] = 'Nabywca Testowy';
+            $buyer['country_code'] = 'PL';
+            $buyer['address_l1'] = 'ul. Przykładowa 2';
+            $buyer['address_l2'] = '00-002 Miasto Testowe';
+            $buyer['anonymized'] = true;
+        } else {
+            $buyer['nip'] = self::clean_nip((string)($buyer['nip'] ?? ''));
+            $buyer['anonymized'] = false;
         }
+
         $item = [
             'name' => $anonymize ? 'Usługa udziału w turnusie sportowym – dane testowe' : 'Udział w turnusie '.$row->camp_name.' ('.$row->start_date.' – '.$row->end_date.')',
             'quantity' => '1',
@@ -82,7 +94,19 @@ final class BCS_KSeF_FA3 {
         $errors = [];
         if (strlen($snapshot['seller']['nip']) !== 10) $errors[] = 'Konfiguracja KSeF wymaga 10-cyfrowego NIP kontekstu Organizatora.';
         if ($snapshot['seller']['address_l1'] === '') $errors[] = 'Brakuje pierwszej linii adresu Organizatora dla KSeF.';
-        if ($snapshot['buyer']['name'] === '') $errors[] = 'Brakuje nazwy nabywcy.';
+        if ($snapshot['buyer']['name'] === '') {
+            $errors[] = (int)($row->invoice_requested ?? 0) === 1
+                ? 'Zaznaczono „Faktura: tak”, ale brakuje nazwy / imienia i nazwiska nabywcy w danych do faktury.'
+                : 'Brakuje nazwy nabywcy.';
+        }
+        if ($snapshot['buyer']['address_l1'] === '') {
+            $errors[] = (int)($row->invoice_requested ?? 0) === 1
+                ? 'Zaznaczono „Faktura: tak”, ale brakuje ulicy i numeru w danych do faktury.'
+                : 'Brakuje adresu nabywcy.';
+        }
+        if ((int)($row->invoice_requested ?? 0) === 1 && !$snapshot['buyer']['anonymized'] && $snapshot['buyer']['address_l2'] === '') {
+            $errors[] = 'Zaznaczono „Faktura: tak”, ale brakuje kodu pocztowego lub miejscowości w danych do faktury.';
+        }
         if ((float)$row->gross_amount <= 0) $errors[] = 'Kwota brutto faktury musi być większa od zera.';
         if ($errors) return ['success'=>false, 'xml'=>'', 'errors'=>$errors] + $snapshot;
 
@@ -225,7 +249,12 @@ final class BCS_KSeF_FA3 {
             'buyer_snapshot'=>wp_json_encode($result['buyer'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'invoice_items_snapshot'=>wp_json_encode([$result['item']], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         ], ['id'=>$invoiceId]);
-        self::operation($invoiceId, (int)$row->organizer_id, 'Przygotowanie XML FA(3)', 'success', null, ['sha256'=>$hash, 'schema'=>BCS_KSeF_Config::FA3_SCHEMA_VERSION]);
+        self::operation($invoiceId, (int)$row->organizer_id, 'Przygotowanie XML FA(3)', 'success', null, [
+            'sha256'=>$hash,
+            'schema'=>BCS_KSeF_Config::FA3_SCHEMA_VERSION,
+            'buyer_source'=>(string)($result['buyer']['source'] ?? ''),
+            'invoice_requested'=>(int)($row->invoice_requested ?? 0),
+        ]);
         return ['success'=>true, 'message'=>'Przygotowano testowy XML FA(3). Dokument nie został jeszcze wysłany do KSeF.', 'path'=>$path, 'hash'=>$hash];
     }
 
