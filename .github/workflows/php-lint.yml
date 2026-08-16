@@ -72,6 +72,8 @@ jobs:
         run: php tests/release-074-organizer-cleanup-test.php
       - name: Release 0.75 KSeF operations test
         run: php tests/release-075-ksef-operations-test.php
+      - name: Release 0.76 KSeF E2E test
+        run: php tests/release-076-ksef-e2e-test.php
       - name: Release 0.71 real Dompdf render
         env:
           BCS_TEST_PDF_PATH: /tmp/agreement-v2-0.71.pdf
