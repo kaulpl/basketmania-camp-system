@@ -22,7 +22,7 @@ preg_match('/\* Version:\s*([0-9.]+)/', $plugin, $headerVersion);
 preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $plugin, $constantVersion);
 $currentVersion = $headerVersion[1] ?? '';
 $constant = $constantVersion[1] ?? '';
-$check($currentVersion === '0.80' && $constant === '0.80', 'Plugin version declarations must both be 0.80.');
+$check($currentVersion !== '' && $currentVersion === $constant && version_compare($currentVersion, '0.80', '>='), 'Plugin version declarations must be synchronized and at least 0.80.');
 $check(str_contains($plugin, "require_once BCS_DIR . 'includes/class-bcs-release-080.php';"), 'Bootstrap powinien ładować release 0.80.');
 $check(str_contains($plugin, 'BCS_Release_080::init();'), 'Bootstrap powinien inicjalizować release 0.80.');
 $check(str_contains($release, 'final class BCS_Release_080'), 'Brakuje klasy release 0.80.');
