@@ -99,7 +99,8 @@ require_once BCS_DIR . 'includes/class-bcs-ksef-client.php';
 require_once BCS_DIR . 'includes/class-bcs-ksef-auth.php';
 require_once BCS_DIR . 'includes/class-bcs-ksef-fa3.php';
 require_once BCS_DIR . 'includes/class-bcs-ksef-service.php';
-require_once BCS_DIR . 'includes/class-bcs-ksef-test-service.php';
+require_once BCS_DIR . 'includes/class-bcs-ksef-invoice-flow.php';
+require_once BCS_DIR . 'includes/class-bcs-ksef-test-document-service.php';
 require_once BCS_DIR . 'includes/class-bcs-ksef-admin.php';
 require_once BCS_DIR . 'includes/class-bcs-release-072.php';
 require_once BCS_DIR . 'includes/class-bcs-release-073.php';
@@ -196,6 +197,7 @@ add_action('plugins_loaded', function () {
     BCS_Release_074::init();
     BCS_Release_075_Organizer::init();
     BCS_Release_075::init();
+    BCS_KSeF_Invoice_Flow::init();
     BCS_Release_076::init();
     BCS_Templates::init();
     BCS_PDF::init();
