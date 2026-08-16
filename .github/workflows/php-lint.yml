@@ -76,6 +76,8 @@ jobs:
         run: php tests/release-076-ksef-e2e-test.php
       - name: Release 0.77 KSeF parent delivery test
         run: php tests/release-077-ksef-parent-delivery-test.php
+      - name: Release 0.78 organizer agreement proof test
+        run: php tests/release-078-organizer-proof-test.php
       - name: Release 0.71 real Dompdf render
         env:
           BCS_TEST_PDF_PATH: /tmp/agreement-v2-0.71.pdf
