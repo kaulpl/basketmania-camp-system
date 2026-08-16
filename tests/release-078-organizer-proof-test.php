@@ -14,8 +14,9 @@ $fail = static function(string $message): void {
 preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $headerVersion);
 preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $bootstrap, $constantVersion);
 $currentVersion = $headerVersion[1] ?? '';
-if ($currentVersion !== '0.78' || ($constantVersion[1] ?? '') !== '0.78') {
-    $fail('Plugin version declarations must both be 0.78.');
+$definedVersion = $constantVersion[1] ?? '';
+if ($currentVersion === '' || $definedVersion === '' || $currentVersion !== $definedVersion || version_compare($currentVersion, '0.78', '<')) {
+    $fail('Plugin version declarations must be synchronized and at least 0.78.');
 }
 
 foreach (['class-bcs-release-078.php', 'BCS_Release_078::init();'] as $needle) {
