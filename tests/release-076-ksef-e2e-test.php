@@ -21,7 +21,12 @@ $fail = static function(string $message): void {
     exit(1);
 };
 
-if (!str_contains($bootstrap, '* Version: 0.76') || !str_contains($bootstrap, "define('BCS_VERSION', '0.76')")) $fail('Plugin version declarations are not synchronized at 0.76.');
+preg_match('/\* Version:\s*([0-9.]+)/', $bootstrap, $headerVersion);
+preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $bootstrap, $constantVersion);
+$currentVersion = $headerVersion[1] ?? '';
+if ($currentVersion === '' || ($constantVersion[1] ?? '') !== $currentVersion || version_compare($currentVersion, '0.76', '<')) {
+    $fail('Plugin version declarations must be synchronized at 0.76 or newer.');
+}
 foreach (['class-bcs-ksef-invoice-flow.php','class-bcs-ksef-test-document-service.php','class-bcs-release-076.php','class-bcs-release-076-compat.php','BCS_KSeF_Invoice_Flow::init();','BCS_Release_076::init();','BCS_Release_076_Compat::init();'] as $needle) if (!str_contains($bootstrap, $needle)) $fail('Release 0.76 bootstrap is incomplete: '.$needle);
 
 foreach (["DB_VERSION = '0.76.1'",'ksef_production_token_ciphertext','ksef_production_token_nonce','ksef_environment_used','ksef_delivery_completed_at',"BCS_DB::table('ksef_test_documents')"] as $needle) if (!str_contains($install, $needle)) $fail('Full KSeF database support is incomplete: '.$needle);
@@ -30,7 +35,7 @@ foreach (['PRODUCTION_BASE_URL','https://api.ksef.mf.gov.pl/v2','return $environ
 foreach (['ksef_production_token_ciphertext','decrypt_for_environment','configured(object $organizer, string $environment'] as $needle) if (!str_contains($secret, $needle)) $fail('Separate environment tokens are incomplete: '.$needle);
 foreach (['forcedEnvironment','new BCS_KSeF_Client($environment)','decrypt_for_environment','environment\'=>$environment'] as $needle) if (!str_contains($auth, $needle)) $fail('Environment-aware authentication is incomplete: '.$needle);
 
-foreach (['BCS_Invoices::ensure_invoice','BCS_KSeF_FA3::prepare_and_save','BCS_KSeF_Service::send','BCS_KSeF_Service::refresh_status','ksef_finalize_invoice_076','environment === \'production\'','nie został automatycznie wysłany rodzicowi','invoice_delivery_after_ksef'] as $needle) if (!str_contains($flow, $needle)) $fail('Operational invoice flow is incomplete: '.$needle);
+foreach (['BCS_Invoices::ensure_invoice','BCS_KSeF_FA3::prepare_and_save','BCS_KSeF_Service::send','BCS_KSeF_Service::refresh_status','ksef_finalize_invoice_076','after_acceptance','invoice_delivery_after_ksef'] as $needle) if (!str_contains($flow, $needle)) $fail('Operational invoice flow is incomplete: '.$needle);
 
 foreach (['ksef_test_documents','TEST-KSEF/','Nabywca Testowy','Sprzedawca Testowy Basketmania','BCS_KSeF_Auth::authenticate($r,\'test\')','send_online_invoice','session_invoice_status'] as $needle) if (!str_contains($testDocuments, $needle)) $fail('Independent KSeF TEST document flow is incomplete: '.$needle);
 
