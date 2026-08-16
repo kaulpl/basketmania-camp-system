@@ -108,6 +108,7 @@ require_once BCS_DIR . 'includes/class-bcs-release-074.php';
 require_once BCS_DIR . 'includes/class-bcs-release-075-organizer.php';
 require_once BCS_DIR . 'includes/class-bcs-release-075.php';
 require_once BCS_DIR . 'includes/class-bcs-release-076.php';
+require_once BCS_DIR . 'includes/class-bcs-release-076-compat.php';
 require_once BCS_DIR . 'includes/class-bcs-templates.php';
 require_once BCS_DIR . 'includes/class-bcs-pdf.php';
 require_once BCS_DIR . 'includes/class-bcs-camp-reports.php';
@@ -199,6 +200,7 @@ add_action('plugins_loaded', function () {
     BCS_Release_075::init();
     BCS_KSeF_Invoice_Flow::init();
     BCS_Release_076::init();
+    BCS_Release_076_Compat::init();
     BCS_Templates::init();
     BCS_PDF::init();
     BCS_Camp_Reports::init();
