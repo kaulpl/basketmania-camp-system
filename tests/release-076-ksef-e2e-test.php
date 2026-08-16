@@ -26,9 +26,9 @@ foreach (['class-bcs-ksef-invoice-flow.php','class-bcs-ksef-test-document-servic
 
 foreach (["DB_VERSION = '0.76.1'",'ksef_production_token_ciphertext','ksef_production_token_nonce','ksef_environment_used','ksef_delivery_completed_at',"BCS_DB::table('ksef_test_documents')"] as $needle) if (!str_contains($install, $needle)) $fail('Full KSeF database support is incomplete: '.$needle);
 
-foreach (['PRODUCTION_BASE_URL','https://api.ksef.mf.gov.pl/v2',"return $environment === 'production' ? 'production' : 'test'",'label(string $environment)'] as $needle) if (!str_contains($config, $needle)) $fail('TEST/PRODUCTION configuration is incomplete: '.$needle);
+foreach (['PRODUCTION_BASE_URL','https://api.ksef.mf.gov.pl/v2','return $environment === \'production\' ? \'production\' : \'test\'','label(string $environment)'] as $needle) if (!str_contains($config, $needle)) $fail('TEST/PRODUCTION configuration is incomplete: '.$needle);
 foreach (['ksef_production_token_ciphertext','decrypt_for_environment','configured(object $organizer, string $environment'] as $needle) if (!str_contains($secret, $needle)) $fail('Separate environment tokens are incomplete: '.$needle);
-foreach (['forcedEnvironment','new BCS_KSeF_Client($environment)','decrypt_for_environment','environment'=>$environment] as $needle) if (!str_contains($auth, $needle)) $fail('Environment-aware authentication is incomplete: '.$needle);
+foreach (['forcedEnvironment','new BCS_KSeF_Client($environment)','decrypt_for_environment','environment\'=>$environment'] as $needle) if (!str_contains($auth, $needle)) $fail('Environment-aware authentication is incomplete: '.$needle);
 
 foreach (['BCS_Invoices::ensure_invoice','BCS_KSeF_FA3::prepare_and_save','BCS_KSeF_Service::send','BCS_KSeF_Service::refresh_status','ksef_finalize_invoice_076','environment === \'production\'','nie został automatycznie wysłany rodzicowi','invoice_delivery_after_ksef'] as $needle) if (!str_contains($flow, $needle)) $fail('Operational invoice flow is incomplete: '.$needle);
 
