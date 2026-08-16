@@ -23,16 +23,16 @@ foreach ([
     'po poprawnym przyjęciu przez KSeF przekazuje PDF rodzicowi niezależnie od środowiska',
     'if (empty($invoice->ksef_delivery_completed_at))',
     'self::deliver($invoice, $registrationId, $environment)',
-    "$wpdb->update(BCS_DB::table('invoices'), ['ksef_delivery_completed_at'=>BCS_Utils::now()]",
-    "'PDF został przekazany rodzicowi.'",
-    "BCS_Mailer::send((string)$registration->parent_email",
+    "'ksef_delivery_completed_at'=>BCS_Utils::now()",
+    'PDF został przekazany rodzicowi.',
+    'BCS_Mailer::send((string)$registration->parent_email',
     "'invoice_delivery_after_ksef'",
-    "'ksef_environment'=>BCS_KSeF_Config::label($environment)",
+    "'ksef_environment'=>BCS_KSeF_Config::label(\$environment)",
 ] as $needle) {
     if (!str_contains($flow, $needle)) $fail('Environment-independent KSeF delivery is incomplete: '.$needle);
 }
 
-if (str_contains($flow, "if ($environment === 'production')")) {
+if (str_contains($flow, 'if ($environment === \'production\')')) {
     $fail('Parent PDF delivery must not be limited to production anymore.');
 }
 if (str_contains($flow, 'dokument nie został automatycznie wysłany rodzicowi')) {
@@ -43,7 +43,7 @@ foreach ([
     'schedule_previously_accepted_invoices',
     "ksef_status='accepted'",
     'ksef_delivery_completed_at IS NULL',
-    "wp_schedule_single_event(time() + $delay, 'bcs_ksef_finalize_invoice_076'",
+    'wp_schedule_single_event(time() + $delay, \'bcs_ksef_finalize_invoice_076\'',
     "BCS_DB::table('invoices')",
     'Osobne dokumenty z modułu KSeF TEST są w innej tabeli',
 ] as $needle) {
