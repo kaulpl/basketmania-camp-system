@@ -56,6 +56,53 @@ class BCS_Invoices {
         return 'data:image/png;base64,'.base64_encode((string)file_get_contents($path));
     }
 
+    /**
+     * Jedno źródło danych nabywcy dla PDF oraz KSeF.
+     * invoice_requested=1 oznacza świadomy wybór danych z sekcji fakturowej i nie wolno
+     * wtedy po cichu zastępować brakujących pól danymi rodzica.
+     *
+     * @return array{source:string,source_version:string,anonymized:bool,nip:string,name:string,country_code:string,address_l1:string,address_l2:string,errors:array}
+     */
+    public static function buyer_snapshot_from_registration(object $r): array {
+        $requested = (int)($r->invoice_requested ?? 0) === 1;
+        $errors = [];
+
+        if ($requested) {
+            $name = trim((string)($r->invoice_buyer_name ?? ''));
+            $addressL1 = trim((string)($r->invoice_street ?? ''));
+            $addressL2 = trim((string)($r->invoice_postal_code ?? '').' '.(string)($r->invoice_city ?? ''));
+            $nip = preg_replace('/\D+/', '', (string)($r->invoice_nip ?? '')) ?: '';
+            if ($name === '') $errors[] = 'Brakuje nazwy / imienia i nazwiska nabywcy w danych do faktury.';
+            if ($addressL1 === '') $errors[] = 'Brakuje ulicy i numeru w danych do faktury.';
+            if (trim((string)($r->invoice_postal_code ?? '')) === '') $errors[] = 'Brakuje kodu pocztowego w danych do faktury.';
+            if (trim((string)($r->invoice_city ?? '')) === '') $errors[] = 'Brakuje miejscowości w danych do faktury.';
+            $source = 'invoice_form';
+        } else {
+            $name = trim((string)($r->parent_first_name ?? '').' '.(string)($r->parent_last_name ?? ''));
+            $addressL1 = trim((string)($r->parent_street ?? '').' '.(string)($r->parent_house_number ?? ''));
+            $addressL2 = trim((string)($r->parent_postal_code ?? '').' '.(string)($r->parent_city ?? ''));
+            if ($addressL1 === '' && $addressL2 === '') {
+                $addressL1 = trim((string)($r->parent_address ?? ''));
+            }
+            $nip = '';
+            if ($name === '') $errors[] = 'Brakuje imienia i nazwiska rodzica / opiekuna do faktury.';
+            if ($addressL1 === '' && $addressL2 === '') $errors[] = 'Brakuje adresu rodzica / opiekuna do faktury.';
+            $source = 'parent';
+        }
+
+        return [
+            'source'=>$source,
+            'source_version'=>'0.80',
+            'anonymized'=>false,
+            'nip'=>$nip,
+            'name'=>$name,
+            'country_code'=>'PL',
+            'address_l1'=>$addressL1,
+            'address_l2'=>$addressL2,
+            'errors'=>$errors,
+        ];
+    }
+
     public static function ensure_invoice(int $registration_id): string {
         global $wpdb;
         $existing=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('invoices')." WHERE registration_id=%d ORDER BY id DESC LIMIT 1",$registration_id));
@@ -88,10 +135,20 @@ class BCS_Invoices {
         $number=self::next_number((int)$r->organizer_id,$year,$prefix);
         $vat_rate=(float)($settings['invoice_vat_rate']??0);$gross=(float)$r->paid_amount;$net=$vat_rate>0?$gross/(1+$vat_rate/100):$gross;$vat=$gross-$net;
         $money=static fn(float $v):string=>number_format($v,2,',',' ').' PLN';
+        $buyer=self::buyer_snapshot_from_registration($r);
+        if(!empty($buyer['errors'])){
+            BCS_Utils::log('invoice_buyer_data_incomplete_080',[
+                'invoice_requested'=>(int)($r->invoice_requested??0),
+                'buyer_source'=>$buyer['source'],
+                'errors'=>$buyer['errors'],
+            ],$registration_id,null);
+            return '';
+        }
+        $buyerAddress=trim((string)$buyer['address_l1']."\n".(string)$buyer['address_l2']);
         $vars=[
             '{{LOGO_DATA_URI}}'=>self::logo_data_uri(),'{{INVOICE_NUMBER}}'=>$number,'{{ORGANIZER_NAME}}'=>esc_html($r->organizer_name),'{{ORGANIZER_ADDRESS}}'=>nl2br(esc_html($r->organizer_address)),
             '{{ORGANIZER_NIP}}'=>esc_html($r->organizer_nip),'{{ORGANIZER_EMAIL}}'=>esc_html($r->organizer_email),'{{ORGANIZER_PHONE}}'=>esc_html($r->organizer_phone),
-            '{{BUYER_NAME}}'=>esc_html(trim((string)($r->invoice_buyer_name??''))!==''?(string)$r->invoice_buyer_name:trim($r->parent_first_name.' '.$r->parent_last_name)),'{{BUYER_ADDRESS}}'=>nl2br(esc_html(trim((string)($r->invoice_street??'')."\n".trim((string)($r->invoice_postal_code??'').' '.(string)($r->invoice_city??'')))?:BCS_Utils::registration_address($r))),'{{BUYER_NIP}}'=>esc_html((string)($r->invoice_nip??'')),'{{INVOICE_NOTES}}'=>nl2br(esc_html((string)($r->invoice_notes??''))),
+            '{{BUYER_NAME}}'=>esc_html((string)$buyer['name']),'{{BUYER_ADDRESS}}'=>nl2br(esc_html($buyerAddress)),'{{BUYER_NIP}}'=>esc_html((string)$buyer['nip']),'{{INVOICE_NOTES}}'=>nl2br(esc_html((string)($r->invoice_notes??''))),
             '{{ISSUE_PLACE}}'=>esc_html($r->location ?: 'Pelplin'),'{{ISSUE_DATE}}'=>BCS_Utils::today('d-m-Y'),'{{SALE_DATE}}'=>BCS_Utils::today('d-m-Y'),
             '{{PAYMENT_DATE}}'=>!empty($r->paid_at)?esc_html(wp_date('d-m-Y',strtotime($r->paid_at))):BCS_Utils::today('d-m-Y'),
             '{{CAMP_NAME}}'=>esc_html($r->camp_name),'{{CAMP_DATES}}'=>esc_html($r->start_date.' – '.$r->end_date),
@@ -103,14 +160,15 @@ class BCS_Invoices {
         $dir=BCS_Document_Engine::uploads_dir().'/registration-'.$registration_id;if(!is_dir($dir))wp_mkdir_p($dir);
         $base='03-faktura-'.sanitize_file_name(str_replace('/','-',$number));$pdf=$dir.'/'.$base.'.pdf';$html_path=$dir.'/'.$base.'.html';
         $path=BCS_PDF::generate($html,$pdf,'Faktura '.$number)?$pdf:$html_path;if($path===$html_path)file_put_contents($path,$html);
-        $inserted=$wpdb->insert(BCS_DB::table('invoices'),['registration_id'=>$registration_id,'organizer_id'=>$r->organizer_id,'invoice_number'=>$number,'issue_date'=>BCS_Utils::today('Y-m-d'),'gross_amount'=>$gross,'net_amount'=>$net,'vat_amount'=>$vat,'vat_rate'=>$vat_rate,'status'=>'generated','file_path'=>$path,'ksef_status'=>'not_sent','created_at'=>BCS_Utils::now()]);
+        $snapshotForDb=$buyer;unset($snapshotForDb['errors']);
+        $inserted=$wpdb->insert(BCS_DB::table('invoices'),['registration_id'=>$registration_id,'organizer_id'=>$r->organizer_id,'invoice_number'=>$number,'issue_date'=>BCS_Utils::today('Y-m-d'),'gross_amount'=>$gross,'net_amount'=>$net,'vat_amount'=>$vat,'vat_rate'=>$vat_rate,'status'=>'generated','file_path'=>$path,'ksef_status'=>'not_sent','buyer_snapshot'=>wp_json_encode($snapshotForDb,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES),'created_at'=>BCS_Utils::now()]);
         if($inserted===false || !(int)$wpdb->insert_id){
             BCS_Utils::log('invoice_create_failed',['invoice_number'=>$number,'database_error'=>(string)$wpdb->last_error],$registration_id,null);
             return '';
         }
         $invoice_id=(int)$wpdb->insert_id;
         $wpdb->update(BCS_DB::table('registrations'),['invoice_status'=>'generated','updated_at'=>BCS_Utils::now()],['id'=>$registration_id]);
-        BCS_Utils::log('invoice_created',['invoice_id'=>$invoice_id,'invoice_number'=>$number,'path'=>$path],$registration_id,null);
+        BCS_Utils::log('invoice_created',['invoice_id'=>$invoice_id,'invoice_number'=>$number,'path'=>$path,'buyer_source'=>$buyer['source'],'invoice_requested'=>(int)($r->invoice_requested??0)],$registration_id,null);
         return $path;
         } finally {
             delete_option($number_lock_key);
@@ -151,7 +209,8 @@ class BCS_Invoices {
         $sms_result=BCS_SMS::send((string)$r->parent_phone,$sms);$sms_ok=!empty($sms_result['success']);
         $now=BCS_Utils::now();
         $wpdb->update(BCS_DB::table('invoices'),['status'=>$email_ok?'sent':'generated','sent_at'=>$email_ok?$now:null,'email_status'=>$email_ok?'sent':'failed','sms_status'=>$sms_ok?'sent':'failed'],['id'=>(int)$invoice->id]);
-        $wpdb->update(BCS_DB::table('registrations'),['invoice_status'=>$email_ok?'sent':'generated','invoice_sent_at'=>$email_ok?$now:null,'invoice_requested'=>0,'updated_at'=>$now],['id'=>$registration_id]);
+        // invoice_requested jest historyczną deklaracją rodzica i nie może być zerowane po wystawieniu faktury.
+        $wpdb->update(BCS_DB::table('registrations'),['invoice_status'=>$email_ok?'sent':'generated','invoice_sent_at'=>$email_ok?$now:null,'updated_at'=>$now],['id'=>$registration_id]);
             BCS_Utils::log('invoice_delivery',['invoice_id'=>(int)$invoice->id,'invoice_number'=>$invoice->invoice_number,'email_success'=>$email_ok,'email_error'=>$email_ok?'':BCS_Mailer::last_error(),'sms_success'=>$sms_ok,'sms_error'=>$sms_ok?'':(string)($sms_result['error']??''),'email_body'=>$body,'sms_body'=>$sms],$registration_id,null);
             return true;
         } finally {
