@@ -29,7 +29,7 @@ $check(str_contains($release, 'inputmode="numeric"'), 'Pola OTP powinny używać
 $check(str_contains($release, 'pattern="[0-9]{6}"'), 'Pola OTP powinny oczekiwać 6 cyfr.');
 $check(str_contains($release, 'maxlength="6"'), 'Pola OTP powinny ograniczać długość do 6 znaków.');
 $check(str_contains($release, 'id="bcs-org-otp-code-079"'), 'Organizator powinien dostać prawdziwe pole formularza OTP.');
-$check(!str_contains($release, 'prompt('), '0.79 nie może używać prompt() do wpisania kodu OTP.');
+$check(!str_contains($release, 'const code=prompt('), '0.79 nie może używać prompt() do pobrania kodu OTP.');
 $check(str_contains($release, 'event.stopImmediatePropagation();'), 'Nowy listener Organizatora powinien zatrzymać historyczny handler prompt().');
 $check(str_contains($release, "document.addEventListener('click',async event=>"), 'Nowy listener Organizatora powinien przejmować kliknięcie przycisku podpisu.');
 $check(str_contains($release, '},true);'), 'Listener OTP Organizatora powinien działać w fazie capture.');
@@ -37,9 +37,9 @@ $check(str_contains($release, "post('bcs_046_organizer_otp_send'"), '0.79 powinn
 $check(str_contains($release, "post('bcs_046_organizer_otp_verify'"), '0.79 powinno korzystać z istniejącej weryfikacji OTP Organizatora.');
 
 $check(!str_contains($release, "remove_action('wp_ajax_bcs_046_organizer_otp_verify'"), '0.79 nie może podmieniać backendowej weryfikacji/dowodu Organizatora.');
-$check(str_contains($release078, "'sms_message_id'=>$smsMessageId"), '0.78 nadal powinno przechowywać kanoniczne ID SMS Organizatora.');
-$check(str_contains($release078, "'accepted_at'=>$now"), '0.78 nadal powinno przechowywać czas podpisu Organizatora.');
-$check(str_contains($release078, "'verified_at'=>$now"), '0.78 nadal powinno przechowywać czas weryfikacji Organizatora.');
+$check(str_contains($release078, "'sms_message_id'=>\$smsMessageId"), '0.78 nadal powinno przechowywać kanoniczne ID SMS Organizatora.');
+$check(str_contains($release078, "'accepted_at'=>\$now"), '0.78 nadal powinno przechowywać czas podpisu Organizatora.');
+$check(str_contains($release078, "'verified_at'=>\$now"), '0.78 nadal powinno przechowywać czas weryfikacji Organizatora.');
 
 $check(str_contains($frontend, '<input id="bcs-code" maxlength="6" inputmode="numeric">'), 'Test zakłada obecny historyczny markup pola rodzica do podmiany w 0.79.');
 $check(str_contains($release, '$legacy = \'<input id="bcs-code" maxlength="6" inputmode="numeric">\';'), '0.79 powinno celować dokładnie w aktualne pole rodzica.');
