@@ -3,15 +3,18 @@ if (!defined('ABSPATH')) exit;
 
 /** Jednorazowe uwierzytelnienie tokenem KSeF i pozyskanie access tokenu. */
 final class BCS_KSeF_Auth {
-    /** @return array{success:bool,message:string,access_token?:string,refresh_token?:string,client?:BCS_KSeF_Client,certificates?:array,reference?:string} */
-    public static function authenticate(object $organizer): array {
+    /** @return array{success:bool,message:string,access_token?:string,refresh_token?:string,client?:BCS_KSeF_Client,certificates?:array,reference?:string,environment?:string} */
+    public static function authenticate(object $organizer, ?string $forcedEnvironment = null): array {
         try {
             if (!BCS_KSeF_Config::master_key_available()) throw new RuntimeException('Brak klucza BCS_KSEF_SECRET_KEY lub rozszerzenia Sodium.');
-            if (!BCS_KSeF_Secret::configured($organizer)) throw new RuntimeException('Organizator nie ma zapisanego tokenu KSeF TEST.');
+            $environment = BCS_KSeF_Config::allowed_environment($forcedEnvironment ?? (string)($organizer->ksef_environment ?? 'test'));
+            if (!BCS_KSeF_Secret::configured($organizer, $environment)) {
+                throw new RuntimeException('Organizator nie ma zapisanego tokenu KSeF dla środowiska '.BCS_KSeF_Config::label($environment).'.');
+            }
             $nip = preg_replace('/\D+/', '', (string)($organizer->ksef_context_nip ?? '')) ?: '';
             if (strlen($nip) !== 10) throw new RuntimeException('NIP kontekstu KSeF musi zawierać 10 cyfr.');
 
-            $client = new BCS_KSeF_Client('test');
+            $client = new BCS_KSeF_Client($environment);
             $challenge = $client->challenge();
             if (!$challenge['success']) throw new RuntimeException('Nie udało się pobrać wyzwania KSeF: '.$challenge['message']);
             $challengeValue = (string)($challenge['data']['challenge'] ?? '');
@@ -26,7 +29,7 @@ final class BCS_KSeF_Auth {
             if (!$certificatesResult['success']) throw new RuntimeException('Nie udało się pobrać kluczy KSeF: '.$certificatesResult['message']);
             $certificates = self::certificates($certificatesResult['data']);
             $tokenKey = BCS_KSeF_Crypto::select_public_key($certificates, 'KsefTokenEncryption');
-            $plainToken = BCS_KSeF_Secret::decrypt((string)$organizer->ksef_token_ciphertext, (string)$organizer->ksef_token_nonce);
+            $plainToken = BCS_KSeF_Secret::decrypt_for_environment($organizer, $environment);
             $encryptedToken = BCS_KSeF_Crypto::rsa_oaep_sha256_encrypt($plainToken.'|'.$timestampMs, $tokenKey['certificate']);
 
             $init = $client->init_token_auth([
@@ -61,12 +64,13 @@ final class BCS_KSeF_Auth {
 
             return [
                 'success'=>true,
-                'message'=>'Uwierzytelniono Organizatora w KSeF TEST.',
+                'message'=>'Uwierzytelniono Organizatora w KSeF '.BCS_KSeF_Config::label($environment).'.',
                 'access_token'=>$accessToken,
                 'refresh_token'=>$refreshToken,
                 'client'=>$client,
                 'certificates'=>$certificates,
                 'reference'=>$reference,
+                'environment'=>$environment,
             ];
         } catch (Throwable $exception) {
             return ['success'=>false, 'message'=>$exception->getMessage()];
