@@ -184,10 +184,10 @@ final class BCS_KSeF_Invoice_Flow {
             'email_status'=>$emailOk ? 'sent' : 'failed',
             'sms_status'=>$smsOk ? 'sent' : 'failed',
         ], ['id'=>(int)$invoice->id]);
+        // invoice_requested opisuje deklarację rodzica i po przyjęciu KSeF musi pozostać bez zmian.
         $wpdb->update(BCS_DB::table('registrations'), [
             'invoice_status'=>$emailOk ? 'sent' : 'generated',
             'invoice_sent_at'=>$emailOk ? $now : null,
-            'invoice_requested'=>0,
             'updated_at'=>$now,
         ], ['id'=>$registrationId]);
 
@@ -198,6 +198,7 @@ final class BCS_KSeF_Invoice_Flow {
             'ksef_environment'=>BCS_KSeF_Config::label($environment),
             'email_success'=>$emailOk,
             'sms_success'=>$smsOk,
+            'invoice_requested'=>(int)($registration->invoice_requested ?? 0),
         ], $registrationId, null);
 
         return ['success'=>$emailOk, 'message'=>$emailOk ? 'Wysłano e-mail z PDF faktury.' : BCS_Mailer::last_error()];
