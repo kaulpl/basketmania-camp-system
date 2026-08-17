@@ -84,6 +84,8 @@ jobs:
         run: php tests/release-080-invoice-buyer-ksef-test.php
       - name: Release 0.81 form confirmation/date/KSeF help test
         run: php tests/release-081-form-confirmation-date-ksef-help-test.php
+      - name: Release 0.82 KSeF buyer hard guard test
+        run: php tests/release-082-ksef-buyer-hard-guard-test.php
       - name: Release 0.71 real Dompdf render
         env:
           BCS_TEST_PDF_PATH: /tmp/agreement-v2-0.71.pdf
