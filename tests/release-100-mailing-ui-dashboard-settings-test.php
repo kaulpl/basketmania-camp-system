@@ -32,7 +32,8 @@ $check(str_contains($css, '.bcs-mail-card'), 'Powinny istnieć nowoczesne karty 
 // Segmenty bez ręcznego wpisywania ID/roku.
 $check(str_contains($r100, 'public static function audience_catalog()'), '1.00 powinno budować katalog segmentów z danych systemu.');
 $check(str_contains($r100, "SELECT DISTINCT YEAR(start_date)"), 'Lata powinny pochodzić z turnusów zapisanych w systemie.');
-$check(str_contains($r100, "SELECT id,name,start_date,end_date,status FROM "."BCS_DB::table('camps')"), 'Turnusy powinny pochodzić z tabeli camps.');
+$check(str_contains($r100, 'SELECT id,name,start_date,end_date,status FROM '), 'Katalog turnusów powinien pobierać nazwę i daty turnusu.');
+$check(str_contains($r100, "BCS_DB::table('camps')"), 'Katalog turnusów powinien pochodzić z tabeli camps.');
 $check(str_contains($r100, "BCS_Release_097::audience_contacts"), 'Liczby przy segmentach powinny używać tego samego filtra aktywnych zgód co kampania.');
 $check(str_contains($r100, 'data-bcs-audience-year'), 'Rok powinien być wybierany z listy rozwijanej.');
 $check(str_contains($r100, 'data-bcs-audience-camp'), 'Turnus powinien być wybierany z listy rozwijanej.');
