@@ -6,10 +6,30 @@ if (!defined('ABSPATH')) exit;
  */
 final class BCS_Release_098 {
     private const CLICK_ACTION = 'bcs_marketing_click_098';
+    private const CONTACT_PAGE = 'bcs-mailing-contact-history';
+    private const CAMPAIGN_PAGE = 'bcs-mailing-campaign-history';
 
     public static function init(): void {
         add_action('admin_post_'.self::CLICK_ACTION, [__CLASS__, 'handle_click']);
         add_action('admin_post_nopriv_'.self::CLICK_ACTION, [__CLASS__, 'handle_click']);
+        add_action('admin_menu', [__CLASS__, 'admin_menu'], 99);
+    }
+
+    public static function admin_menu(): void {
+        add_submenu_page(null, 'Historia kontaktu mailingowego', 'Historia kontaktu mailingowego', 'manage_options', self::CONTACT_PAGE, [__CLASS__, 'contact_history_page']);
+        add_submenu_page(null, 'Szczegóły kampanii mailingowej', 'Szczegóły kampanii mailingowej', 'manage_options', self::CAMPAIGN_PAGE, [__CLASS__, 'campaign_history_page']);
+    }
+
+    public static function contact_history_page(): void {
+        echo '<div class="wrap"><h1>Historia kontaktu mailingowego</h1>';
+        self::render_contact_history(absint($_GET['contact_id'] ?? 0));
+        echo '</div>';
+    }
+
+    public static function campaign_history_page(): void {
+        echo '<div class="wrap"><h1>Szczegóły kampanii mailingowej</h1>';
+        self::render_campaign_history(absint($_GET['campaign_id'] ?? 0));
+        echo '</div>';
     }
 
     public static function tracking_url(object $recipient, object $campaign): string {
@@ -34,11 +54,11 @@ final class BCS_Release_098 {
     }
 
     public static function contact_history_url(int $contactId): string {
-        return add_query_arg(['page'=>'bcs-mailing','tab'=>'contacts','contact_id'=>$contactId], admin_url('admin.php'));
+        return add_query_arg(['page'=>self::CONTACT_PAGE,'contact_id'=>$contactId], admin_url('admin.php'));
     }
 
     public static function campaign_history_url(int $campaignId): string {
-        return add_query_arg(['page'=>'bcs-mailing','tab'=>'campaign','campaign_id'=>$campaignId,'history'=>1], admin_url('admin.php'));
+        return add_query_arg(['page'=>self::CAMPAIGN_PAGE,'campaign_id'=>$campaignId], admin_url('admin.php'));
     }
 
     public static function year_summary_html(int $contactId): string {
