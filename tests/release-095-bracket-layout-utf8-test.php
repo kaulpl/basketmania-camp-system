@@ -26,16 +26,20 @@ $check(str_contains($release095, "remove_action('admin_post_'.self::ACTION, [BCS
 $check(str_contains($release095, "add_action('admin_post_'.self::ACTION, [__CLASS__, 'bracket_pdf'], 20)"), '0.95 powinno obsługiwać istniejącą akcję generatora drabinki.');
 $check(!str_contains($release095, 'Losowanie automatyczne · uczestnicy zarejestrowani i opłaceni:'), 'Nowy PDF nie powinien zawierać opisu losowania/liczby uczestników.');
 $check(!str_contains($release095, 'Format wydruku: A3 poziomo'), 'Nowy PDF nie powinien zawierać technicznego opisu formatu wydruku.');
-$check(str_contains($release095, '<?xml version="1.0" encoding="UTF-8"?>'), 'SVG powinien jawnie deklarować UTF-8.');
-$check(str_contains($release095, 'font-family:"DejaVu Sans"'), 'SVG powinien jawnie używać DejaVu Sans dla polskich znaków.');
+$check(str_contains($release095, '<?xml version="1.0" encoding="UTF-8"?>'), 'SVG kontrolny powinien jawnie deklarować UTF-8.');
+$check(str_contains($release095, 'font-family:"DejaVu Sans"'), 'SVG kontrolny powinien jawnie używać DejaVu Sans.');
 $check(str_contains($release095, 'fit_participant_label'), 'Etykiety uczestników powinny mieć mechanizm dopasowania do pola.');
 $check(str_contains($release095, 'wrap_words'), 'Długie etykiety powinny móc przechodzić do drugiej linii.');
+$check(str_contains($release095, 'render_pdf_bytes'), 'Produkcja PDF powinna korzystać z osobnego bezpośredniego renderera.');
+$check(str_contains($release095, '$canvas->text('), 'Tekst powinien być rysowany bezpośrednio na canvasie PDF, a nie jako tekst wewnątrz SVG.');
+$check(str_contains($release095, 'getTextWidth('), 'Dopasowanie tekstu powinno mierzyć rzeczywistą szerokość fontem Dompdf.');
+$check(str_contains($release095, "getFont('DejaVu Sans', 'normal')"), 'Bezpośredni renderer powinien pobierać prawdziwy font DejaVu Sans.');
 $check(str_contains($release095, "setPaper('A3', 'landscape')"), 'PDF nadal musi być A3 poziomo.');
 $check(str_contains($release094, 'Generuj drabinkę'), 'Przycisk Generuj drabinkę z 0.94 powinien pozostać aktywny.');
 
 $polish = 'Zażółć gęślą jaźń ŁŚŹŻĆŃÓĘĄ';
 $encoded = BCS_Release_095::xml_text($polish);
-$check(!str_contains($encoded, '?'), 'Kodowanie polskich znaków nie może zamieniać ich na znak zapytania.');
+$check(!str_contains($encoded, '?'), 'Kodowanie kontrolnego SVG nie może zamieniać polskich znaków na znak zapytania.');
 $check(str_contains($encoded, '&#x17C;'), 'Ż/ż powinno być kodowane jako encja Unicode XML.');
 $check(str_contains($encoded, '&#x142;'), 'ł powinno być kodowane jako encja Unicode XML.');
 $check(str_contains($encoded, '&#x15B;') || str_contains($encoded, '&#x15A;'), 'ś/Ś powinno być kodowane jako encja Unicode XML.');
@@ -81,12 +85,12 @@ $camp = (object)[
 ];
 $svg = BCS_Release_095::build_bracket_svg($participants60, $camp);
 $decodedSvg = html_entity_decode($svg, ENT_QUOTES | ENT_XML1, 'UTF-8');
-$check(str_starts_with($svg, '<?xml version="1.0" encoding="UTF-8"?><svg'), 'Drabinka 0.95 powinna być prawidłowym SVG UTF-8.');
+$check(str_starts_with($svg, '<?xml version="1.0" encoding="UTF-8"?><svg'), 'Drabinka kontrolna 0.95 powinna być prawidłowym SVG UTF-8.');
 $check(!str_contains($decodedSvg, 'Losowanie automatyczne'), 'W podglądzie 60-osobowym nie może być technicznego opisu losowania.');
 $check(!str_contains($decodedSvg, 'Format wydruku'), 'W podglądzie 60-osobowym nie może być technicznego opisu A3.');
-$check(str_contains($decodedSvg, 'Łódź Śląska'), 'Nazwa turnusu z polskimi znakami powinna przetrwać generowanie SVG.');
-$check(str_contains($decodedSvg, 'FINAŁ'), 'Polskie Ł w nagłówku FINAŁ musi być poprawne.');
-$check(str_contains($decodedSvg, 'ZWYCIĘZCA'), 'Polskie Ę w ZWYCIĘZCA musi być poprawne.');
+$check(str_contains($decodedSvg, 'Łódź Śląska'), 'Nazwa turnusu z polskimi znakami powinna przetrwać generowanie SVG kontrolnego.');
+$check(str_contains($decodedSvg, 'FINAŁ'), 'Polskie Ł w nagłówku FINAŁ musi być poprawne w SVG kontrolnym.');
+$check(str_contains($decodedSvg, 'ZWYCIĘZCA'), 'Polskie Ę w ZWYCIĘZCA musi być poprawne w SVG kontrolnym.');
 foreach ($participants60 as $participant) {
     $numberToken = '[#'.$participant->jersey_number.']';
     $check(substr_count($decodedSvg, $numberToken) === 1, 'Każdy numer koszulki powinien pojawić się dokładnie raz: '.$numberToken);
@@ -101,22 +105,13 @@ $autoload = $root.'/vendor/autoload.php';
 if (file_exists($autoload)) {
     require_once $autoload;
     try {
-        $dataUri = 'data:image/svg+xml;base64,'.base64_encode($svg);
-        $html = '<!doctype html><html lang="pl"><head><meta charset="UTF-8"><style>@page{size:A3 landscape;margin:6mm}html,body{margin:0;padding:0}img{display:block;width:100%;height:auto}</style></head><body><img src="'.$dataUri.'"></body></html>';
-        $options = new Dompdf\Options();
-        $options->set('isRemoteEnabled', false);
-        $options->set('defaultFont', 'DejaVu Sans');
-        $pdf = new Dompdf\Dompdf($options);
-        $pdf->setPaper('A3', 'landscape');
-        $pdf->loadHtml($html, 'UTF-8');
-        $pdf->render();
-        $bytes = $pdf->output();
-        $check(str_starts_with($bytes, '%PDF'), 'Realny render 60-osobowej drabinki powinien zwrócić PDF.');
+        $bytes = BCS_Release_095::render_pdf_bytes($participants60, $camp);
+        $check(str_starts_with($bytes, '%PDF'), 'Bezpośredni render 60-osobowej drabinki powinien zwrócić PDF.');
         $check(strlen($bytes) > 7000, 'Realny PDF 60-osobowej drabinki nie powinien być pusty.');
         $pdfPath = getenv('BCS_TEST_BRACKET_PDF_PATH') ?: '';
         if ($pdfPath !== '') file_put_contents($pdfPath, $bytes);
     } catch (Throwable $e) {
-        $check(false, 'Realny render 60-osobowej drabinki A3 przez Dompdf nie powiódł się: '.$e->getMessage());
+        $check(false, 'Bezpośredni render 60-osobowej drabinki A3 przez Dompdf nie powiódł się: '.$e->getMessage());
     }
 }
 
