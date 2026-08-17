@@ -90,6 +90,10 @@ jobs:
         run: php tests/release-083-invoice-profile-tab-test.php
       - name: Release 0.84 KSeF additional description test
         run: php tests/release-084-ksef-additional-description-test.php
+      - name: Release 0.85 Chrome WebOTP test
+        run: php tests/release-085-chrome-webotp-test.php
+      - name: Check 0.85 WebOTP JavaScript syntax
+        run: node --check assets/js/webotp-085.js
       - name: Release 0.71 real Dompdf render
         env:
           BCS_TEST_PDF_PATH: /tmp/agreement-v2-0.71.pdf
