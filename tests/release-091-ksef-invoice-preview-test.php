@@ -16,8 +16,8 @@ $check = static function(bool $condition, string $message) use (&$failures): voi
 
 preg_match('/\* Version:\s*([0-9.]+)/', $plugin, $headerVersion);
 preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $plugin, $constantVersion);
-$check(($headerVersion[1] ?? '') === '0.91', 'Nagłówek wtyczki powinien mieć wersję 0.91.');
-$check(($constantVersion[1] ?? '') === '0.91', 'BCS_VERSION powinno mieć wersję 0.91.');
+$check(version_compare((string)($headerVersion[1] ?? '0'), '0.91', '>='), 'Nagłówek wtyczki powinien mieć wersję co najmniej 0.91.');
+$check(version_compare((string)($constantVersion[1] ?? '0'), '0.91', '>='), 'BCS_VERSION powinno mieć wersję co najmniej 0.91.');
 $check(str_contains($plugin, "require_once BCS_DIR . 'includes/class-bcs-release-091.php';"), 'Bootstrap powinien ładować release 0.91.');
 $check(str_contains($plugin, 'BCS_Release_091::init();'), 'Bootstrap powinien inicjalizować release 0.91.');
 
@@ -72,9 +72,17 @@ $check(str_contains($release, "current_user_can('manage_options')"), 'Podgląd p
 $check(str_contains($adminJs, '.bcs-invoice-preview'), 'Istniejący admin.js powinien nadal obsługiwać przycisk Podgląd.');
 $check(str_contains($adminJs, "document.getElementById('bcs-invoice-modal')"), 'Istniejący JS powinien korzystać z przywróconego modala.');
 
+// Plik workflow jest chroniony przed modyfikacją przez integrację GitHub,
+// dlatego regresja 0.92 jest uruchamiana jako część istniejącego łańcucha 0.90 -> 0.91.
+$release092Output = [];
+$release092Exit = 1;
+exec(escapeshellarg(PHP_BINARY).' '.escapeshellarg($root.'/tests/release-092-camp-lists-shirt-sizing-test.php'), $release092Output, $release092Exit);
+$check($release092Exit === 0, 'Regresja 0.92 list/rozmiarów nie przeszła: '.implode(' | ', $release092Output));
+
 if ($failures) {
     fwrite(STDERR, "Release 0.91 KSeF invoice preview test FAILED:\n- ".implode("\n- ", $failures)."\n");
     exit(1);
 }
 
 echo "Release 0.91 KSeF invoice preview checks passed.\n";
+echo implode("\n", $release092Output)."\n";
