@@ -100,6 +100,8 @@ jobs:
         run: node --check assets/js/invoice-profile-086.js
       - name: Release 0.87 native invoice accordion test
         run: php tests/release-087-native-invoice-accordion-test.php
+      - name: Release 0.88 single KSeF description test
+        run: php tests/release-088-single-ksef-description-test.php
       - name: Release 0.71 real Dompdf render
         env:
           BCS_TEST_PDF_PATH: /tmp/agreement-v2-0.71.pdf
