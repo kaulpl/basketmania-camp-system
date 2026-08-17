@@ -13,6 +13,7 @@ final class BCS_Release_101 {
         // remove_submenu_page() usuwa pozycję menu, ale nie usuwa tego callbacku.
         // 1.00 rejestrowało więc nowy renderer obok starego renderera 0.96.
         add_action('admin_menu', [__CLASS__, 'detach_legacy_mailing_renderer'], 1500);
+        add_action('admin_enqueue_scripts', [__CLASS__, 'assets'], 1600);
     }
 
     public static function detach_legacy_mailing_renderer(): void {
@@ -21,5 +22,11 @@ final class BCS_Release_101 {
         if ($hook === '') return;
 
         remove_action($hook, [BCS_Release_096::class, 'mailing_page']);
+    }
+
+    public static function assets(string $hook): void {
+        $page = sanitize_key(wp_unslash($_GET['page'] ?? ''));
+        if ($page !== self::PAGE) return;
+        wp_enqueue_style('bcs-mailing-101', BCS_URL.'assets/mailing-101.css', ['bcs-mailing-100'], BCS_VERSION);
     }
 }
