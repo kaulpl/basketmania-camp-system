@@ -108,6 +108,20 @@ jobs:
         run: php tests/release-090-mail-reply-modal-test.php
       - name: Check 0.90 mail reply JavaScript syntax
         run: node --check assets/js/mail-reply-090.js
+      - name: Release 0.95 bracket A3 layout and UTF-8 test
+        env:
+          BCS_TEST_BRACKET_PDF_PATH: /tmp/bracket-0.95-60.pdf
+          BCS_TEST_BRACKET_SVG_PATH: /tmp/bracket-0.95-60.svg
+        run: php tests/release-095-bracket-layout-utf8-test.php
+      - name: Upload 0.95 bracket preview artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bracket-0.95-60-preview
+          path: |
+            /tmp/bracket-0.95-60.pdf
+            /tmp/bracket-0.95-60.svg
+          if-no-files-found: ignore
       - name: Release 0.71 real Dompdf render
         env:
           BCS_TEST_PDF_PATH: /tmp/agreement-v2-0.71.pdf
