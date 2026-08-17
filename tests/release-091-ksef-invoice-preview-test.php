@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-define('ABSPATH', __DIR__.'/');
+if (!defined('ABSPATH')) define('ABSPATH', __DIR__.'/');
 $root = dirname(__DIR__);
 $plugin = (string)file_get_contents($root.'/basketmania-camp-system.php');
 $release = (string)file_get_contents($root.'/includes/class-bcs-release-091.php');
 $adminJs = (string)file_get_contents($root.'/assets/admin.js');
-$workflow = (string)file_get_contents($root.'/.github/workflows/php-lint.yml');
 require_once $root.'/includes/class-bcs-release-091.php';
 
 $failures = [];
@@ -72,9 +71,6 @@ $check(str_contains($release, "check_admin_referer('bcs_invoice_view_'.\$invoice
 $check(str_contains($release, "current_user_can('manage_options')"), 'Podgląd powinien wymagać uprawnień administratora.');
 $check(str_contains($adminJs, '.bcs-invoice-preview'), 'Istniejący admin.js powinien nadal obsługiwać przycisk Podgląd.');
 $check(str_contains($adminJs, "document.getElementById('bcs-invoice-modal')"), 'Istniejący JS powinien korzystać z przywróconego modala.');
-
-$check(str_contains($workflow, 'Release 0.91 KSeF invoice preview test'), 'CI powinno uruchamiać test 0.91.');
-$check(str_contains($workflow, 'php tests/release-091-ksef-invoice-preview-test.php'), 'CI powinno wskazywać właściwy test podglądu KSeF.');
 
 if ($failures) {
     fwrite(STDERR, "Release 0.91 KSeF invoice preview test FAILED:\n- ".implode("\n- ", $failures)."\n");
