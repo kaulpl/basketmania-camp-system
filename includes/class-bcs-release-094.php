@@ -114,7 +114,6 @@ final class BCS_Release_094 {
         $matches = intdiv($size, 2);
         $byes = $size - $count;
         $byeFlags = array_merge(array_fill(0, $byes, true), array_fill(0, $matches - $byes, false));
-        // Wolne losy również rozkładamy losowo między meczami.
         for ($i = count($byeFlags) - 1; $i > 0; $i--) {
             $j = random_int(0, $i);
             [$byeFlags[$i], $byeFlags[$j]] = [$byeFlags[$j], $byeFlags[$i]];
@@ -174,7 +173,7 @@ final class BCS_Release_094 {
 
     private static function stage_x_positions(int $stageCount, bool $left): array {
         $center = 560.0;
-        $innerGap = 105.0;
+        $innerGap = 210.0;
         $outer = 24.0;
         $inner = $center - $innerGap;
         if ($stageCount <= 1) return [$left ? $inner : (1120.0 - $inner)];
@@ -250,7 +249,7 @@ final class BCS_Release_094 {
         $stageCount = count($positions);
         $leftXs = self::stage_x_positions($stageCount, true);
         $rightXs = self::stage_x_positions($stageCount, false);
-        $boxWidth = max(54.0, min(135.0, 395.0 / max(1, $stageCount)));
+        $boxWidth = max(54.0, min(135.0, 300.0 / max(1, $stageCount)));
         $verticalStep = $height / max(1, $sideSlots);
         $boxHeight = max(7.0, min(22.0, $verticalStep * 0.72));
         $fontSize = max(5.2, min(10.5, $boxHeight * 0.56));
@@ -270,7 +269,6 @@ final class BCS_Release_094 {
         $svg .= '<text x="24" y="106" class="small">Losowanie automatyczne · uczestnicy zarejestrowani i opłaceni: '.$count.'</text>';
         $svg .= '<text x="1096" y="106" text-anchor="end" class="small">Format wydruku: A3 poziomo</text>';
 
-        // Nagłówki rund po obu stronach.
         foreach ($leftXs as $stage => $x) {
             $round = $stage === 0 ? 'START' : 'RUNDA '.($stage+1);
             $svg .= '<text x="'.($x+$boxWidth/2).'" y="116" text-anchor="middle" class="round">'.$round.'</text>';
@@ -315,8 +313,6 @@ final class BCS_Release_094 {
         $camp = self::camp($campId);
         if (!$camp) wp_die('Nie znaleziono turnusu.');
 
-        // Numer koszulki pozostaje numerem turnusowym z 0.93, niezależnym od tego,
-        // czy konkretny uczestnik jest już opłacony.
         $refresh = BCS_Release_092::refresh_jersey_numbers($campId);
         if (empty($refresh['success'])) wp_die(esc_html((string)($refresh['message'] ?? 'Nie udało się odświeżyć numerów koszulek.')));
 
