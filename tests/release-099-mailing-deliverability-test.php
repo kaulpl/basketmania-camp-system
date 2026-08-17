@@ -42,15 +42,15 @@ $check(str_contains($r099, 'marketing_from_email'), '0.99 powinno pozwalać uży
 $check(str_contains($r099, 'marketing_reply_to'), '0.99 powinno pozwalać ustawić osobny Reply-To marketingu.');
 $check(str_contains($r099, 'configure_marketing_phpmailer'), 'Osobny adres marketingowy powinien być wymuszany także na PHPMailerze.');
 
-$check(str_contains($r099, "txt_contains($domain, 'v=spf1')"), 'Panel powinien diagnozować SPF.');
-$check(str_contains($r099, "txt_contains('_dmarc.'.$domain, 'v=DMARC1')"), 'Panel powinien diagnozować DMARC.');
+$check(str_contains($r099, "txt_contains(\$domain, 'v=spf1')"), 'Panel powinien diagnozować SPF.');
+$check(str_contains($r099, "txt_contains('_dmarc.'.\$domain, 'v=DMARC1')"), 'Panel powinien diagnozować DMARC.');
 $check(str_contains($r099, "'dkim_selector'"), 'Panel powinien wspierać diagnostykę selektora DKIM.');
 $check(str_contains($r099, 'Mailing – Dostarczalność'), 'Powinien istnieć ekran ustawień dostarczalności.');
 
 $check(str_contains($r099, 'max_consecutive_failures'), 'Powinien istnieć próg kolejnych błędów transportu.');
 $check(str_contains($r099, 'AUTO_PAUSE_OPTION'), 'Powinien istnieć globalny bezpiecznik automatycznego zatrzymania.');
 $check(str_contains($r099, "SET status='paused'"), 'Po przekroczeniu progu błędów aktywne kampanie powinny zostać wstrzymane.');
-$check(str_contains($r099, "m.consent_status"), 'Przed właściwą wysyłką nadal musi być sprawdzana aktywna zgoda.');
+$check(str_contains($r099, 'm.consent_status'), 'Przed właściwą wysyłką nadal musi być sprawdzana aktywna zgoda.');
 
 if ($failures) {
     fwrite(STDERR, "Release 0.99 mailing deliverability test FAILED:\n- ".implode("\n- ", $failures)."\n");
