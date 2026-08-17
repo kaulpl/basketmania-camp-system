@@ -17,8 +17,9 @@ $check = static function(bool $condition, string $message) use (&$failures): voi
 
 preg_match('/\* Version:\s*([0-9.]+)/', $plugin, $headerVersion);
 preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $plugin, $constantVersion);
-$check(($headerVersion[1] ?? '') === '0.95', 'Nagłówek wtyczki powinien mieć wersję 0.95.');
-$check(($constantVersion[1] ?? '') === '0.95', 'BCS_VERSION powinno mieć wersję 0.95.');
+$detectedVersion = $headerVersion[1] ?? '';
+$check($detectedVersion !== '' && $detectedVersion === ($constantVersion[1] ?? ''), 'Nagłówek wtyczki i BCS_VERSION powinny mieć ten sam numer wersji.');
+$check(version_compare($detectedVersion, '0.95', '>='), 'Wersja wtyczki nie może być starsza niż 0.95 dla regresji drabinki.');
 $check(str_contains($plugin, "require_once BCS_DIR . 'includes/class-bcs-release-095.php';"), 'Bootstrap powinien ładować release 0.95.');
 $check(str_contains($plugin, 'BCS_Release_095::init();'), 'Bootstrap powinien inicjalizować release 0.95.');
 
