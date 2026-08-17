@@ -60,17 +60,17 @@ $check(($data['descriptions'][0]['value'] ?? '') === 'Olivia Nowak', 'Parser pow
 
 $check(str_contains($release, "remove_action('admin_post_bcs_invoice_view', ['BCS_Invoices', 'stream_invoice']);"), '0.91 powinno przejąć dotychczasową akcję podglądu PDF.');
 $check(str_contains($release, "add_action('admin_post_bcs_invoice_view', [__CLASS__, 'preview_ksef_invoice']);"), 'Przycisk Podgląd powinien prowadzić do wizualizacji KSeF.');
-$check(str_contains($release, "ksef_xml_path"), 'Podgląd powinien czytać zapisany plik XML KSeF.');
-$check(str_contains($release, "file_get_contents($path)"), 'Podgląd powinien czytać istniejący XML bezpośrednio z pliku.');
+$check(str_contains($release, 'ksef_xml_path'), 'Podgląd powinien czytać zapisany plik XML KSeF.');
+$check(str_contains($release, 'file_get_contents($path)'), 'Podgląd powinien czytać istniejący XML bezpośrednio z pliku.');
 $check(!str_contains($release, 'prepare_and_save('), 'Sam podgląd nie może ponownie generować lub modyfikować XML KSeF.');
 $check(str_contains($release, 'Wizualizacja faktury ustrukturyzowanej FA(3)'), 'Podgląd powinien jasno wskazywać źródło FA(3).');
 $check(str_contains($release, 'DodatkowyOpis'), 'Wizualizacja powinna uwzględniać dodatkowe opisy KSeF.');
 $check(str_contains($release, 'id="bcs-invoice-modal"'), '0.91 powinno przywrócić modal wymagany przez admin.js.');
 $check(str_contains($release, 'Wizualizacja faktury KSeF FA(3)'), 'Iframe modala powinien być opisany jako wizualizacja KSeF.');
-$check(str_contains($release, "sanitize_key(wp_unslash($_GET['page'] ?? '')) !== 'bcs-invoices'"), 'Modal powinien być renderowany tylko w module Faktury.');
-$check(str_contains($release, "check_admin_referer('bcs_invoice_view_'.$invoiceId)"), 'Podgląd powinien zachować istniejące zabezpieczenie nonce dla faktury.');
+$check(str_contains($release, "sanitize_key(wp_unslash(\$_GET['page'] ?? '')) !== 'bcs-invoices'"), 'Modal powinien być renderowany tylko w module Faktury.');
+$check(str_contains($release, "check_admin_referer('bcs_invoice_view_'.\$invoiceId)"), 'Podgląd powinien zachować istniejące zabezpieczenie nonce dla faktury.');
 $check(str_contains($release, "current_user_can('manage_options')"), 'Podgląd powinien wymagać uprawnień administratora.');
-$check(str_contains($adminJs, ".bcs-invoice-preview"), 'Istniejący admin.js powinien nadal obsługiwać przycisk Podgląd.');
+$check(str_contains($adminJs, '.bcs-invoice-preview'), 'Istniejący admin.js powinien nadal obsługiwać przycisk Podgląd.');
 $check(str_contains($adminJs, "document.getElementById('bcs-invoice-modal')"), 'Istniejący JS powinien korzystać z przywróconego modala.');
 
 $check(str_contains($workflow, 'Release 0.91 KSeF invoice preview test'), 'CI powinno uruchamiać test 0.91.');
