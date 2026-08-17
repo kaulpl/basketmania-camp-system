@@ -94,6 +94,10 @@ jobs:
         run: php tests/release-085-chrome-webotp-test.php
       - name: Check 0.85 WebOTP JavaScript syntax
         run: node --check assets/js/webotp-085.js
+      - name: Release 0.86 parent status/invoice UI test
+        run: php tests/release-086-parent-status-invoice-ui-test.php
+      - name: Check 0.86 invoice profile JavaScript syntax
+        run: node --check assets/js/invoice-profile-086.js
       - name: Release 0.71 real Dompdf render
         env:
           BCS_TEST_PDF_PATH: /tmp/agreement-v2-0.71.pdf
