@@ -110,8 +110,8 @@ final class BCS_Release_092 {
     /**
      * Numer koszulki jest własnością konkretnego zgłoszenia, a zgłoszenie należy do jednego turnusu.
      * Za każdym wygenerowaniem dowolnej listy dla turnusu numerujemy aktywnych uczestników 1..N
-     * w kanonicznej kolejności od najmłodszego do najstarszego. Dzięki temu sortowanie listy strojów
-     * nie zmienia numeru konkretnego uczestnika.
+     * dokładnie według kolejności rozmiarów stroju: od najmniejszego do największego.
+     * Przy identycznym rozmiarze decyduje nazwisko, imię, a na końcu ID zgłoszenia.
      *
      * @return array{success:bool,count:int,message:string}
      */
@@ -120,11 +120,10 @@ final class BCS_Release_092 {
         global $wpdb;
         $table = BCS_DB::table('registrations');
         $rows = $wpdb->get_results($wpdb->prepare(
-            "SELECT id FROM {$table} WHERE camp_id=%d AND status<>'cancelled' "
-            ."ORDER BY CASE WHEN child_birth_date IS NULL OR child_birth_date='0000-00-00' THEN 1 ELSE 0 END, "
-            ."child_birth_date DESC, child_last_name ASC, child_first_name ASC, id ASC",
+            "SELECT id, shirt_size, child_first_name, child_last_name FROM {$table} WHERE camp_id=%d AND status<>'cancelled'",
             $campId
         ));
+        usort($rows, [BCS_Release_093::class, 'compare_jersey_rows']);
 
         $wpdb->query('START TRANSACTION');
         try {
@@ -142,7 +141,7 @@ final class BCS_Release_092 {
                 if ($updated === false) throw new RuntimeException('Nie udało się zapisać numeru koszulki.');
             }
             $wpdb->query('COMMIT');
-            return ['success'=>true,'count'=>count((array)$rows),'message'=>'Numery koszulek zostały zaktualizowane dla turnusu.'];
+            return ['success'=>true,'count'=>count((array)$rows),'message'=>'Numery koszulek zostały zaktualizowane według rozmiarów stroju dla turnusu.'];
         } catch (Throwable $e) {
             $wpdb->query('ROLLBACK');
             return ['success'=>false,'count'=>0,'message'=>$e->getMessage()];
@@ -181,16 +180,10 @@ final class BCS_Release_092 {
         global $wpdb;
         $camp = self::camp($campId);
         $rows = $wpdb->get_results($wpdb->prepare(
-            "SELECT jersey_number, child_first_name, child_last_name, shirt_size FROM ".BCS_DB::table('registrations')." WHERE camp_id=%d AND status<>'cancelled'",
+            "SELECT id, jersey_number, child_first_name, child_last_name, shirt_size FROM ".BCS_DB::table('registrations')." WHERE camp_id=%d AND status<>'cancelled'",
             $campId
         ));
-        usort($rows, static function($a, $b): int {
-            $size = BCS_Release_092::compare_shirt_sizes((string)$a->shirt_size, (string)$b->shirt_size);
-            if ($size !== 0) return $size;
-            $name = strcasecmp((string)$a->child_last_name.(string)$a->child_first_name, (string)$b->child_last_name.(string)$b->child_first_name);
-            if ($name !== 0) return $name;
-            return (int)$a->jersey_number <=> (int)$b->jersey_number;
-        });
+        usort($rows, [BCS_Release_093::class, 'compare_jersey_rows']);
 
         $body = '';
         foreach ($rows as $row) {
@@ -201,7 +194,7 @@ final class BCS_Release_092 {
             'Lista strojów',
             $camp,
             '<table><thead><tr><th>Nr koszulki</th><th>Rozmiar</th><th>Uczestnik</th></tr></thead><tbody>'.$body.'</tbody></table>',
-            'Rozmiary posortowane od najmniejszego do największego. Rozmiary literowe są większe od rozmiarów bez oznaczeń literowych.'
+            'Rozmiary i numery koszulek są ułożone od najmniejszego stroju do największego. Rozmiary literowe są większe od rozmiarów bez oznaczeń literowych.'
         );
         self::stream_pdf($html, 'lista-strojow-turnus-'.$campId.'.pdf', 'Lista strojów');
     }
@@ -230,7 +223,7 @@ final class BCS_Release_092 {
             'Aktualna lista uczestników',
             $camp,
             $table,
-            'Wiek obliczony na dzień rozpoczęcia turnusu. Lista posortowana od najmłodszego do najstarszego uczestnika.'
+            'Wiek obliczony na dzień rozpoczęcia turnusu. Lista posortowana od najmłodszego do najstarszego uczestnika. Numery koszulek wynikają z kolejności rozmiarów stroju od najmniejszego do największego.'
         );
         self::stream_pdf($html, 'lista-uczestnikow-turnus-'.$campId.'.pdf', 'Lista uczestników');
     }
