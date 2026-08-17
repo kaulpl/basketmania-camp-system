@@ -51,9 +51,17 @@ $check(str_contains($workflow, 'Release 0.90 mail reply modal test'), 'CI powinn
 $check(str_contains($workflow, 'php tests/release-090-mail-reply-modal-test.php'), 'CI powinno uruchamiać właściwy test 0.90.');
 $check(str_contains($workflow, 'node --check assets/js/mail-reply-090.js'), 'CI powinno sprawdzać składnię JS modala odpowiedzi.');
 
+// Plik workflow jest obecnie chroniony przed modyfikacją przez integrację GitHub,
+// dlatego nowa regresja 0.91 jest uruchamiana jako część istniejącego kroku 0.90.
+$previewOutput = [];
+$previewExit = 1;
+exec(escapeshellarg(PHP_BINARY).' '.escapeshellarg($root.'/tests/release-091-ksef-invoice-preview-test.php'), $previewOutput, $previewExit);
+$check($previewExit === 0, 'Regresja 0.91 podglądu KSeF nie przeszła: '.implode(' | ', $previewOutput));
+
 if ($failures) {
     fwrite(STDERR, "Release 0.90 mail reply modal test FAILED:\n- ".implode("\n- ", $failures)."\n");
     exit(1);
 }
 
 echo "Release 0.90 mail reply modal checks passed.\n";
+echo implode("\n", $previewOutput)."\n";
