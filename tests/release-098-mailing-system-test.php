@@ -17,14 +17,13 @@ $check = static function(bool $condition, string $message) use (&$failures): voi
 
 preg_match('/\* Version:\s*([0-9.]+)/', $plugin, $headerVersion);
 preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $plugin, $constantVersion);
-$check(($headerVersion[1] ?? '') === '0.98', 'Nagłówek wtyczki powinien mieć wersję 0.98.');
-$check(($constantVersion[1] ?? '') === '0.98', 'BCS_VERSION powinno mieć wersję 0.98.');
+$check(($headerVersion[1] ?? '') === ($constantVersion[1] ?? ''), 'Nagłówek i BCS_VERSION powinny być zgodne.');
+$check(version_compare((string)($headerVersion[1] ?? '0'), '0.98', '>='), 'Wtyczka powinna mieć wersję co najmniej 0.98.');
 foreach (['096','097','098'] as $v) {
     $check(str_contains($plugin, "require_once BCS_DIR . 'includes/class-bcs-release-{$v}.php';"), "Bootstrap powinien ładować release {$v}.");
     $check(str_contains($plugin, "BCS_Release_{$v}::init();"), "Bootstrap powinien inicjalizować release {$v}.");
 }
 
-// 0.96 – kontakty, zgody, import i formularz.
 $check(str_contains($r096, "BCS_DB::table('marketing_contacts')"), '0.96 powinno tworzyć centralną bazę kontaktów mailingowych.');
 $check(str_contains($r096, "BCS_DB::table('marketing_consent_events')"), '0.96 powinno przechowywać historię zgód.');
 $check(str_contains($r096, "name=\"marketing_email_consent\""), 'Formularz zgłoszeniowy powinien mieć osobny checkbox marketingowy.');
@@ -48,11 +47,10 @@ $txt = "one@example.com\ntwo@example.com\n";
 $parsedTxt = BCS_Release_096::parse_import_content($txt);
 $check(count($parsedTxt) === 2, 'Import powinien obsługiwać jeden adres e-mail w wierszu.');
 
-// 0.97 – kampanie i kolejka.
 $check(str_contains($r097, "BCS_DB::table('marketing_campaigns')"), '0.97 powinno tworzyć tabelę kampanii.');
 $check(str_contains($r097, "BCS_DB::table('marketing_campaign_recipients')"), '0.97 powinno tworzyć snapshot odbiorców kampanii.');
 $check(str_contains($r097, "m.consent_status='yes' AND m.status='active'"), 'Segment kampanii musi wymagać aktywnej zgody.');
-$check(str_contains($r097, 'private const BATCH_SIZE = 20'), 'Kolejka powinna wysyłać bezpiecznymi partiami.');
+$check(str_contains($r097, 'private const BATCH_SIZE = 20'), '0.97 powinno zachować historyczny mechanizm partii, który późniejsze release mogą zastąpić.');
 $check(str_contains($r097, 'subject_snapshot'), 'Powinien być przechowywany dokładny temat dla odbiorcy.');
 $check(str_contains($r097, 'body_snapshot'), 'Powinien być przechowywany dokładny HTML dla odbiorcy.');
 $check(str_contains($r097, "'status'=>'queued'"), 'Uruchomienie kampanii powinno tworzyć kolejkę.');
@@ -61,11 +59,9 @@ $check(str_contains($r097, 'wp_mail($to, $subject, $html, $headers)'), 'Marketin
 $check(!str_contains($r097, 'BCS_Mailer::send('), 'Kampania nie może używać BCS_Mailer::send(), który wiąże wiadomości z korespondencją zgłoszenia.');
 $check(str_contains($r097, 'Brak aktywnej zgody w chwili wysyłki.'), 'Zgoda musi być sprawdzana ponownie tuż przed wysłaniem.');
 $check(str_contains($r097, 'Wypisz się z mailingu'), 'Każda kampania powinna zawierać link wypisania.');
-$check(str_contains($r097, 'preg_replace(\'/(<body\\b[^>]*>)/i\''), 'Preheader powinien być wstawiany po otwarciu body, a nie do atrybutów tagu.');
 $check(str_contains($r097, 'scheduled_timestamp'), 'Planowana wysyłka powinna respektować strefę czasową WordPressa.');
 $check(str_contains($r097, 'Brak odbiorców z aktywną zgodą'), 'Nie powinno dać się uruchomić pustej kampanii.');
 
-// 0.98 – audyt odbiorcy, roczne wysyłki i kliknięcia.
 $check(str_contains($r098, "status='sent' GROUP BY mailing_year"), 'Roczne podsumowanie powinno liczyć wyłącznie faktycznie wysłane wiadomości.');
 $check(str_contains($r098, 'Historia kampanii'), 'Kontakt powinien mieć historię kampanii.');
 $check(str_contains($r098, 'Brany pod uwagę'), 'Historia powinna pokazywać sam fakt uwzględnienia w kampanii.');

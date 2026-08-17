@@ -115,6 +115,8 @@ jobs:
         run: php tests/release-095-bracket-layout-utf8-test.php
       - name: Release 0.98 mailing system test
         run: php tests/release-098-mailing-system-test.php
+      - name: Release 0.99 mailing deliverability test
+        run: php tests/release-099-mailing-deliverability-test.php
       - name: Upload 0.95 bracket preview artifacts
         if: always()
         uses: actions/upload-artifact@v4
