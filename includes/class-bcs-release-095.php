@@ -37,9 +37,14 @@ final class BCS_Release_095 {
         }, $escaped) ?? $escaped;
     }
 
-    private static function ulen(string $value): int {
+    /** @return string[] */
+    private static function uchars(string $value): array {
         $chars = preg_split('//u', $value, -1, PREG_SPLIT_NO_EMPTY);
-        return is_array($chars) ? count($chars) : strlen($value);
+        return is_array($chars) ? $chars : str_split($value);
+    }
+
+    private static function ulen(string $value): int {
+        return count(self::uchars($value));
     }
 
     /** @return string[]|null */
@@ -70,9 +75,7 @@ final class BCS_Release_095 {
         return '[#'.($number > 0 ? $number : '-').'] '.$name;
     }
 
-    /**
-     * @return array{lines:array<int,string>,font_size:float}
-     */
+    /** @return array{lines:array<int,string>,font_size:float} */
     public static function fit_participant_label(?object $participant, float $boxWidth, float $preferredFont, float $minFont = 2.8): array {
         $label = self::participant_label($participant);
         if (!$participant) return ['lines'=>[$label], 'font_size'=>$preferredFont];
@@ -309,6 +312,252 @@ final class BCS_Release_095 {
         return $svg;
     }
 
+    /** @return string[]|null */
+    private static function canvas_wrap_words(string $label, float $availableWidth, float $fontSize, object $fontMetrics, string $font): ?array {
+        $words = preg_split('/\s+/u', trim($label), -1, PREG_SPLIT_NO_EMPTY);
+        if (!$words) return [''];
+        $lines = [];
+        $current = '';
+        foreach ($words as $word) {
+            if ($fontMetrics->getTextWidth($word, $font, $fontSize) > $availableWidth) return null;
+            $candidate = $current === '' ? $word : $current.' '.$word;
+            if ($fontMetrics->getTextWidth($candidate, $font, $fontSize) <= $availableWidth) {
+                $current = $candidate;
+                continue;
+            }
+            if ($current !== '') $lines[] = $current;
+            $current = $word;
+            if (count($lines) >= 2) return null;
+        }
+        if ($current !== '') $lines[] = $current;
+        return count($lines) <= 2 ? $lines : null;
+    }
+
+    /** @return array{lines:array<int,string>,font_size:float} */
+    private static function fit_canvas_label(?object $participant, float $boxWidth, float $preferredFont, object $fontMetrics, string $font): array {
+        $label = self::participant_label($participant);
+        if (!$participant) return ['lines'=>[$label], 'font_size'=>$preferredFont];
+        $availableWidth = max(10.0, $boxWidth - 8.0);
+
+        for ($fontSize = $preferredFont; $fontSize >= 1.8; $fontSize -= 0.15) {
+            if ($fontMetrics->getTextWidth($label, $font, $fontSize) <= $availableWidth) {
+                return ['lines'=>[$label], 'font_size'=>round($fontSize, 2)];
+            }
+            $lines = self::canvas_wrap_words($label, $availableWidth, $fontSize, $fontMetrics, $font);
+            if ($lines !== null) {
+                return ['lines'=>$lines, 'font_size'=>round($fontSize, 2)];
+            }
+        }
+
+        $chars = self::uchars($label);
+        $best = null;
+        $minFont = 1.6;
+        for ($split = 1; $split < count($chars); $split++) {
+            $line1 = rtrim(implode('', array_slice($chars, 0, $split)));
+            $line2 = ltrim(implode('', array_slice($chars, $split)));
+            if ($line1 === '' || $line2 === '') continue;
+            $width = max(
+                $fontMetrics->getTextWidth($line1, $font, $minFont),
+                $fontMetrics->getTextWidth($line2, $font, $minFont)
+            );
+            if ($width <= $availableWidth) {
+                $score = abs(self::ulen($line1) - self::ulen($line2));
+                if ($best === null || $score < $best['score']) $best = ['score'=>$score, 'lines'=>[$line1, $line2]];
+            }
+        }
+        return ['lines'=>$best['lines'] ?? [$label], 'font_size'=>$minFont];
+    }
+
+    private static function canvas_text(object $canvas, object $fontMetrics, string $font, float $size, string $text, float $x, float $y, string $align = 'left', array $color = [0.07, 0.10, 0.16]): void {
+        $width = $fontMetrics->getTextWidth($text, $font, $size);
+        if ($align === 'center') $x -= $width / 2;
+        elseif ($align === 'right') $x -= $width;
+        $canvas->text($x, $y, $text, $font, $size, $color);
+    }
+
+    public static function render_pdf_bytes(array $participants, object $camp): string {
+        $participants = BCS_Release_094::randomized($participants);
+        $slots = BCS_Release_094::first_round_slots($participants);
+        $metrics = self::layout_metrics(count($participants));
+        $sideSlots = (int)$metrics['side_slots'];
+        $positions = self::all_stage_positions($sideSlots, (float)$metrics['top'], (float)$metrics['height']);
+        $stageCount = count($positions);
+        $leftXs = self::stage_x_positions($stageCount, true, $metrics);
+        $rightXs = self::stage_x_positions($stageCount, false, $metrics);
+        $boxWidth = (float)$metrics['box_width'];
+
+        $options = new Dompdf\Options();
+        $options->set('isRemoteEnabled', false);
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->set('defaultMediaType', 'print');
+        $options->set('isFontSubsettingEnabled', true);
+        $pdf = new Dompdf\Dompdf($options);
+        $pdf->setPaper('A3', 'landscape');
+        $pdf->loadHtml('<!doctype html><html lang="pl"><head><meta charset="UTF-8"><style>@page{size:A3 landscape;margin:0}html,body{margin:0;padding:0}</style></head><body><div style="width:1px;height:1px"></div></body></html>', 'UTF-8');
+        $pdf->render();
+
+        $canvas = $pdf->getCanvas();
+        $fontMetrics = $pdf->getFontMetrics();
+        $font = $fontMetrics->getFont('DejaVu Sans', 'normal');
+        $bold = $fontMetrics->getFont('DejaVu Sans', 'bold');
+        if (!$font || !$bold) throw new RuntimeException('Nie udało się załadować fontu DejaVu Sans do drabinki PDF.');
+
+        $pageW = (float)$canvas->get_width();
+        $pageH = (float)$canvas->get_height();
+        $margin = 18.0;
+        $scale = min(($pageW - 2*$margin) / 1120.0, ($pageH - 2*$margin) / 790.0);
+        $offsetX = ($pageW - 1120.0*$scale) / 2.0;
+        $offsetY = ($pageH - 790.0*$scale) / 2.0;
+        $sx = static fn(float $x): float => $offsetX + $x*$scale;
+        $sy = static fn(float $y): float => $offsetY + $y*$scale;
+        $ss = static fn(float $value): float => $value*$scale;
+
+        $dark = [0.086, 0.125, 0.20];
+        $metaColor = [0.36, 0.39, 0.45];
+        $roundColor = [0.32, 0.38, 0.44];
+        $lineColor = [0.28, 0.33, 0.41];
+        $borderColor = [0.39, 0.46, 0.55];
+        $writeColor = [0.60, 0.64, 0.70];
+        $blue = [0.07, 0.37, 0.69];
+        $byeFill = [0.965, 0.97, 0.98];
+        $finalFill = [0.97, 0.985, 1.0];
+        $white = [1.0, 1.0, 1.0];
+
+        // Połączenia pomiędzy rundami.
+        foreach ([[true, $leftXs], [false, $rightXs]] as [$left, $xs]) {
+            for ($stage = 0; $stage < count($positions)-1; $stage++) {
+                $current = $positions[$stage];
+                $next = $positions[$stage+1];
+                for ($i = 0; $i < count($next); $i++) {
+                    $a = $current[$i*2];
+                    $b = $current[$i*2+1];
+                    $mid = $next[$i];
+                    if ($left) {
+                        $fromX = $xs[$stage] + $boxWidth;
+                        $toX = $xs[$stage+1];
+                    } else {
+                        $fromX = $xs[$stage] - $boxWidth;
+                        $toX = $xs[$stage+1];
+                    }
+                    $jointX = ($fromX + $toX) / 2;
+                    $canvas->line($sx($fromX), $sy($a), $sx($jointX), $sy($a), $lineColor, $ss(1.0));
+                    $canvas->line($sx($jointX), $sy($a), $sx($jointX), $sy($b), $lineColor, $ss(1.0));
+                    $canvas->line($sx($fromX), $sy($b), $sx($jointX), $sy($b), $lineColor, $ss(1.0));
+                    $canvas->line($sx($jointX), $sy($mid), $sx($toX), $sy($mid), $lineColor, $ss(1.0));
+                }
+            }
+        }
+
+        // Pola rund i tekst uczestników – tekst jest rysowany bezpośrednio w PDF,
+        // dzięki czemu używa prawdziwego pliku fontu DejaVu Sans zamiast fallbacku SVG.
+        foreach ([[true, $leftXs], [false, $rightXs]] as [$left, $xs]) {
+            foreach ($positions as $stage => $ys) {
+                foreach ($ys as $index => $y) {
+                    $isFirst = $stage === 0;
+                    $x = $left ? $xs[$stage] : $xs[$stage] - $boxWidth;
+                    $participant = null;
+                    $boxHeight = max(8.0, min(16.0, (float)$metrics['max_first_box_height']));
+                    $fit = ['lines'=>[''], 'font_size'=>(float)$metrics['preferred_font']];
+                    $fill = $white;
+
+                    if ($isFirst) {
+                        $slotIndex = $left ? $index : (count($slots) - 1 - $index);
+                        $participant = $slots[$slotIndex] ?? null;
+                        $fit = self::fit_canvas_label(
+                            $participant,
+                            $ss($boxWidth),
+                            $ss((float)$metrics['preferred_font']),
+                            $fontMetrics,
+                            $font
+                        );
+                        $lineCount = max(1, count($fit['lines']));
+                        $lineHeight = (float)$fit['font_size'] * 1.12;
+                        $neededPt = $lineCount === 1 ? ($lineHeight + $ss(4.0)) : ($lineHeight*$lineCount + $ss(3.0));
+                        $boxHeight = min((float)$metrics['max_first_box_height'], max(8.0, $neededPt / $scale));
+                        if (!$participant) $fill = $byeFill;
+                    }
+
+                    $boxX = $sx($x);
+                    $boxY = $sy($y - $boxHeight/2);
+                    $boxW = $ss($boxWidth);
+                    $boxH = $ss($boxHeight);
+                    $canvas->filled_rectangle($boxX, $boxY, $boxW, $boxH, $fill);
+                    $canvas->rectangle($boxX, $boxY, $boxW, $boxH, $borderColor, $ss(0.9));
+
+                    if ($isFirst) {
+                        $fontSize = (float)$fit['font_size'];
+                        $lineHeight = $fontSize * 1.12;
+                        $lines = $fit['lines'];
+                        $totalHeight = count($lines) * $lineHeight;
+                        $textTop = $sy($y) - $totalHeight/2;
+                        $textX = $left ? ($boxX + $ss(4.0)) : ($boxX + $boxW - $ss(4.0));
+                        foreach ($lines as $lineIndex => $line) {
+                            self::canvas_text(
+                                $canvas,
+                                $fontMetrics,
+                                $font,
+                                $fontSize,
+                                $line,
+                                $textX,
+                                $textTop + $lineIndex*$lineHeight,
+                                $left ? 'left' : 'right',
+                                $dark
+                            );
+                        }
+                    } else {
+                        $canvas->line(
+                            $boxX + $ss(6.0),
+                            $sy($y + 1.0),
+                            $boxX + $boxW - $ss(6.0),
+                            $sy($y + 1.0),
+                            $writeColor,
+                            $ss(0.7),
+                            [$ss(3.0), $ss(2.0)]
+                        );
+                    }
+                }
+            }
+        }
+
+        // Finał.
+        $finalY = 435.0;
+        $finalW = 150.0;
+        $finalH = 102.0;
+        $finalX = 560.0 - $finalW/2;
+        $leftLastX = $leftXs[count($leftXs)-1] + $boxWidth;
+        $rightLastX = $rightXs[count($rightXs)-1] - $boxWidth;
+        $lastY = $positions[count($positions)-1][0];
+        $canvas->line($sx($leftLastX), $sy($lastY), $sx($finalX), $sy($finalY), $lineColor, $ss(1.0));
+        $canvas->line($sx($rightLastX), $sy($lastY), $sx($finalX+$finalW), $sy($finalY), $lineColor, $ss(1.0));
+        $canvas->filled_rectangle($sx($finalX), $sy($finalY-$finalH/2), $ss($finalW), $ss($finalH), $finalFill);
+        $canvas->rectangle($sx($finalX), $sy($finalY-$finalH/2), $ss($finalW), $ss($finalH), $blue, $ss(1.6));
+        self::canvas_text($canvas, $fontMetrics, $bold, $ss(14.0), 'FINAŁ', $sx(560.0), $sy($finalY-34.0), 'center', $blue);
+        $canvas->line($sx($finalX+14), $sy($finalY-8), $sx($finalX+$finalW-14), $sy($finalY-8), $writeColor, $ss(0.7), [$ss(3),$ss(2)]);
+        $canvas->line($sx($finalX+14), $sy($finalY+15), $sx($finalX+$finalW-14), $sy($finalY+15), $writeColor, $ss(0.7), [$ss(3),$ss(2)]);
+        self::canvas_text($canvas, $fontMetrics, $font, $ss(8.0), 'ZWYCIĘZCA', $sx(560.0), $sy($finalY+27.0), 'center', $metaColor);
+        $canvas->line($sx($finalX+28), $sy($finalY+45), $sx($finalX+$finalW-28), $sy($finalY+45), $writeColor, $ss(0.7), [$ss(3),$ss(2)]);
+
+        // Nagłówki i opis turnusu.
+        self::canvas_text($canvas, $fontMetrics, $bold, $ss(21.0), 'DRABINKA PUCHAROWA', $sx(560.0), $sy(10.0), 'center', $dark);
+        self::canvas_text($canvas, $fontMetrics, $bold, $ss(11.0), 'Nazwa konkursu / turnieju: .......................................................................................................', $sx(560.0), $sy(39.0), 'center', $dark);
+        self::canvas_text($canvas, $fontMetrics, $font, $ss(10.0), (string)($camp->name ?? 'Turnus Basketmania Camp'), $sx(560.0), $sy(63.0), 'center', $metaColor);
+        $dates = trim((string)($camp->start_date ?? '').' - '.(string)($camp->end_date ?? ''), ' -');
+        $location = trim((string)($camp->location ?? ''));
+        $meta = trim($dates.($dates !== '' && $location !== '' ? ' - ' : '').$location);
+        if ($meta !== '') self::canvas_text($canvas, $fontMetrics, $font, $ss(10.0), $meta, $sx(560.0), $sy(78.0), 'center', $metaColor);
+
+        foreach ($leftXs as $stage => $x) {
+            $round = $stage === 0 ? 'START' : 'RUNDA '.($stage+1);
+            self::canvas_text($canvas, $fontMetrics, $bold, $ss(8.0), $round, $sx($x+$boxWidth/2), $sy(98.0), 'center', $roundColor);
+        }
+        foreach ($rightXs as $stage => $x) {
+            $round = $stage === 0 ? 'START' : 'RUNDA '.($stage+1);
+            self::canvas_text($canvas, $fontMetrics, $bold, $ss(8.0), $round, $sx($x-$boxWidth/2), $sy(98.0), 'center', $roundColor);
+        }
+
+        return $pdf->output();
+    }
+
     private static function camp(int $campId): ?object {
         global $wpdb;
         return $wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('camps')." WHERE id=%d", $campId));
@@ -330,19 +579,7 @@ final class BCS_Release_095 {
 
         if (!BCS_PDF::available()) wp_die('Silnik PDF nie jest dostępny.');
         try {
-            $svg = self::build_bracket_svg($participants, $camp);
-            $dataUri = 'data:image/svg+xml;base64,'.base64_encode($svg);
-            $html = '<!doctype html><html lang="pl"><head><meta charset="UTF-8"><style>@page{size:A3 landscape;margin:6mm}html,body{margin:0;padding:0;width:100%;height:100%}img{display:block;width:100%;height:auto}</style></head><body><img src="'.$dataUri.'" alt="Drabinka pucharowa"></body></html>';
-
-            $options = new Dompdf\Options();
-            $options->set('isRemoteEnabled', false);
-            $options->set('defaultFont', 'DejaVu Sans');
-            $options->set('defaultMediaType', 'print');
-            $pdf = new Dompdf\Dompdf($options);
-            $pdf->setPaper('A3', 'landscape');
-            $pdf->loadHtml($html, 'UTF-8');
-            $pdf->render();
-            $bytes = $pdf->output();
+            $bytes = self::render_pdf_bytes($participants, $camp);
 
             BCS_Utils::log('camp_bracket_generated_095', [
                 'camp_id'=>$campId,
