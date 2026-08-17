@@ -8,7 +8,7 @@ final class BCS_Release_098 {
     private const CLICK_ACTION = 'bcs_marketing_click_098';
     private const CONTACT_PAGE = 'bcs-mailing-contact-history';
     private const CAMPAIGN_PAGE = 'bcs-mailing-campaign-history';
-    private const QUEUE_HOOK = 'bcs_marketing_queue_097';
+    private const QUEUE_PUMP_HOOK = 'bcs_marketing_queue_pump_098';
     private const QUEUE_SCHEDULE = 'bcs_marketing_minute_098';
 
     public static function init(): void {
@@ -17,6 +17,7 @@ final class BCS_Release_098 {
         add_action('admin_menu', [__CLASS__, 'admin_menu'], 99);
         add_filter('cron_schedules', [__CLASS__, 'cron_schedules']);
         add_action('init', [__CLASS__, 'ensure_queue_schedule']);
+        add_action(self::QUEUE_PUMP_HOOK, [__CLASS__, 'pump_queue']);
     }
 
     public static function cron_schedules(array $schedules): array {
@@ -25,7 +26,11 @@ final class BCS_Release_098 {
     }
 
     public static function ensure_queue_schedule(): void {
-        if (!wp_next_scheduled(self::QUEUE_HOOK)) wp_schedule_event(time()+60, self::QUEUE_SCHEDULE, self::QUEUE_HOOK);
+        if (!wp_next_scheduled(self::QUEUE_PUMP_HOOK)) wp_schedule_event(time()+60, self::QUEUE_SCHEDULE, self::QUEUE_PUMP_HOOK);
+    }
+
+    public static function pump_queue(): void {
+        if (class_exists('BCS_Release_097')) BCS_Release_097::run_queue();
     }
 
     public static function admin_menu(): void {
