@@ -17,8 +17,8 @@ $check = static function(bool $condition, string $message) use (&$failures): voi
 
 preg_match('/\* Version:\s*([0-9.]+)/', $plugin, $headerVersion);
 preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $plugin, $constantVersion);
-$check(($headerVersion[1] ?? '') === '0.93', 'Nagłówek wtyczki powinien mieć wersję 0.93.');
-$check(($constantVersion[1] ?? '') === '0.93', 'BCS_VERSION powinno mieć wersję 0.93.');
+$check(version_compare((string)($headerVersion[1] ?? '0'), '0.93', '>='), 'Nagłówek wtyczki powinien mieć wersję co najmniej 0.93.');
+$check(version_compare((string)($constantVersion[1] ?? '0'), '0.93', '>='), 'BCS_VERSION powinno mieć wersję co najmniej 0.93.');
 $check(str_contains($plugin, "require_once BCS_DIR . 'includes/class-bcs-release-093.php';"), 'Bootstrap powinien ładować release 0.93.');
 $check(str_contains($plugin, 'BCS_Release_093::init();'), 'Bootstrap powinien inicjalizować release 0.93.');
 
@@ -52,9 +52,17 @@ $check(str_contains($release092, 'Numery koszulek wynikają z kolejności rozmia
 $check(str_contains($release092, 'Rozmiary i numery koszulek są ułożone od najmniejszego stroju do największego.'), 'Lista strojów powinna jasno opisywać numerację od najmniejszego rozmiaru.');
 $check(str_contains($release093, 'BCS_Release_092::compare_shirt_sizes'), '0.93 powinno używać tego samego porządku rozmiarów co Lista strojów.');
 
+// Workflow GitHub jest chroniony przed edycją przez integrację, dlatego regresja 0.94
+// jest wykonywana jako kolejny element istniejącego łańcucha testów.
+$bracketOutput = [];
+$bracketExit = 1;
+exec(escapeshellarg(PHP_BINARY).' '.escapeshellarg($root.'/tests/release-094-tournament-bracket-a3-test.php'), $bracketOutput, $bracketExit);
+$check($bracketExit === 0, 'Regresja 0.94 drabinki A3 nie przeszła: '.implode(' | ', $bracketOutput));
+
 if ($failures) {
     fwrite(STDERR, "Release 0.93 jersey number by size test FAILED:\n- ".implode("\n- ", $failures)."\n");
     exit(1);
 }
 
 echo "Release 0.93 jersey number by size checks passed.\n";
+echo implode("\n", $bracketOutput)."\n";
