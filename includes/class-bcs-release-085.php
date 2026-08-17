@@ -26,9 +26,8 @@ final class BCS_Release_085 {
         // faktycznej wysyłki. Jeżeli nikt nie obsłużył SMS-a, 0.85 robi to tutaj.
         add_filter('bcs_sms_send_result', [__CLASS__, 'origin_bound_otp_transport'], 100, 3);
 
-        // WebOTP musi zacząć nasłuch PRZED wysłaniem SMS-a.
-        add_action('wp_footer', [__CLASS__, 'frontend_webotp_script'], 999);
-        add_action('admin_head', [__CLASS__, 'admin_webotp_script'], -10);
+        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_frontend_webotp']);
+        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_admin_webotp']);
     }
 
     /**
@@ -44,6 +43,20 @@ final class BCS_Release_085 {
         }
         $canonical = '<input id="bcs-code" name="bcs_otp_code" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" autocomplete="one-time-code" autocapitalize="off" spellcheck="false" enterkeyhint="done">';
         return preg_replace('/<input\b[^>]*\bid=["\']bcs-code["\'][^>]*>/i', $canonical, $output, 1) ?: $output;
+    }
+
+    public static function enqueue_frontend_webotp(): void {
+        if (is_admin()) return;
+        wp_enqueue_script('bcs-webotp-085', BCS_URL.'assets/js/webotp-085.js', [], BCS_VERSION, true);
+    }
+
+    public static function enqueue_admin_webotp(string $hook = ''): void {
+        if (!current_user_can('manage_options')) return;
+        if (sanitize_key((string)($_GET['page'] ?? '')) !== 'bcs-registrations') return;
+
+        // W panelu ładujemy w HEAD. Dzięki temu listener capture z 0.85 zostaje
+        // zarejestrowany przed admin_head 0.79, który uruchamia właściwą wysyłkę OTP.
+        wp_enqueue_script('bcs-webotp-085', BCS_URL.'assets/js/webotp-085.js', [], BCS_VERSION, false);
     }
 
     private static function active_otp_action(): string {
@@ -169,105 +182,5 @@ final class BCS_Release_085 {
             ]);
         }
         return $result;
-    }
-
-    private static function webotp_common_js(): string {
-        return <<<'JS'
-        const bcsWebOtp085=(()=>{
-            let controller=null;
-            const supported=()=>window.isSecureContext && 'OTPCredential' in window && navigator.credentials && typeof navigator.credentials.get==='function';
-            const abort=()=>{if(controller){try{controller.abort();}catch(e){}controller=null;}};
-            const visible=(node)=>node && !node.hidden && node.getClientRects().length>0;
-            const waitVisible=(inputSelector,modalSelector,timeout=8000)=>new Promise(resolve=>{
-                const start=Date.now();
-                const tick=()=>{
-                    const input=document.querySelector(inputSelector),modal=modalSelector?document.querySelector(modalSelector):null;
-                    if(input && (!modalSelector || visible(modal))){resolve(input);return;}
-                    if(Date.now()-start>=timeout){resolve(input||null);return;}
-                    window.setTimeout(tick,80);
-                };tick();
-            });
-            const start=async(options)=>{
-                if(!supported())return false;
-                abort();controller=new AbortController();
-                const local=controller;
-                window.setTimeout(()=>{if(controller===local)abort();},125000);
-                try{
-                    const credential=await navigator.credentials.get({otp:{transport:['sms']},signal:local.signal});
-                    const value=String(credential&&credential.code||'').replace(/\D/g,'').slice(0,6);
-                    if(value.length!==6)return false;
-                    const input=await waitVisible(options.input,options.modal,8000);
-                    if(!input)return false;
-                    input.value=value;
-                    input.dispatchEvent(new Event('input',{bubbles:true}));
-                    input.dispatchEvent(new Event('change',{bubbles:true}));
-                    window.setTimeout(()=>{
-                        if(options.form){const form=document.querySelector(options.form);if(form){if(typeof form.requestSubmit==='function')form.requestSubmit();else form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));}}
-                        else if(options.verify){document.querySelector(options.verify)?.click();}
-                    },120);
-                    return true;
-                }catch(error){
-                    if(error&&error.name!=='AbortError')console.debug('Basketmania WebOTP:',error);
-                    return false;
-                }finally{if(controller===local)controller=null;}
-            };
-            return {supported,start,abort};
-        })();
-JS;
-    }
-
-    public static function frontend_webotp_script(): void {
-        if (is_admin()) return;
-        ?>
-        <script>
-        (()=>{
-            <?php echo self::webotp_common_js(); ?>
-            const ensureField=()=>{
-                const input=document.querySelector('#bcs-code');if(!input)return;
-                input.setAttribute('name','bcs_otp_code');input.setAttribute('type','text');input.setAttribute('maxlength','6');input.setAttribute('inputmode','numeric');input.setAttribute('pattern','[0-9]{6}');input.setAttribute('autocomplete','one-time-code');
-            };
-            const addNote=()=>{
-                const modal=document.querySelector('#bcs-otp-modal .bcs-modal-dialog');
-                if(!modal||modal.querySelector('.bcs-webotp-note-085'))return;
-                const note=document.createElement('small');note.className='bcs-webotp-note-085';
-                note.textContent=bcsWebOtp085.supported()?'Chrome może pobrać kod z SMS automatycznie po Twoim potwierdzeniu.':'Automatyczne pobranie kodu zależy od przeglądarki i urządzenia; kod można zawsze wpisać ręcznie.';
-                const input=modal.querySelector('#bcs-code');input?.closest('label')?.insertAdjacentElement('afterend',note);
-            };
-            ensureField();addNote();
-            document.addEventListener('click',event=>{
-                if(!event.target.closest('#bcs-send-code'))return;
-                ensureField();
-                bcsWebOtp085.start({input:'#bcs-code',modal:'#bcs-otp-modal',verify:'#bcs-verify-code'});
-            },true);
-        })();
-        </script>
-        <?php
-    }
-
-    public static function admin_webotp_script(): void {
-        if (!current_user_can('manage_options')) return;
-        if (sanitize_key((string)($_GET['page'] ?? '')) !== 'bcs-registrations') return;
-        ?>
-        <script>
-        (()=>{
-            <?php echo self::webotp_common_js(); ?>
-            const prepare=()=>{
-                const input=document.querySelector('#bcs-org-otp-code-079');
-                if(input){input.setAttribute('name','bcs_organizer_otp_code');input.setAttribute('type','text');input.setAttribute('maxlength','6');input.setAttribute('inputmode','numeric');input.setAttribute('pattern','[0-9]{6}');input.setAttribute('autocomplete','one-time-code');}
-                const note=document.querySelector('.bcs-otp079-note');
-                if(note&&!note.dataset.bcs085){
-                    note.dataset.bcs085='1';
-                    note.textContent='Safari na Macu może podpowiedzieć kod z iPhone’a. Chrome WebOTP działa na Androidzie oraz na komputerze z kodem przekazanym z Androida przez Chrome Sync; Chrome nie odbiera WebOTP z iPhone’a.';
-                }
-            };
-            document.addEventListener('click',event=>{
-                if(!event.target.closest('.bcs-org-sign-046'))return;
-                bcsWebOtp085.start({input:'#bcs-org-otp-code-079',modal:'#bcs-org-otp-modal-079',form:'#bcs-org-otp-form-079'});
-                window.setTimeout(prepare,100);window.setTimeout(prepare,500);
-            },true);
-            new MutationObserver(prepare).observe(document.documentElement,{childList:true,subtree:true});
-        })();
-        </script>
-        <?php
     }
 }
