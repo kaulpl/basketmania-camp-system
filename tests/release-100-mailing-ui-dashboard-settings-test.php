@@ -6,7 +6,9 @@ if (!defined('ABSPATH')) define('ABSPATH', __DIR__.'/');
 $root = dirname(__DIR__);
 $plugin = (string)file_get_contents($root.'/basketmania-camp-system.php');
 $r100 = (string)file_get_contents($root.'/includes/class-bcs-release-100.php');
+$r101 = (string)file_get_contents($root.'/includes/class-bcs-release-101.php');
 $css = (string)file_get_contents($root.'/assets/mailing-100.css');
+$css101 = (string)file_get_contents($root.'/assets/mailing-101.css');
 $js = (string)file_get_contents($root.'/assets/mailing-100.js');
 
 $failures = [];
@@ -16,18 +18,30 @@ $check = static function(bool $condition, string $message) use (&$failures): voi
 
 preg_match('/\* Version:\s*([0-9.]+)/', $plugin, $headerVersion);
 preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $plugin, $constantVersion);
-$check(($headerVersion[1] ?? '') === '1.00', 'Nagłówek wtyczki powinien mieć wersję 1.00.');
-$check(($constantVersion[1] ?? '') === '1.00', 'BCS_VERSION powinno mieć wersję 1.00.');
+$check(($headerVersion[1] ?? '') === ($constantVersion[1] ?? ''), 'Nagłówek i BCS_VERSION powinny być zgodne.');
+$check(version_compare((string)($headerVersion[1] ?? '0'), '1.00', '>='), 'Wtyczka powinna mieć wersję co najmniej 1.00.');
 $check(str_contains($plugin, "require_once BCS_DIR . 'includes/class-bcs-release-100.php';"), 'Bootstrap powinien ładować release 1.00.');
 $check(str_contains($plugin, 'BCS_Release_100::init();'), 'Bootstrap powinien inicjalizować release 1.00.');
+$check(str_contains($plugin, "require_once BCS_DIR . 'includes/class-bcs-release-101.php';"), 'Bootstrap powinien ładować hotfix 1.01.');
+$check(str_contains($plugin, 'BCS_Release_101::init();'), 'Bootstrap powinien inicjalizować hotfix 1.01.');
 
 // Nowoczesny moduł Mailing.
-$check(str_contains($r100, "remove_submenu_page('bcs-dashboard', self::PAGE)"), '1.00 powinno zastąpić stary callback strony Mailing.');
+$check(str_contains($r100, "remove_submenu_page('bcs-dashboard', self::PAGE)"), '1.00 powinno zastąpić starą pozycję strony Mailing.');
 $check(str_contains($r100, "add_submenu_page('bcs-dashboard', 'Mailing', 'Mailing'"), '1.00 powinno rejestrować nową stronę Mailing.');
 $check(str_contains($r100, 'bcs-mailing-kpis'), 'Mailing powinien mieć nowoczesne kafle KPI.');
 $check(str_contains($r100, 'bcs-mailing-tabs'), 'Mailing powinien mieć własną przejrzystą nawigację.');
 $check(str_contains($css, '.bcs-mailing-kpis'), 'Powinien istnieć osobny styl nowoczesnych KPI Mailingu.');
 $check(str_contains($css, '.bcs-mail-card'), 'Powinny istnieć nowoczesne karty Mailingu.');
+
+// 1.01 usuwa podwójne renderowanie starego modułu 0.96.
+$check(str_contains($r101, "get_plugin_page_hookname(self::PAGE, self::PARENT)"), '1.01 powinno rozwiązywać rzeczywisty hook strony Mailingu.');
+$check(str_contains($r101, "remove_action(\$hook, [BCS_Release_096::class, 'mailing_page'])"), '1.01 musi odpiąć stary renderer 0.96 z hooka strony.');
+$check(str_contains($r101, "add_action('admin_menu', [__CLASS__, 'detach_legacy_mailing_renderer'], 1500)"), 'Odpięcie starego renderera musi wykonać się po rejestracji menu 1.00.');
+$check(str_contains($r101, "BCS_URL.'assets/mailing-101.css'"), '1.01 powinno ładować osobny arkusz hotfixu Mailingu.');
+$check(str_contains($css101, 'max-width:none!important'), 'Mailing 1.01 powinien usuwać limit szerokości 1500 px.');
+$check(str_contains($css101, 'width:100%!important'), 'Nawigacja Mailingu powinna wykorzystywać pełną szerokość modułu.');
+$check(str_contains($css101, '.bcs-mailing-tabs a.is-active'), 'Zakładki 1.01 powinny mieć nowoczesny aktywny stan.');
+$check(str_contains($css101, 'border-radius:15px'), 'Nowa nawigacja powinna mieć nowoczesny kontener z zaokrągleniem.');
 
 // Segmenty bez ręcznego wpisywania ID/roku.
 $check(str_contains($r100, 'public static function audience_catalog()'), '1.00 powinno budować katalog segmentów z danych systemu.');
@@ -75,8 +89,8 @@ $check(str_contains($r100, "remove_action('admin_post_'.self::CAMPAIGN_TEST_ACTI
 $check(str_contains($r100, 'BCS_Release_097::build_recipient_message'), 'Test kampanii powinien zachować identyczny wygląd wiadomości kampanii.');
 
 if ($failures) {
-    fwrite(STDERR, "Release 1.00 mailing UI/dashboard/settings test FAILED:\n- ".implode("\n- ", $failures)."\n");
+    fwrite(STDERR, "Release 1.00/1.01 mailing UI/dashboard/settings test FAILED:\n- ".implode("\n- ", $failures)."\n");
     exit(1);
 }
 
-echo "Release 1.00 mailing UI/dashboard/settings checks passed.\n";
+echo "Release 1.00/1.01 mailing UI/dashboard/settings checks passed.\n";
