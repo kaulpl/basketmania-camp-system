@@ -8,11 +8,24 @@ final class BCS_Release_098 {
     private const CLICK_ACTION = 'bcs_marketing_click_098';
     private const CONTACT_PAGE = 'bcs-mailing-contact-history';
     private const CAMPAIGN_PAGE = 'bcs-mailing-campaign-history';
+    private const QUEUE_HOOK = 'bcs_marketing_queue_097';
+    private const QUEUE_SCHEDULE = 'bcs_marketing_minute_098';
 
     public static function init(): void {
         add_action('admin_post_'.self::CLICK_ACTION, [__CLASS__, 'handle_click']);
         add_action('admin_post_nopriv_'.self::CLICK_ACTION, [__CLASS__, 'handle_click']);
         add_action('admin_menu', [__CLASS__, 'admin_menu'], 99);
+        add_filter('cron_schedules', [__CLASS__, 'cron_schedules']);
+        add_action('init', [__CLASS__, 'ensure_queue_schedule']);
+    }
+
+    public static function cron_schedules(array $schedules): array {
+        $schedules[self::QUEUE_SCHEDULE] = ['interval'=>60, 'display'=>'Co minutę – mailing Basketmania Camp'];
+        return $schedules;
+    }
+
+    public static function ensure_queue_schedule(): void {
+        if (!wp_next_scheduled(self::QUEUE_HOOK)) wp_schedule_event(time()+60, self::QUEUE_SCHEDULE, self::QUEUE_HOOK);
     }
 
     public static function admin_menu(): void {
@@ -49,7 +62,11 @@ final class BCS_Release_098 {
         if (!$row) wp_die('Nieprawidłowy link kampanii.');
         if (empty($row->clicked_at)) $wpdb->update($recipients, ['clicked_at'=>BCS_Utils::now(),'updated_at'=>BCS_Utils::now()], ['id'=>(int)$row->id]);
         $url = esc_url_raw((string)$row->cta_url);
-        wp_safe_redirect($url !== '' ? $url : home_url('/'));
+        if ($url !== '' && wp_http_validate_url($url)) {
+            wp_redirect($url, 302, 'Basketmania Camp Mailing');
+        } else {
+            wp_safe_redirect(home_url('/'));
+        }
         exit;
     }
 
