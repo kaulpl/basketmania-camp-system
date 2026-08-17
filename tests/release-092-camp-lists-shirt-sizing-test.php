@@ -16,8 +16,8 @@ $check = static function(bool $condition, string $message) use (&$failures): voi
 
 preg_match('/\* Version:\s*([0-9.]+)/', $plugin, $headerVersion);
 preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $plugin, $constantVersion);
-$check(($headerVersion[1] ?? '') === '0.92', 'Nagłówek wtyczki powinien mieć wersję 0.92.');
-$check(($constantVersion[1] ?? '') === '0.92', 'BCS_VERSION powinno mieć wersję 0.92.');
+$check(version_compare((string)($headerVersion[1] ?? '0'), '0.92', '>='), 'Nagłówek wtyczki powinien mieć wersję co najmniej 0.92.');
+$check(version_compare((string)($constantVersion[1] ?? '0'), '0.92', '>='), 'BCS_VERSION powinno mieć wersję co najmniej 0.92.');
 $check(str_contains($plugin, "require_once BCS_DIR . 'includes/class-bcs-release-092.php';"), 'Bootstrap powinien ładować release 0.92.');
 $check(str_contains($plugin, 'BCS_Camp_Reports::init();') && str_contains($plugin, 'BCS_Release_092::init();'), '0.92 powinno inicjalizować się po module raportów turnusu.');
 
@@ -26,12 +26,13 @@ $check(str_contains($release, 'ADD KEY camp_jersey_number (camp_id, jersey_numbe
 $check(str_contains($release, "WHERE camp_id=%d AND status<>'cancelled'"), 'Numeracja powinna dotyczyć aktywnych uczestników konkretnego turnusu.');
 $check(str_contains($release, "SET jersey_number=NULL WHERE camp_id=%d"), 'Przeliczenie powinno czyścić stare numery wyłącznie w danym turnusie.');
 $check(str_contains($release, "['jersey_number'=>\$index + 1]"), 'Numery koszulek powinny być zapisywane kolejno 1..N.');
-$check(str_contains($release, 'child_birth_date DESC'), 'Kanoniczna kolejność numerowania i lista uczestników powinny być od najmłodszego do najstarszego.');
+$check(str_contains($release, 'child_birth_date DESC'), 'Lista uczestników powinna pozostać posortowana od najmłodszego do najstarszego.');
+$check(str_contains($release, "SELECT id, shirt_size, child_first_name, child_last_name"), 'Kanoniczna numeracja koszulek powinna korzystać z rozmiaru stroju.');
 $check(str_contains($release, "remove_action('admin_post_bcs_camp_shirts_pdf'"), '0.92 powinno przejąć generowanie listy strojów.');
 $check(str_contains($release, "remove_action('admin_post_bcs_camp_participants_pdf'"), '0.92 powinno przejąć generowanie listy uczestników.');
 $check(substr_count($release, 'refresh_jersey_numbers($campId)') >= 2, 'Obie listy powinny automatycznie aktualizować numery koszulek.');
 $check(str_contains($release, '<th>Nr koszulki</th>'), 'Lista uczestników i strojów powinny pokazywać rzeczywisty numer koszulki.');
-$check(str_contains($release, 'Lista posortowana od najmłodszego do najstarszego uczestnika.'), 'Opis listy uczestników powinien informować o nowym sortowaniu.');
+$check(str_contains($release, 'Lista posortowana od najmłodszego do najstarszego uczestnika.'), 'Opis listy uczestników powinien informować o sortowaniu wieku.');
 
 $cases = [
     100=>'128-134',
@@ -73,9 +74,15 @@ $nodeExit = 1;
 exec('node --check '.escapeshellarg($root.'/assets/js/shirt-size-suggestion-092.js').' 2>&1', $nodeOutput, $nodeExit);
 $check($nodeExit === 0, 'Składnia JavaScript 0.92 jest nieprawidłowa: '.implode(' | ', $nodeOutput));
 
+$nextOutput = [];
+$nextExit = 1;
+exec(escapeshellarg(PHP_BINARY).' '.escapeshellarg($root.'/tests/release-093-jersey-number-by-size-test.php'), $nextOutput, $nextExit);
+$check($nextExit === 0, 'Regresja 0.93 numeracji koszulek nie przeszła: '.implode(' | ', $nextOutput));
+
 if ($failures) {
     fwrite(STDERR, "Release 0.92 camp lists/shirt sizing test FAILED:\n- ".implode("\n- ", $failures)."\n");
     exit(1);
 }
 
 echo "Release 0.92 camp lists/shirt sizing checks passed.\n";
+echo implode("\n", $nextOutput)."\n";
