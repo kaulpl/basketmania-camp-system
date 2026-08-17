@@ -83,6 +83,17 @@ final class BCS_Release_097 {
 
     private static function now(): string { return BCS_Utils::now(); }
 
+    private static function scheduled_timestamp(?string $value): int {
+        $value = trim((string)$value);
+        if ($value === '') return 0;
+        try {
+            $dt = new DateTimeImmutable($value, wp_timezone());
+            return $dt->getTimestamp();
+        } catch (Throwable $e) {
+            return 0;
+        }
+    }
+
     public static function render_campaigns_page(string $tab): void {
         if ($tab === 'new-campaign' || $tab === 'campaign') {
             self::render_campaign_form(absint($_GET['campaign_id'] ?? 0));
@@ -131,7 +142,7 @@ final class BCS_Release_097 {
 
     private static function render_campaign_form(int $campaignId): void {
         $campaign = self::campaign($campaignId);
-        $editable = !$campaign || in_array((string)$campaign->status, ['draft'], true);
+        $editable = !$campaign || (string)$campaign->status === 'draft';
         $values = [
             'name'=>$campaign->name ?? '',
             'subject'=>$campaign->subject ?? '',
@@ -145,7 +156,11 @@ final class BCS_Release_097 {
         ];
         echo '<div class="card" style="max-width:1050px;padding:22px">';
         echo '<h2>'.($campaign ? 'Kampania #'.(int)$campaign->id : 'Nowa kampania').'</h2>';
-        if ($campaign) echo '<p>Status: <strong>'.esc_html(self::status_label((string)$campaign->status)).'</strong></p>';
+        if ($campaign) {
+            echo '<p>Status: <strong>'.esc_html(self::status_label((string)$campaign->status)).'</strong></p>';
+            $estimate = count(self::audience_contacts($campaign));
+            echo '<p>Aktualnie segment spełnia: <strong>'.(int)$estimate.' kontaktów z aktywną zgodą</strong>.</p>';
+        }
 
         if ($editable) {
             echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'">';
@@ -265,9 +280,12 @@ final class BCS_Release_097 {
         $campaign = self::campaign($id);
         if (!$campaign || (string)$campaign->status !== 'draft') wp_die('Kampania nie może zostać uruchomiona.');
         $contacts = self::audience_contacts($campaign);
+        if (!$contacts) wp_die('Brak odbiorców z aktywną zgodą spełniających kryteria tej kampanii.');
         global $wpdb;
         $now = self::now();
-        $year = (int)wp_date('Y', BCS_Utils::timestamp());
+        $scheduledTs = self::scheduled_timestamp($campaign->scheduled_at ?? null);
+        $referenceTs = $scheduledTs > BCS_Utils::timestamp() ? $scheduledTs : BCS_Utils::timestamp();
+        $year = (int)wp_date('Y', $referenceTs);
         foreach ($contacts as $contact) {
             $token = BCS_Utils::random_token();
             $wpdb->insert(self::recipients_table(), [
@@ -287,14 +305,13 @@ final class BCS_Release_097 {
             [$subject, $html] = self::build_recipient_message($campaign, $contact, $recipient);
             $wpdb->update(self::recipients_table(), ['subject_snapshot'=>$subject,'body_snapshot'=>$html], ['id'=>$recipientId]);
         }
-        $scheduled = !empty($campaign->scheduled_at) ? strtotime((string)$campaign->scheduled_at) : 0;
-        $future = $scheduled && $scheduled > BCS_Utils::timestamp();
+        $future = $scheduledTs > BCS_Utils::timestamp();
         $wpdb->update(self::campaigns_table(), [
             'status'=>$future ? 'scheduled' : 'queued',
             'started_at'=>$future ? null : $now,
             'updated_at'=>$now,
         ], ['id'=>$id]);
-        self::schedule_queue($future ? $scheduled : (BCS_Utils::timestamp()+5));
+        self::schedule_queue($future ? $scheduledTs : (BCS_Utils::timestamp()+5));
         wp_safe_redirect(add_query_arg(['page'=>'bcs-mailing','tab'=>'campaigns','campaign_launched'=>1], admin_url('admin.php')));
         exit;
     }
@@ -321,8 +338,8 @@ final class BCS_Release_097 {
         $body .= '<p style="margin-top:34px;padding-top:20px;border-top:1px solid #e5e7eb;font-size:12px;line-height:18px;color:#7b7f86;text-align:center">Nie chcesz otrzymywać informacji o kolejnych edycjach Basketmania Camp? <a href="'.esc_url($unsubscribe).'">Wypisz się z mailingu</a>.</p>';
         $html = BCS_Mailer::wrap_html_email($subject, $body);
         if (!empty($campaign->preheader)) {
-            $preheader = '<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">'.esc_html(self::replace_variables((string)$campaign->preheader, $contact, $unsubscribe)).'</div>';
-            $html = str_replace('<body ', '<body '.$preheader, $html);
+            $preheader = '<div data-bcs-preheader="1" style="display:none!important;max-height:0;max-width:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all">'.esc_html(self::replace_variables((string)$campaign->preheader, $contact, $unsubscribe)).'</div>';
+            $html = preg_replace('/(<body\b[^>]*>)/i', '$1'.$preheader, $html, 1) ?? $html;
         }
         return [$subject, $html];
     }
@@ -386,7 +403,6 @@ final class BCS_Release_097 {
         $nowTs = BCS_Utils::timestamp();
         $now = self::now();
 
-        // Kampanie zaplanowane przechodzą do kolejki dopiero po osiągnięciu terminu.
         $wpdb->query($wpdb->prepare("UPDATE {$campaigns} SET status='queued',started_at=COALESCE(started_at,%s),updated_at=%s WHERE status='scheduled' AND scheduled_at IS NOT NULL AND scheduled_at<=%s", $now, $now, $now));
 
         $rows = $wpdb->get_results($wpdb->prepare("SELECT r.*,c.status campaign_status,m.consent_status,m.status contact_status
@@ -408,6 +424,7 @@ final class BCS_Release_097 {
             $wpdb->update($recipients, [
                 'status'=>$ok ? 'sent' : 'failed',
                 'sent_at'=>$ok ? $now : null,
+                'mailing_year'=>(int)wp_date('Y', $nowTs),
                 'error_message'=>$ok ? null : 'Transport pocztowy odrzucił wiadomość.',
                 'updated_at'=>$now,
             ], ['id'=>(int)$row->id]);
@@ -423,7 +440,8 @@ final class BCS_Release_097 {
         if ($remaining > 0) self::schedule_queue($nowTs + 60);
         elseif ($scheduled > 0) {
             $next = $wpdb->get_var("SELECT scheduled_at FROM {$campaigns} WHERE status='scheduled' AND scheduled_at IS NOT NULL ORDER BY scheduled_at ASC LIMIT 1");
-            if ($next) self::schedule_queue(max($nowTs+60, strtotime((string)$next)));
+            $nextTs = self::scheduled_timestamp((string)$next);
+            if ($nextTs) self::schedule_queue(max($nowTs+60, $nextTs));
         }
     }
 
