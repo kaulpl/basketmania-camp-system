@@ -104,6 +104,10 @@ jobs:
         run: php tests/release-088-single-ksef-description-test.php
       - name: Release 0.89 inbound mail parser/unread test
         run: php tests/release-089-inbound-mail-parser-unread-test.php
+      - name: Release 0.90 mail reply modal test
+        run: php tests/release-090-mail-reply-modal-test.php
+      - name: Check 0.90 mail reply JavaScript syntax
+        run: node --check assets/js/mail-reply-090.js
       - name: Release 0.71 real Dompdf render
         env:
           BCS_TEST_PDF_PATH: /tmp/agreement-v2-0.71.pdf

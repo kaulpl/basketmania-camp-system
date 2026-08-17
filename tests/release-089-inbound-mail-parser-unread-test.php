@@ -16,8 +16,10 @@ $check = static function(bool $condition, string $message) use (&$failures): voi
 
 preg_match('/\* Version:\s*([0-9.]+)/', $plugin, $headerVersion);
 preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $plugin, $constantVersion);
-$check(($headerVersion[1] ?? '') === '0.89', 'Nagłówek wtyczki powinien mieć wersję 0.89.');
-$check(($constantVersion[1] ?? '') === '0.89', 'BCS_VERSION powinno mieć wersję 0.89.');
+$header = (string)($headerVersion[1] ?? '');
+$constant = (string)($constantVersion[1] ?? '');
+$check($header !== '' && $header === $constant, 'Nagłówek wtyczki i BCS_VERSION powinny być zgodne.');
+$check($header !== '' && version_compare($header, '0.89', '>='), 'Test 0.89 wymaga wersji 0.89 lub nowszej.');
 $check(str_contains($plugin, "require_once BCS_DIR . 'includes/class-bcs-release-089.php';"), 'Bootstrap powinien ładować release 0.89.');
 $check(str_contains($plugin, 'BCS_Release_089::init();'), 'Bootstrap powinien inicjalizować release 0.89.');
 
