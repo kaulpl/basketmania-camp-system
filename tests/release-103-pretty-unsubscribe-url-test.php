@@ -20,8 +20,8 @@ $check = static function(bool $condition, string $message) use (&$failures): voi
 
 preg_match('/\* Version:\s*([0-9.]+)/', $plugin, $headerVersion);
 preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $plugin, $constantVersion);
-$check(($headerVersion[1] ?? '') === '1.03', 'Nagłówek wtyczki powinien mieć wersję 1.03.');
-$check(($constantVersion[1] ?? '') === '1.03', 'BCS_VERSION powinno mieć wersję 1.03.');
+$check(($headerVersion[1] ?? '') === ($constantVersion[1] ?? ''), 'Nagłówek i BCS_VERSION powinny być zgodne.');
+$check(version_compare((string)($headerVersion[1] ?? '0'), '1.03', '>='), 'Wtyczka powinna mieć wersję co najmniej 1.03.');
 $check(str_contains($plugin, "require_once BCS_DIR . 'includes/class-bcs-release-103.php';"), 'Bootstrap powinien ładować release 1.03.');
 $check(str_contains($plugin, 'BCS_Release_103::init();'), 'Bootstrap powinien inicjalizować release 1.03.');
 
@@ -63,3 +63,7 @@ if ($failures) {
 }
 
 echo "Release 1.03 pretty unsubscribe URL checks passed.\n";
+
+// CI ma już krok dla 1.03; uruchamiamy w nim również regresję 1.04 bez
+// ingerowania w strukturę istniejącego workflow.
+require __DIR__.'/release-104-mailing-throttle-worker-test.php';
