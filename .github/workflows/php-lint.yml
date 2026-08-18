@@ -121,6 +121,8 @@ jobs:
         run: php tests/release-100-mailing-ui-dashboard-settings-test.php
       - name: Release 1.02 mailing dashboard and date query test
         run: php tests/release-102-mailing-dashboard-stats-test.php
+      - name: Release 1.03 pretty unsubscribe URL test
+        run: php tests/release-103-pretty-unsubscribe-url-test.php
       - name: Check 1.00 mailing JavaScript syntax
         run: node --check assets/mailing-100.js
       - name: Upload 0.95 bracket preview artifacts

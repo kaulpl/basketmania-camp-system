@@ -20,8 +20,8 @@ $check = static function(bool $condition, string $message) use (&$failures): voi
 
 preg_match('/\* Version:\s*([0-9.]+)/', $plugin, $headerVersion);
 preg_match("/define\('BCS_VERSION',\s*'([^']+)'\)/", $plugin, $constantVersion);
-$check(($headerVersion[1] ?? '') === '1.02', 'Nagłówek wtyczki powinien mieć wersję 1.02.');
-$check(($constantVersion[1] ?? '') === '1.02', 'BCS_VERSION powinno mieć wersję 1.02.');
+$check(($headerVersion[1] ?? '') === ($constantVersion[1] ?? ''), 'Nagłówek i BCS_VERSION powinny być zgodne.');
+$check(version_compare((string)($headerVersion[1] ?? '0'), '1.02', '>='), 'Wtyczka powinna mieć wersję co najmniej 1.02.');
 
 // Strict MySQL: DATE nie może być porównywane do pustego stringa.
 $query = "SELECT DISTINCT YEAR(start_date) y FROM wp_bcs_camps WHERE start_date IS NOT NULL AND start_date<>'' ORDER BY y DESC";
