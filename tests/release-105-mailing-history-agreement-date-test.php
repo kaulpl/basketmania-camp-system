@@ -59,3 +59,5 @@ if ($failures) {
 }
 
 echo "Release 1.05 mailing history/agreement date checks passed.\n";
+
+require __DIR__.'/release-106-agreement-attachment-sections-test.php';
