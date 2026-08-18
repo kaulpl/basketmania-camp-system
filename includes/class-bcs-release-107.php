@@ -2,19 +2,13 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * 1.07 – centralny audyt działań wszystkich modułów i w pełni polski widok logów.
- *
- * Założenia:
- * - istniejące, szczegółowe logi modułów pozostają źródłem informacji o wyniku,
- * - dodatkowa warstwa audytowa rejestruje każdą obsłużoną akcję Basketmania,
- * - nie kopiujemy do audytu treści formularzy, haseł, tokenów ani danych medycznych,
- * - Logi i Historia klienta nie pokazują technicznych angielskich identyfikatorów.
+ * 1.07 – centralny audyt działań wszystkich modułów oraz polskie Logi/Historia klienta.
  */
 final class BCS_Release_107 {
     private static ?array $pendingAdminAction = null;
     private static bool $adminShutdownRegistered = false;
     private static int $mailboxBeforeId = 0;
-    private static ?array $mailingQueueBefore = null;
+    private static ?array $mailingBefore = null;
     private static ?array $publicMarketingAudit = null;
     private static bool $publicShutdownRegistered = false;
 
@@ -23,17 +17,14 @@ final class BCS_Release_107 {
         add_action('admin_menu', [__CLASS__, 'replace_logs_page'], 999);
         add_action('admin_enqueue_scripts', [__CLASS__, 'assets'], 50);
 
-        // Poczta – cron oraz ręczna synchronizacja (ręczna jest domykana w shutdown).
         add_action('bcs_mailbox_sync_event', [__CLASS__, 'mailbox_sync_before'], 1);
         add_action('bcs_mailbox_sync_event', [__CLASS__, 'mailbox_sync_after'], 99);
 
-        // Mailing – rejestrujemy tylko przebiegi, w których faktycznie zmieniły się liczniki wysyłki.
-        add_action('bcs_marketing_queue_097', [__CLASS__, 'mailing_queue_before'], 1);
-        add_action('bcs_marketing_queue_097', [__CLASS__, 'mailing_queue_after'], 99);
-        add_action('bcs_marketing_queue_pump_098', [__CLASS__, 'mailing_queue_before'], 1);
-        add_action('bcs_marketing_queue_pump_098', [__CLASS__, 'mailing_queue_after'], 99);
+        foreach (['bcs_marketing_queue_097', 'bcs_marketing_queue_pump_098'] as $hook) {
+            add_action($hook, [__CLASS__, 'mailing_queue_before'], 1);
+            add_action($hook, [__CLASS__, 'mailing_queue_after'], 99);
+        }
 
-        // Publiczne akcje marketingowe nie przechodzą przez audyt administratora.
         foreach (['admin_post_bcs_marketing_unsubscribe_096', 'admin_post_nopriv_bcs_marketing_unsubscribe_096'] as $hook) {
             add_action($hook, [__CLASS__, 'prepare_unsubscribe_audit'], 1);
         }
@@ -64,8 +55,6 @@ final class BCS_Release_107 {
             'mailing_queue_processed' => 'Przetworzono kolejkę mailingu',
             'marketing_unsubscribed' => 'Odbiorca wypisał się z mailingu',
             'mailing_link_clicked' => 'Odbiorca kliknął link w mailingu',
-            'marketing_consent_granted' => 'Wyrażono zgodę na mailing',
-            'marketing_consent_withdrawn' => 'Cofnięto zgodę na mailing',
         ];
     }
 
@@ -110,13 +99,11 @@ final class BCS_Release_107 {
             'marketing_campaign_test' => 'Wysłano test kampanii mailingowej',
             'marketing_campaign_pause' => 'Wstrzymano kampanię mailingową',
             'marketing_campaign_resume' => 'Wznowiono kampanię mailingową',
-            'marketing_settings_save' => 'Zapisano ustawienia mailingu',
             'agreement_view' => 'Otworzono podgląd umowy',
             'agreement_version_preview_054' => 'Otworzono podgląd wersji umowy',
             'camp_bracket_pdf_094' => 'Wygenerowano drabinkę turniejową',
-            'camp_report' => 'Wygenerowano raport turnusu',
-            'invoice_download' => 'Pobrano fakturę',
             'invoice_generate' => 'Wygenerowano fakturę',
+            'invoice_download' => 'Pobrano fakturę',
             'ksef_send' => 'Wysłano fakturę do KSeF',
             'ksef_status' => 'Sprawdzono status dokumentu w KSeF',
             'ksef_download' => 'Pobrano dokument z KSeF',
@@ -125,40 +112,12 @@ final class BCS_Release_107 {
         ];
     }
 
-    public static function event_title(string $event): string {
-        $known = self::event_labels();
-        if (isset($known[$event])) return $known[$event];
-        if (str_starts_with($event, 'audit_')) return self::audit_action_label(substr($event, 6));
-        if (str_starts_with($event, 'crm_')) return self::audit_action_label($event);
-        return 'Zdarzenie systemowe';
-    }
-
-    public static function audit_action_label(string $key): string {
-        $key = self::normalize_action_key($key);
-        $labels = self::audit_action_labels();
-        if (isset($labels[$key])) return $labels[$key];
-        $module = self::module_for_action($key);
-        return match ($module) {
-            'Mailing' => 'Wykonano działanie w module Mailing',
-            'Poczta' => 'Wykonano działanie w module Poczta',
-            'Faktury i KSeF' => 'Wykonano działanie w module Faktury i KSeF',
-            'Umowy' => 'Wykonano działanie w module Umowy',
-            'Płatności' => 'Wykonano działanie w module Płatności',
-            'CRM – Zgłoszenia' => 'Wykonano działanie w obsłudze zgłoszeń',
-            'Turnusy i raporty' => 'Wykonano działanie dotyczące turnusu lub raportu',
-            'Organizatorzy' => 'Wykonano działanie dotyczące organizatora',
-            'Szablony' => 'Wykonano działanie w module Szablony',
-            'Dokumenty' => 'Wykonano działanie dotyczące dokumentu',
-            default => 'Wykonano działanie w systemie',
-        };
-    }
-
     public static function normalize_action_key(string $key): string {
         $key = strtolower(trim($key));
-        $key = preg_replace('/^bcs_/', '', $key);
-        $key = preg_replace('/_\d{3}$/', '', (string)$key);
-        $key = preg_replace('/[^a-z0-9_]+/', '_', (string)$key);
-        return trim((string)$key, '_');
+        $key = (string)preg_replace('/^bcs_/', '', $key);
+        $key = (string)preg_replace('/_\d{3}$/', '', $key);
+        $key = (string)preg_replace('/[^a-z0-9_]+/', '_', $key);
+        return trim($key, '_');
     }
 
     public static function module_for_action(string $key): string {
@@ -178,16 +137,39 @@ final class BCS_Release_107 {
         return 'System';
     }
 
-    /**
-     * Czysta funkcja używana również przez test regresyjny.
-     */
+    public static function audit_action_label(string $key): string {
+        $key = self::normalize_action_key($key);
+        $labels = self::audit_action_labels();
+        if (isset($labels[$key])) return $labels[$key];
+        return match (self::module_for_action($key)) {
+            'Mailing' => 'Wykonano działanie w module Mailing',
+            'Poczta' => 'Wykonano działanie w module Poczta',
+            'Faktury i KSeF' => 'Wykonano działanie w module Faktury i KSeF',
+            'Umowy' => 'Wykonano działanie w module Umowy',
+            'Płatności' => 'Wykonano działanie w module Płatności',
+            'CRM – Zgłoszenia' => 'Wykonano działanie w obsłudze zgłoszeń',
+            'Turnusy i raporty' => 'Wykonano działanie dotyczące turnusu lub raportu',
+            'Organizatorzy' => 'Wykonano działanie dotyczące organizatora',
+            'Szablony' => 'Wykonano działanie w module Szablony',
+            'Dokumenty' => 'Wykonano działanie dotyczące dokumentu',
+            default => 'Wykonano działanie w systemie',
+        };
+    }
+
+    public static function event_title(string $event): string {
+        $known = self::event_labels();
+        if (isset($known[$event])) return $known[$event];
+        if (str_starts_with($event, 'audit_')) return self::audit_action_label(substr($event, 6));
+        if (str_starts_with($event, 'crm_')) return self::audit_action_label($event);
+        return 'Zdarzenie systemowe';
+    }
+
+    /** Czysta funkcja używana również przez test regresyjny. */
     public static function detect_admin_action(array $request): ?array {
         $explicit = isset($request['action']) ? (string)$request['action'] : '';
         if ($explicit !== '' && str_starts_with($explicit, 'bcs_')) {
             $key = self::normalize_action_key($explicit);
-            if ($key === 'workflow_single' && !empty($request['workflow'])) {
-                $key = 'workflow_'.self::normalize_action_key((string)$request['workflow']);
-            }
+            if ($key === 'workflow_single' && !empty($request['workflow'])) $key = 'workflow_'.self::normalize_action_key((string)$request['workflow']);
             return ['action_key'=>$key, 'module'=>self::module_for_action($key), 'label'=>self::audit_action_label($key)];
         }
 
@@ -198,14 +180,11 @@ final class BCS_Release_107 {
             }
         }
 
-        if (!empty($request['bcs_mail_read'])) {
-            return ['action_key'=>'mail_read', 'module'=>'Poczta', 'label'=>self::audit_action_label('mail_read')];
-        }
+        if (!empty($request['bcs_mail_read'])) return ['action_key'=>'mail_read', 'module'=>'Poczta', 'label'=>self::audit_action_label('mail_read')];
 
         $preferred = [
-            'bcs_save_settings','bcs_test_email','bcs_test_sms','bcs_reset_test_data',
-            'bcs_save_organizer','bcs_delete_organizer','bcs_save_camp','bcs_delete_camp',
-            'bcs_save_registration','bcs_delete_registration','bcs_mail_sync','bcs_mail_assign',
+            'bcs_save_settings','bcs_test_email','bcs_test_sms','bcs_reset_test_data','bcs_save_organizer','bcs_delete_organizer',
+            'bcs_save_camp','bcs_delete_camp','bcs_save_registration','bcs_delete_registration','bcs_mail_sync','bcs_mail_assign',
             'bcs_mail_reply','bcs_mail_create_registration','bcs_save_template','bcs_save_templates',
         ];
         foreach ($preferred as $field) {
@@ -261,34 +240,20 @@ final class BCS_Release_107 {
 
         $event = 'audit_'.substr(self::normalize_action_key((string)$a['action_key']), 0, 80);
         BCS_Utils::log($event, [
-            'module'=>(string)$a['module'],
-            'action_label'=>(string)$a['label'],
-            'action_key'=>(string)$a['action_key'],
-            'request_method'=>(string)$a['method'],
-            'page'=>(string)$a['page'],
-            'invoice_id'=>(int)$a['invoice_id'],
-            'campaign_id'=>(int)$a['campaign_id'],
-            'contact_id'=>(int)$a['contact_id'],
-            'message_id'=>(int)$a['message_id'],
-            'camp_id'=>(int)$a['camp_id'],
-            'organizer_id'=>(int)$a['organizer_id'],
-            'audit_status'=>'handled',
-            '_actor_type'=>'administrator',
+            'module'=>(string)$a['module'], 'action_label'=>(string)$a['label'], 'action_key'=>(string)$a['action_key'],
+            'request_method'=>(string)$a['method'], 'page'=>(string)$a['page'], 'invoice_id'=>(int)$a['invoice_id'],
+            'campaign_id'=>(int)$a['campaign_id'], 'contact_id'=>(int)$a['contact_id'], 'message_id'=>(int)$a['message_id'],
+            'camp_id'=>(int)$a['camp_id'], 'organizer_id'=>(int)$a['organizer_id'], 'audit_status'=>'handled', '_actor_type'=>'administrator',
         ], $registrationId ?: null, (int)$a['agreement_id'] ?: null);
 
         if ((string)$a['action_key'] === 'mail_sync') {
-            $count = self::log_new_inbound_since(self::$mailboxBeforeId, 'manual');
+            $new = self::log_new_inbound_since(self::$mailboxBeforeId, 'manual');
             $last = get_option('bcs_last_imap_result', []);
-            BCS_Utils::log('mailbox_sync_completed', [
-                'source'=>'manual',
-                'new_messages'=>$count,
-                'errors'=>(int)($last['errors'] ?? 0),
-                '_actor_type'=>'administrator',
-            ], null, null);
+            BCS_Utils::log('mailbox_sync_completed', ['source'=>'manual','new_messages'=>$new,'errors'=>(int)($last['errors'] ?? 0),'_actor_type'=>'administrator']);
         } elseif ((string)$a['action_key'] === 'mail_assign' && !empty($a['message_id'])) {
-            BCS_Utils::log('mailbox_message_assigned', ['message_id'=>(int)$a['message_id']], $registrationId ?: null, null);
+            BCS_Utils::log('mailbox_message_assigned', ['message_id'=>(int)$a['message_id']], $registrationId ?: null);
         } elseif ((string)$a['action_key'] === 'mail_read' && !empty($a['message_id'])) {
-            BCS_Utils::log('mailbox_message_read', ['message_id'=>(int)$a['message_id']], $registrationId ?: null, null);
+            BCS_Utils::log('mailbox_message_read', ['message_id'=>(int)$a['message_id']], $registrationId ?: null);
         }
     }
 
@@ -319,62 +284,43 @@ final class BCS_Release_107 {
         ));
         foreach ((array)$rows as $row) {
             BCS_Utils::log('mailbox_message_received', [
-                'message_id'=>(int)$row->id,
-                'sender_email'=>(string)$row->sender_email,
-                'subject'=>(string)$row->subject,
-                'source'=>$source,
-                '_actor_type'=>'system',
-            ], !empty($row->registration_id) ? (int)$row->registration_id : null, null);
+                'message_id'=>(int)$row->id, 'sender_email'=>(string)$row->sender_email, 'subject'=>(string)$row->subject,
+                'source'=>$source, '_actor_type'=>'system',
+            ], !empty($row->registration_id) ? (int)$row->registration_id : null);
         }
         return count((array)$rows);
     }
 
-    public static function mailbox_sync_before(): void {
-        self::$mailboxBeforeId = self::latest_inbound_id();
-    }
+    public static function mailbox_sync_before(): void { self::$mailboxBeforeId = self::latest_inbound_id(); }
 
     public static function mailbox_sync_after(): void {
         $new = self::log_new_inbound_since(self::$mailboxBeforeId, 'automatic');
         $last = get_option('bcs_last_imap_result', []);
         $errors = (int)($last['errors'] ?? 0);
-        if ($new > 0 || $errors > 0) {
-            BCS_Utils::log('mailbox_sync_completed', [
-                'source'=>'automatic',
-                'new_messages'=>$new,
-                'errors'=>$errors,
-                '_actor_type'=>'system',
-            ], null, null);
-        }
+        if ($new > 0 || $errors > 0) BCS_Utils::log('mailbox_sync_completed', ['source'=>'automatic','new_messages'=>$new,'errors'=>$errors,'_actor_type'=>'system']);
     }
 
     private static function mailing_stats(): array {
-        if (!class_exists('BCS_Release_097')) return ['queued'=>0,'sending'=>0,'sent'=>0,'failed'=>0];
+        $out = ['queued'=>0,'sending'=>0,'sent'=>0,'failed'=>0];
+        if (!class_exists('BCS_Release_097')) return $out;
         global $wpdb;
         $table = BCS_Release_097::recipients_table();
-        $out = ['queued'=>0,'sending'=>0,'sent'=>0,'failed'=>0];
         $rows = $wpdb->get_results("SELECT status,COUNT(*) cnt FROM {$table} GROUP BY status");
         foreach ((array)$rows as $row) if (isset($out[$row->status])) $out[$row->status] = (int)$row->cnt;
         return $out;
     }
 
-    public static function mailing_queue_before(): void {
-        self::$mailingQueueBefore = self::mailing_stats();
-    }
+    public static function mailing_queue_before(): void { self::$mailingBefore = self::mailing_stats(); }
 
     public static function mailing_queue_after(): void {
-        if (!self::$mailingQueueBefore || !class_exists('BCS_Utils')) return;
-        $before = self::$mailingQueueBefore;
-        self::$mailingQueueBefore = null;
+        if (!self::$mailingBefore || !class_exists('BCS_Utils')) return;
+        $before = self::$mailingBefore;
+        self::$mailingBefore = null;
         $after = self::mailing_stats();
         $sent = max(0, (int)$after['sent'] - (int)$before['sent']);
         $failed = max(0, (int)$after['failed'] - (int)$before['failed']);
         if ($sent === 0 && $failed === 0) return;
-        BCS_Utils::log('mailing_queue_processed', [
-            'sent_count'=>$sent,
-            'failed_count'=>$failed,
-            'queued_remaining'=>(int)$after['queued'],
-            '_actor_type'=>'system',
-        ], null, null);
+        BCS_Utils::log('mailing_queue_processed', ['sent_count'=>$sent,'failed_count'=>$failed,'queued_remaining'=>(int)$after['queued'],'_actor_type'=>'system']);
     }
 
     private static function register_public_shutdown(): void {
@@ -419,30 +365,21 @@ final class BCS_Release_107 {
 
     public static function flush_public_marketing_audit(): void {
         if (!self::$publicMarketingAudit || !class_exists('BCS_Utils')) return;
-        $audit = self::$publicMarketingAudit;
+        $a = self::$publicMarketingAudit;
         self::$publicMarketingAudit = null;
         global $wpdb;
 
-        if ($audit['type'] === 'unsubscribe' && class_exists('BCS_Release_096')) {
-            $row = $wpdb->get_row($wpdb->prepare('SELECT status,consent_status FROM '.BCS_Release_096::contacts_table().' WHERE id=%d', (int)$audit['id']));
-            if ($row && ((string)$row->status !== (string)$audit['status_before'] || (string)$row->consent_status !== (string)$audit['consent_before'])) {
-                BCS_Utils::log('marketing_unsubscribed', [
-                    'contact_id'=>(int)$audit['id'],
-                    'consent_status'=>(string)$row->consent_status,
-                    '_actor_type'=>'parent',
-                ], !empty($audit['registration_id']) ? (int)$audit['registration_id'] : null, null);
+        if ($a['type'] === 'unsubscribe' && class_exists('BCS_Release_096')) {
+            $row = $wpdb->get_row($wpdb->prepare('SELECT status,consent_status FROM '.BCS_Release_096::contacts_table().' WHERE id=%d', (int)$a['id']));
+            if ($row && ((string)$row->status !== (string)$a['status_before'] || (string)$row->consent_status !== (string)$a['consent_before'])) {
+                BCS_Utils::log('marketing_unsubscribed', ['contact_id'=>(int)$a['id'],'consent_status'=>(string)$row->consent_status,'_actor_type'=>'parent'], !empty($a['registration_id']) ? (int)$a['registration_id'] : null);
             }
         }
 
-        if ($audit['type'] === 'click' && class_exists('BCS_Release_097')) {
-            $clicked = (string)$wpdb->get_var($wpdb->prepare('SELECT clicked_at FROM '.BCS_Release_097::recipients_table().' WHERE id=%d', (int)$audit['id']));
-            if ((string)$audit['clicked_before'] === '' && $clicked !== '') {
-                BCS_Utils::log('mailing_link_clicked', [
-                    'campaign_id'=>(int)$audit['campaign_id'],
-                    'contact_id'=>(int)$audit['contact_id'],
-                    'clicked_at'=>$clicked,
-                    '_actor_type'=>'parent',
-                ], !empty($audit['registration_id']) ? (int)$audit['registration_id'] : null, null);
+        if ($a['type'] === 'click' && class_exists('BCS_Release_097')) {
+            $clicked = (string)$wpdb->get_var($wpdb->prepare('SELECT clicked_at FROM '.BCS_Release_097::recipients_table().' WHERE id=%d', (int)$a['id']));
+            if ((string)$a['clicked_before'] === '' && $clicked !== '') {
+                BCS_Utils::log('mailing_link_clicked', ['campaign_id'=>(int)$a['campaign_id'],'contact_id'=>(int)$a['contact_id'],'clicked_at'=>$clicked,'_actor_type'=>'parent'], !empty($a['registration_id']) ? (int)$a['registration_id'] : null);
             }
         }
     }
@@ -456,7 +393,8 @@ final class BCS_Release_107 {
     }
 
     public static function assets(string $hook): void {
-        if (strpos($hook, 'bcs-') === false && sanitize_key(wp_unslash($_GET['page'] ?? '')) !== 'bcs-registrations') return;
+        $page = sanitize_key(wp_unslash($_GET['page'] ?? ''));
+        if (strpos($hook, 'bcs-') === false && $page !== 'bcs-registrations') return;
         wp_enqueue_script('bcs-audit-polish-107', BCS_URL.'assets/js/audit-polish-107.js', [], BCS_VERSION, true);
         wp_localize_script('bcs-audit-polish-107', 'BCSAudit107', [
             'eventLabels'=>self::event_labels(),
@@ -543,7 +481,7 @@ final class BCS_Release_107 {
         if (!$rows) echo '<tr><td colspan="5">Brak logów dla wybranych filtrów.</td></tr>';
         foreach ($rows as $row) {
             $data = json_decode((string)$row->event_data, true);
-            if (!is_array($data)) $data = ['value'=>(string)$row->event_data;
+            if (!is_array($data)) $data = ['value'=>(string)$row->event_data];
             $actor = BCS_Utils::infer_actor_type((string)$row->event_type, $data);
             $actorLabel = BCS_Utils::actor_label($actor);
             if ($actor === 'administrator' && !empty($data['_actor_display_name'])) {
@@ -562,8 +500,8 @@ final class BCS_Release_107 {
 
     public static function detail_key_label(string $key): string {
         $map = [
-            'module'=>'Moduł','action_label'=>'Akcja','action_key'=>'Rodzaj akcji','request_method'=>'Metoda żądania','page'=>'Ekran systemu',
-            'audit_status'=>'Status audytu','source'=>'Źródło','status'=>'Status','success'=>'Powodzenie','message'=>'Komunikat','error'=>'Błąd','errors'=>'Liczba błędów','reason'=>'Powód','title'=>'Tytuł','subject'=>'Temat wiadomości',
+            'module'=>'Moduł','action_label'=>'Akcja','action_key'=>'Rodzaj akcji','request_method'=>'Metoda żądania','page'=>'Ekran systemu','audit_status'=>'Status audytu',
+            'source'=>'Źródło','status'=>'Status','success'=>'Powodzenie','message'=>'Komunikat','error'=>'Błąd','errors'=>'Liczba błędów','reason'=>'Powód','title'=>'Tytuł','subject'=>'Temat wiadomości',
             'registration_id'=>'ID zgłoszenia','agreement_id'=>'ID umowy','invoice_id'=>'ID faktury','payment_id'=>'ID płatności','campaign_id'=>'ID kampanii','contact_id'=>'ID kontaktu','message_id'=>'ID wiadomości','camp_id'=>'ID turnusu','organizer_id'=>'ID organizatora',
             'sender_email'=>'Adres e-mail nadawcy','recipient_email'=>'Adres e-mail odbiorcy','email'=>'Adres e-mail','phone'=>'Numer telefonu','channel'=>'Kanał komunikacji','provider'=>'Dostawca usługi',
             'amount_due'=>'Kwota do zapłaty','paid_amount'=>'Kwota wpłacona','total_amount'=>'Kwota całkowita','new_messages'=>'Nowe wiadomości','sent_count'=>'Wysłane wiadomości','failed_count'=>'Błędy wysyłki','queued_remaining'=>'Pozostało w kolejce',
@@ -571,19 +509,7 @@ final class BCS_Release_107 {
             'document_hash'=>'Skrót dokumentu','file'=>'Plik','path'=>'Ścieżka','url'=>'Adres URL','created_at'=>'Data utworzenia','updated_at'=>'Data aktualizacji','sent_at'=>'Data wysłania','payment_date'=>'Data płatności',
         ];
         if (isset($map[$key])) return $map[$key];
-        $tokens = [
-            'id'=>'ID','count'=>'liczba','new'=>'nowe','sent'=>'wysłane','failed'=>'błędy','queued'=>'kolejka','remaining'=>'pozostało','date'=>'data','time'=>'czas',
-            'created'=>'utworzenie','updated'=>'aktualizacja','message'=>'wiadomość','email'=>'e-mail','sms'=>'SMS','mail'=>'poczta','mailing'=>'mailing','campaign'=>'kampania','contact'=>'kontakt','recipient'=>'odbiorca',
-            'invoice'=>'faktura','payment'=>'płatność','agreement'=>'umowa','registration'=>'zgłoszenie','camp'=>'turnus','organizer'=>'organizator','amount'=>'kwota','channel'=>'kanał','provider'=>'dostawca','external'=>'zewnętrzny',
-            'status'=>'status','source'=>'źródło','result'=>'wynik','action'=>'akcja','module'=>'moduł','method'=>'metoda','page'=>'ekran','document'=>'dokument','file'=>'plik','path'=>'ścieżka','hash'=>'skrót','url'=>'adres',
-            'subject'=>'temat','sender'=>'nadawca','recipient'=>'odbiorca','click'=>'kliknięcie','clicked'=>'kliknięto','consent'=>'zgoda','value'=>'wartość','automatic'=>'automatycznie','manual'=>'ręcznie','ready'=>'gotowe','draft'=>'draft',
-        ];
-        $parts = array_values(array_filter(explode('_', strtolower($key))));
-        if (!$parts) return 'Informacja dodatkowa';
-        $translated = [];
-        foreach ($parts as $part) $translated[] = $tokens[$part] ?? 'informacja';
-        $label = trim(implode(' ', $translated));
-        return $label !== '' ? mb_strtoupper(mb_substr($label,0,1),'UTF-8').mb_substr($label,1) : 'Informacja dodatkowa';
+        return 'Informacja dodatkowa';
     }
 
     private static function value_label($value): string {
@@ -601,33 +527,15 @@ final class BCS_Release_107 {
     }
 
     public static function details_text(array $data): string {
-        $lines = self::flatten_details($data);
-        return $lines ? implode("\n", $lines) : 'Brak dodatkowych szczegółów.';
-    }
-
-    private static function flatten_details(array $data, string $prefix = ''): array {
         $lines = [];
         foreach ($data as $key=>$value) {
             $key = (string)$key;
             if (str_starts_with($key, '_actor_')) continue;
             if (preg_match('/(?:password|secret|token|authorization|api_key)/i', $key)) continue;
-            if ((int)$value === 0 && in_array($key, ['invoice_id','campaign_id','contact_id','message_id','camp_id','organizer_id','agreement_id','registration_id'], true)) continue;
-            $label = self::detail_key_label($key);
-            $fullLabel = $prefix !== '' ? $prefix.' – '.$label : $label;
-            if (is_array($value)) {
-                if (array_is_list($value) && !array_filter($value, 'is_array')) {
-                    $lines[] = $fullLabel.': '.implode(', ', array_map([__CLASS__, 'value_label'], $value));
-                } else {
-                    $lines = array_merge($lines, self::flatten_details($value, $fullLabel));
-                }
-                continue;
-            }
-            if (is_object($value)) {
-                $lines = array_merge($lines, self::flatten_details((array)$value, $fullLabel));
-                continue;
-            }
-            $lines[] = $fullLabel.': '.self::value_label($value);
+            if (in_array($key, ['invoice_id','campaign_id','contact_id','message_id','camp_id','organizer_id','agreement_id','registration_id'], true) && (int)$value === 0) continue;
+            if (is_array($value) || is_object($value)) $value = wp_json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $lines[] = self::detail_key_label($key).': '.self::value_label($value);
         }
-        return $lines;
+        return $lines ? implode("\n", $lines) : 'Brak dodatkowych szczegółów.';
     }
 }
