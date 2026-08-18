@@ -93,3 +93,7 @@ if ($failures) {
 }
 
 echo "Release 1.07 audit/log Polish checks passed.\n";
+
+$next = $root.'/tests/release-108-camp-archive-test.php';
+if (is_file($next)) passthru(PHP_BINARY.' '.escapeshellarg($next), $nextStatus);
+if (!empty($nextStatus)) exit((int)$nextStatus);
