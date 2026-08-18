@@ -55,3 +55,5 @@ if ($failures) {
 }
 
 echo "Release 1.04 mailing throttle worker checks passed.\n";
+
+require __DIR__.'/release-105-mailing-history-agreement-date-test.php';
