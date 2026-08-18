@@ -75,3 +75,5 @@ if ($failures) {
 }
 
 echo "Release 1.06 agreement attachment sections checks passed.\n";
+
+require __DIR__.'/release-107-audit-log-polish-test.php';
