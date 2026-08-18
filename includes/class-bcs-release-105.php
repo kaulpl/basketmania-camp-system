@@ -172,7 +172,7 @@ final class BCS_Release_105 {
         $count = 0;
         $next = preg_replace(
             '~(Zawarta\s+(?:w\s+dniu|dnia)\s*(?:<[^>]+>\s*)?)(?:\d{2}[.\/-]\d{2}[.\/-]\d{4}|dd[.\/-]mm[.\/-]yyyy|—)~iu',
-            '$1'.$date,
+            '${1}'.$date,
             $html,
             1,
             $count
