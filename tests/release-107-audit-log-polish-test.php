@@ -93,3 +93,5 @@ if ($failures) {
 }
 
 echo "Release 1.07 audit/log Polish checks passed.\n";
+
+require __DIR__.'/release-108-camp-archive-ksef-evidence-test.php';
