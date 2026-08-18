@@ -124,7 +124,7 @@ final class BCS_Release_105 {
         echo '</div></section>';
 
         $rows = $wpdb->get_results($wpdb->prepare("SELECT r.*,m.first_name,m.last_name,m.email contact_email FROM {$recipients} r LEFT JOIN {$contacts} m ON m.id=r.contact_id WHERE r.campaign_id=%d ORDER BY r.id ASC", $campaignId));
-        echo '<section class="bcs-mail-card"><div class="bcs-mail-card-head"><div><h2>Odbiorcy kampanii</h2><p>Dokładny status, terminy i snapshot wiadomości dla każdego adresu.</p></div><span class="bcs-mail-badge is-info">'.count((array)$rows.'').' odbiorców</span></div>';
+        echo '<section class="bcs-mail-card"><div class="bcs-mail-card-head"><div><h2>Odbiorcy kampanii</h2><p>Dokładny status, terminy i snapshot wiadomości dla każdego adresu.</p></div><span class="bcs-mail-badge is-info">'.count((array)$rows).' odbiorców</span></div>';
         echo '<div class="bcs-table-wrap"><table class="widefat bcs-mail-table bcs-mail-history-table-105"><thead><tr><th>Odbiorca</th><th>Rok</th><th>Status</th><th>Brany pod uwagę</th><th>Wysłano</th><th>Kliknięcie</th><th>Wiadomość</th></tr></thead><tbody>';
         if (!$rows) echo '<tr><td colspan="7"><div class="bcs-mail-empty">Kampania nie ma jeszcze odbiorców.</div></td></tr>';
         foreach ((array)$rows as $row) {
@@ -169,16 +169,15 @@ final class BCS_Release_105 {
     public static function replace_agreement_date(string $html, string $date): string {
         if ($html === '' || $date === '') return $html;
         $html = str_replace(['{{AGREEMENT_DATE}}','dd-MM-YYYY','DD-MM-YYYY'], $date, $html);
-        $patterns = [
+        $count = 0;
+        $next = preg_replace(
             '~(Zawarta\s+(?:w\s+dniu|dnia)\s*(?:<[^>]+>\s*)?)(?:\d{2}[.\/-]\d{2}[.\/-]\d{4}|dd[.\/-]mm[.\/-]yyyy|—)~iu',
-            '~(zawarta\s+(?:w\s+dniu|dnia)\s*(?:<[^>]+>\s*)?)(?:\d{2}[.\/-]\d{2}[.\/-]\d{4}|dd[.\/-]mm[.\/-]yyyy|—)~iu',
-        ];
-        foreach ($patterns as $pattern) {
-            $count = 0;
-            $next = preg_replace($pattern, '$1'.$date, $html, 1, $count);
-            if ($count > 0 && is_string($next)) return $next;
-        }
-        return $html;
+            '$1'.$date,
+            $html,
+            1,
+            $count
+        );
+        return $count > 0 && is_string($next) ? $next : $html;
     }
 
     private static function signed_body(string $html): string {
