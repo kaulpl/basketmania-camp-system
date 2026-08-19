@@ -48,3 +48,4 @@ if ($failures) {
 }
 
 echo "Release 1.09 download archive without closing checks passed.\n";
+require __DIR__.'/release-110-invoice-buyer-profile-test.php';
