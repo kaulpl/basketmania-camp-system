@@ -71,3 +71,4 @@ if ($failures) {
 }
 
 echo "Release 1.08 camp archive and KSeF evidence checks passed.\n";
+require __DIR__.'/release-109-download-archive-without-closing-test.php';
