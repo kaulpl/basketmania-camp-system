@@ -49,3 +49,4 @@ if ($failures) {
 }
 
 echo "Release 1.10 invoice buyer toggle checks passed.\n";
+require __DIR__.'/release-111-ksef-test-anonymization-test.php';
