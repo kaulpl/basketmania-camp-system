@@ -2,11 +2,11 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * 0.82 – twarda spójność nabywcy PDF ↔ KSeF.
+ * 0.82 – twarda kontrola nabywcy PDF ↔ KSeF.
  *
- * Właściwa faktura korzysta z nabywcy zamrożonego przy dokumencie lokalnym.
- * Przed wysyłką przygotowujemy FA(3), odczytujemy Podmiot2 z XML i porównujemy
- * nazwę, NIP oraz adres. Rozbieżność blokuje wysyłkę do KSeF.
+ * W PRODUKCJI dane Podmiot2 muszą odpowiadać nabywcy zamrożonemu na fakturze PDF.
+ * W TEST dane rzeczywiste nie mogą opuścić systemu: Podmiot2 musi zostać zastąpiony
+ * fikcyjnym nabywcą, bez NIP-u, zgodnie z ochroną środowiska integracyjnego.
  */
 final class BCS_Release_082 {
     public static function init(): void {
@@ -88,6 +88,38 @@ final class BCS_Release_082 {
         ];
     }
 
+    /**
+     * Twarda kontrola przed wysyłką do KSeF TEST. Nie wystarczy brak NIP-u:
+     * wymagamy również BrakID=1 i dokładnie naszych fikcyjnych danych nabywcy.
+     */
+    public static function test_buyer_is_anonymized(string $xml): bool {
+        if (trim($xml) === '' || !class_exists('DOMDocument')) return false;
+        $buyer = self::buyer_from_xml($xml);
+        $expected = [
+            'source'=>'test',
+            'nip'=>'',
+            'name'=>'Nabywca Testowy',
+            'country_code'=>'PL',
+            'address_l1'=>'ul. Przykładowa 2',
+            'address_l2'=>'00-002 Miasto Testowe',
+        ];
+        if (!self::buyer_snapshots_match($expected, $buyer)) return false;
+
+        $dom = new DOMDocument();
+        $previous = libxml_use_internal_errors(true);
+        $loaded = $dom->loadXML($xml, LIBXML_NONET);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+        if (!$loaded) return false;
+        $xpath = new DOMXPath($dom);
+        $xpath->registerNamespace('fa', BCS_KSeF_Config::FA3_NAMESPACE);
+        $brak = $xpath->query('/fa:Faktura/fa:Podmiot2/fa:DaneIdentyfikacyjne/fa:BrakID');
+        $nip = $xpath->query('/fa:Faktura/fa:Podmiot2/fa:DaneIdentyfikacyjne/fa:NIP');
+        return $brak && $brak->length === 1
+            && trim((string)$brak->item(0)->textContent) === '1'
+            && $nip && $nip->length === 0;
+    }
+
     private static function stored_buyer(object $invoice): array {
         $buyer = json_decode((string)($invoice->buyer_snapshot ?? ''), true);
         return is_array($buyer) ? $buyer : [];
@@ -128,7 +160,7 @@ final class BCS_Release_082 {
             $expected = $current;
         }
 
-        $expected['source_version'] = '0.80'; // format rozpoznawany przez istniejący generator FA(3)
+        $expected['source_version'] = '0.80';
         $expected['guard_version'] = '0.82';
         $expected['anonymized'] = false;
         unset($expected['errors']);
@@ -148,8 +180,6 @@ final class BCS_Release_082 {
             ], $registrationId, null);
         }
 
-        // Jeżeli snapshot mówi „invoice_form”, odtwarzamy również flagę źródłową.
-        // Dzięki temu żaden historyczny fallback w FA(3) nie może przełączyć się na rodzica.
         if ((string)($expected['source'] ?? '') === 'invoice_form' && (int)($registration->invoice_requested ?? 0) !== 1) {
             $addressL2 = self::normalized_text((string)($expected['address_l2'] ?? ''));
             $postal = (string)($registration->invoice_postal_code ?? '');
@@ -173,6 +203,7 @@ final class BCS_Release_082 {
 
     private static function guard_xml(int $registrationId, object $invoice, array $expected): array {
         global $wpdb;
+        $environment = BCS_KSeF_Config::allowed_environment((string)($invoice->ksef_environment ?? 'test'));
         $prepared = BCS_KSeF_FA3::prepare_and_save((int)$invoice->id);
         if (empty($prepared['success'])) {
             $message = (string)($prepared['message'] ?? 'Nie udało się przygotować XML FA(3).');
@@ -183,24 +214,47 @@ final class BCS_Release_082 {
         $path = (string)($fresh->ksef_xml_path ?? '');
         $xml = $path !== '' && is_file($path) ? (string)file_get_contents($path) : '';
         $actual = self::buyer_from_xml($xml);
+
+        if ($environment === 'test') {
+            if (!self::test_buyer_is_anonymized($xml)) {
+                $message = 'Zablokowano wysyłkę do KSeF TEST: XML zawiera niezanonimizowane albo nieprawidłowe dane nabywcy.';
+                $wpdb->update(BCS_DB::table('invoices'), [
+                    'ksef_status'=>'rejected',
+                    'ksef_error_code'=>'TEST_BUYER_NOT_ANONYMIZED_111',
+                    'ksef_error_message'=>$message,
+                    'ksef_last_checked_at'=>BCS_Utils::now(),
+                ], ['id'=>(int)$invoice->id]);
+                BCS_KSeF_FA3::operation((int)$invoice->id, (int)$invoice->organizer_id, 'Kontrola anonimizacji nabywcy KSeF TEST', 'error', null, [
+                    'xml_buyer_hash'=>hash('sha256', wp_json_encode(self::normalize_buyer($actual))),
+                    'buyer_source'=>(string)($expected['source'] ?? ''),
+                ], 'TEST_BUYER_NOT_ANONYMIZED_111', $message);
+                return ['success'=>false,'message'=>$message];
+            }
+            BCS_KSeF_FA3::operation((int)$invoice->id, (int)$invoice->organizer_id, 'Kontrola anonimizacji nabywcy KSeF TEST', 'success', null, [
+                'xml_buyer_hash'=>hash('sha256', wp_json_encode(self::normalize_buyer($actual))),
+                'buyer_source'=>(string)($expected['source'] ?? ''),
+            ]);
+            return ['success'=>true];
+        }
+
         if (!self::buyer_snapshots_match($expected, $actual)) {
             $expectedNormalized = self::normalize_buyer($expected);
             $actualNormalized = self::normalize_buyer($actual);
-            $message = 'Zablokowano wysyłkę do KSeF: dane nabywcy w XML różnią się od danych zamrożonych na fakturze PDF.';
+            $message = 'Zablokowano wysyłkę do KSeF PRODUKCJA: dane nabywcy w XML różnią się od danych zamrożonych na fakturze PDF.';
             $wpdb->update(BCS_DB::table('invoices'), [
                 'ksef_status'=>'rejected',
                 'ksef_error_code'=>'BUYER_MISMATCH_082',
                 'ksef_error_message'=>$message,
                 'ksef_last_checked_at'=>BCS_Utils::now(),
             ], ['id'=>(int)$invoice->id]);
-            BCS_KSeF_FA3::operation((int)$invoice->id, (int)$invoice->organizer_id, 'Kontrola nabywcy PDF ↔ KSeF', 'error', null, [
+            BCS_KSeF_FA3::operation((int)$invoice->id, (int)$invoice->organizer_id, 'Kontrola nabywcy PDF ↔ KSeF PRODUKCJA', 'error', null, [
                 'expected_hash'=>hash('sha256', wp_json_encode($expectedNormalized)),
                 'xml_hash'=>hash('sha256', wp_json_encode($actualNormalized)),
                 'buyer_source'=>(string)($expected['source'] ?? ''),
             ], 'BUYER_MISMATCH_082', $message);
             return ['success'=>false,'message'=>$message];
         }
-        BCS_KSeF_FA3::operation((int)$invoice->id, (int)$invoice->organizer_id, 'Kontrola nabywcy PDF ↔ KSeF', 'success', null, [
+        BCS_KSeF_FA3::operation((int)$invoice->id, (int)$invoice->organizer_id, 'Kontrola nabywcy PDF ↔ KSeF PRODUKCJA', 'success', null, [
             'buyer_hash'=>hash('sha256', wp_json_encode(self::normalize_buyer($expected))),
             'buyer_source'=>(string)($expected['source'] ?? ''),
         ]);
@@ -225,30 +279,23 @@ final class BCS_Release_082 {
         if (empty($frozen['success'])) return $frozen;
         $expected = (array)$frozen['buyer'];
 
-        // Właściwa faktura ma być identyczna z PDF również w środowisku TEST.
-        // Osobny moduł „KSeF TEST” nadal generuje swoje zanonimizowane dokumenty testowe.
-        $restoreAnonymize = null;
-        if (BCS_KSeF_Config::allowed_environment((string)($invoice->ksef_environment ?? 'test')) === 'test'
-            && (int)($invoice->ksef_anonymize_test ?? 0) === 1) {
-            $restoreAnonymize = 1;
-            $wpdb->update(BCS_DB::table('organizers'), ['ksef_anonymize_test'=>0], ['id'=>(int)$invoice->organizer_id]);
+        // TEST zawsze anonimizujemy. Nie wolno już czasowo wyłączać ochrony nawet po to,
+        // aby zrównać XML z lokalnym PDF. W PRODUKCJI zachowujemy rzeczywiste dane.
+        $environment = BCS_KSeF_Config::allowed_environment((string)($invoice->ksef_environment ?? 'test'));
+        if ($environment === 'test') {
+            $wpdb->update(BCS_DB::table('organizers'), ['ksef_anonymize_test'=>1], ['id'=>(int)$invoice->organizer_id]);
+            $invoice->ksef_anonymize_test = 1;
         }
 
-        try {
-            $guard = self::guard_xml($registrationId, $invoice, $expected);
-            if (empty($guard['success'])) return $guard;
+        $guard = self::guard_xml($registrationId, $invoice, $expected);
+        if (empty($guard['success'])) return $guard;
 
-            $ok = BCS_KSeF_Invoice_Flow::generate_and_submit($registrationId);
-            $result = BCS_KSeF_Invoice_Flow::last_result();
-            if (!$ok) return $result ?: ['success'=>false,'message'=>'Nie udało się wysłać faktury do KSeF.'];
-            $result = $result ?: ['success'=>true,'message'=>'Faktura została przekazana do KSeF.'];
-            $result['success'] = true;
-            return self::enrich_result($registrationId, $result);
-        } finally {
-            if ($restoreAnonymize !== null) {
-                $wpdb->update(BCS_DB::table('organizers'), ['ksef_anonymize_test'=>$restoreAnonymize], ['id'=>(int)$invoice->organizer_id]);
-            }
-        }
+        $ok = BCS_KSeF_Invoice_Flow::generate_and_submit($registrationId);
+        $result = BCS_KSeF_Invoice_Flow::last_result();
+        if (!$ok) return $result ?: ['success'=>false,'message'=>'Nie udało się wysłać faktury do KSeF.'];
+        $result = $result ?: ['success'=>true,'message'=>'Faktura została przekazana do KSeF.'];
+        $result['success'] = true;
+        return self::enrich_result($registrationId, $result);
     }
 
     private static function enrich_result(int $registrationId, array $result): array {
