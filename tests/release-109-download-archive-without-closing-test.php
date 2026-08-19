@@ -24,7 +24,6 @@ $check(str_contains($r109, 'Pobierz archiwum bez zamykania turnusu'), 'Interfejs
 $check(str_contains($r109, '>Pobierz archiwum</button>'), 'Powinien istnieć przycisk „Pobierz archiwum”.');
 $check(str_contains($r109, 'BCS_Release_108::build_archive($campId)'), 'Pobranie powinno korzystać z pełnego generatora paczki 1.08.');
 
-// Kluczowa gwarancja: po zbudowaniu paczki stan turnusu wraca do wartości sprzed eksportu.
 foreach (['status','archived_at','archived_by','archive_path','archive_hash','archive_status','archive_size','archive_manifest','archive_created_at','updated_at'] as $field) {
     $check(str_contains($r109, $field), 'Snapshot stanu turnusu powinien obejmować pole '.$field.'.');
 }
@@ -34,7 +33,6 @@ $check(!str_contains($r109, "'status'=>'archived'"), 'Release 1.09 nie może sam
 $check(str_contains($r109, 'remove_false_archive_log'), 'Tymczasowe użycie generatora nie może zostawiać fałszywego wpisu „turnus zarchiwizowany”.');
 $check(str_contains($r109, "BCS_Utils::log('camp_archive_download_without_closing'"), 'Pobranie aktualnego archiwum powinno mieć własny wpis audytowy.');
 
-// Tymczasowy ZIP nie powinien zalegać na serwerze po pobraniu.
 $check(str_contains($r109, 'register_shutdown_function'), 'Tymczasowy plik ZIP powinien być sprzątany po odpowiedzi.');
 $check(str_contains($r109, '@unlink($path)'), 'Tymczasowy ZIP powinien zostać usunięty po pobraniu.');
 $check(str_contains($r109, "header('Content-Type: application/zip')"), 'Endpoint powinien zwracać plik ZIP.');
@@ -48,3 +46,4 @@ if ($failures) {
 }
 
 echo "Release 1.09 download archive without closing checks passed.\n";
+require __DIR__.'/release-110-invoice-buyer-toggle-test.php';
