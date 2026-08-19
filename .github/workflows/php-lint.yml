@@ -125,6 +125,8 @@ jobs:
         run: php tests/release-103-pretty-unsubscribe-url-test.php
       - name: Check 1.00 mailing JavaScript syntax
         run: node --check assets/mailing-100.js
+      - name: Check 1.10 invoice profile JavaScript syntax
+        run: node --check assets/js/invoice-profile-110.js
       - name: Upload 0.95 bracket preview artifacts
         if: always()
         uses: actions/upload-artifact@v4
