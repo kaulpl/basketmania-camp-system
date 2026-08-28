@@ -6,6 +6,7 @@ define('DAY_IN_SECONDS',86400);define('HOUR_IN_SECONDS',3600);define('MINUTE_IN_
 class WP_Error {function __construct(public $code,public $message){} function get_error_message(){return $this->message;}}
 function is_wp_error($v){return $v instanceof WP_Error;}function sanitize_text_field($v){return trim(strip_tags($v));}function wp_unslash($v){return $v;}
 function is_email($v){return filter_var($v,FILTER_VALIDATE_EMAIL)!==false;}function esc_html($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}function esc_attr($s){return esc_html($s);}function esc_url($s){return $s;}function get_option($k,$d=[]){return $d;}function wp_json_encode($v,$flags=0){return json_encode($v,$flags);}function wp_hash_password($c){return password_hash($c,PASSWORD_DEFAULT);}function wp_check_password($c,$h){return password_verify($c,$h);}function get_current_user_id(){return 7;}function current_user_can($v){return $GLOBALS['admin']??false;}function wp_verify_nonce($n,$a){return $n==='valid';}function wp_create_nonce($a){return 'valid';}function wp_nonce_field($a,$name='_wpnonce',$referer=true,$echo=true){return '<input name="'.$name.'" value="valid">';}function admin_url($p){return 'https://example.test/'.$p;}function add_query_arg($a,$url){return $url.'?'.http_build_query($a);}
+function get_page_by_path($path){return null;}function home_url($path){return 'https://example.test'.$path;}
 class BCS_DB {static function table($s){return 'wp_bcs_'.$s;}}
 class BCS_Utils {static function normalize_phone($v){$v=preg_replace('/\D/','',$v);return strlen($v)===9?'48'.$v:$v;}static function now(){return '2026-08-28 12:00:00';}static function log(...$args){}static function client_ip(){return '192.0.2.1';}static function mask_phone($v){return '***'.substr($v,-3);}static function registration_address($r){return 'ul. Testowa 1, 00-001 Testowo';}}
 class BCS_SMS {static $codes=[];static function send($phone,$text){preg_match('/: (\d{6})\./',$text,$m);self::$codes[$phone]=$m[1]??'';return ['success'=>true,'message_id'=>'sms-'.count(self::$codes)];}}
@@ -34,6 +35,20 @@ check(str_contains(BCS_Qualification::separate_card($custom),'Keep other attachm
 $card=['html'=>'<body><main>Frozen</main></body>','hash'=>hash('sha256','<body><main>Frozen</main></body>'),'sole_guardian'=>0,'signers'=>['parent'=>['name'=>'Anna','phone'=>'48600111222','email'=>'anna@example.test','opened_at'=>'2026-08-28 10:00:00'],'second_parent'=>['name'=>'Jan','phone'=>'48600333444','email'=>'jan@example.test','opened_at'=>'2026-08-28 10:00:00'],'organizer'=>['name'=>'Organizator','phone'=>'48600555666','email'=>'org@example.test','opened_at'=>'2026-08-28 10:00:00']]];
 check(BCS_Qualification::stage($card)==='card_parents','Initial stage');
 fails(fn()=>invoke('signing_allowed',$r,$card,'organizer'),'Premature organizer signature');
+invoke('require_acceptance',['read'=>'1']);
+foreach ([[],['read'=>'0'],['read'=>'false']] as $missing) fails(fn()=>invoke('require_acceptance',$missing),'Explicit acceptance required');
+$notOpened=$card;
+fails(fn()=>invoke('signing_allowed',$r,$notOpened,'parent'),'Old landing-page visit does not count as document review');
+foreach ($card['signers'] as &$signer) $signer['reviewed_hash']=$card['hash'];unset($signer);
+$notOpened=$card;unset($notOpened['signers']['parent']['opened_at']);
+fails(fn()=>invoke('signing_allowed',$r,$notOpened,'parent'),'Document must be opened before signing');
+$notOpened=$card;$notOpened['signers']['parent']['reviewed_hash']='different';
+fails(fn()=>invoke('signing_allowed',$r,$notOpened,'parent'),'Review must concern current immutable snapshot');
+$portalUrl=BCS_Qualification::portal_url(1,'second_parent','personal-secret');
+check(str_contains($portalUrl,'/panel-rodzica/') && str_contains($portalUrl,'card_role=second_parent') && str_contains($portalUrl,'card_token=personal-secret'),'Individual invitation routes to Parent Panel');
+$controls=invoke('parent_controls',1,$card,'second_parent','personal-secret');
+foreach (['bcs-card','data-card-open','op=document','name="read" value="1" disabled required','data-card-send disabled','data-card-otp','autocomplete="one-time-code"','Jan'] as $needle) check(str_contains($controls,$needle),'Parent panel control: '.$needle);
+check(!str_contains($controls,'anna@example.test'),'Parent view does not expose another parent signing credential');
 $args=[1,&$card,'parent'];(new ReflectionMethod(BCS_Qualification::class,'send_code'))->invokeArgs(null,$args);$first=BCS_SMS::$codes['48600111222'];
 $bad=[1,&$card,'parent','000000'];try{(new ReflectionMethod(BCS_Qualification::class,'sign'))->invokeArgs(null,$bad);}catch(RuntimeException $e){}check($card['signers']['parent']['challenge']['attempts']===1,'Attempts persisted');
 $args=[1,&$card,'second_parent'];(new ReflectionMethod(BCS_Qualification::class,'send_code'))->invokeArgs(null,$args);$second=BCS_SMS::$codes['48600333444'];
