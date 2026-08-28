@@ -1,3 +1,11 @@
+## 1.12.2 - 2026-08-28
+
+- Parent qualification invitations now open a signer-scoped Parent Panel view; existing links redirect there too.
+- Added document modal, explicit acceptance, SMS modal with expiry countdown and signed PDF download.
+- Server requires opening the exact card snapshot before sending or accepting SMS; landing-page visits no longer count as review.
+- Preserved independent expiring parent tokens without exposing the shared contract/edit token; disabled caching and referrer transmission.
+- Extended qualification security and UI regression tests.
+
 ## 1.12.1 - 2026-08-28
 
 - Fixed form approval popup reading the legacy alternate phone instead of the second parent's dedicated fields.

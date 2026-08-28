@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) exit;
  */
 final class BCS_Qualification {
     public const SOLE_DECLARATION = 'Rodzic/opiekun prawny oświadczył że sprawuje opiekę nad uczestnikiem obozu samodzielnie';
-    private const DECLARATION = 'Zapoznałem/am się z kartą kwalifikacyjną i potwierdzam jej treść podpisem SMS.';
+    private const DECLARATION = 'Oświadczam, że zapoznałem/-am się z pełną treścią karty kwalifikacyjnej i akceptuję jej treść. Potwierdzam ją podpisem SMS.';
 
     public static function init(): void {
         remove_action('admin_footer',['BCS_Release_043','admin_footer'],100);
@@ -21,6 +21,7 @@ final class BCS_Qualification {
         }
         foreach (['admin_post_bcs_qualification','admin_post_nopriv_bcs_qualification'] as $hook) add_action($hook,[__CLASS__,'endpoint']);
         add_action('wp_enqueue_scripts',[__CLASS__,'assets']);
+        add_action('template_redirect',[__CLASS__,'portal_headers'],0);
         add_action('admin_enqueue_scripts',[__CLASS__,'assets']);
         // Stop legacy direct links from exposing an internal draft to a parent.
         foreach (['admin_post_bcs_agreement_view','admin_post_nopriv_bcs_agreement_view','template_redirect','admin_post_bcs_download_document','admin_post_nopriv_bcs_download_document'] as $hook) add_action($hook,[__CLASS__,'guard_draft'],-1000);
@@ -155,9 +156,9 @@ final class BCS_Qualification {
         $signer=&$card['signers'][$role];
         $token=bin2hex(random_bytes(32));
         $signer['token_hash']=hash('sha256',$token);$signer['token_expires']=time()+30*DAY_IN_SECONDS;
-        unset($signer['challenge'],$signer['opened_at']);
+        unset($signer['challenge'],$signer['opened_at'],$signer['reviewed_hash']);
         self::save($id,$card); // persist authorization before delivering the link
-        $url=self::url($id,$role,$token);
+        $url=self::portal_url($id,$role,$token);
         $body='<p>Dzień dobry '.esc_html($signer['name']).',</p><p>Zaksięgowano pełną płatność za turnus. Prosimy o zapoznanie się z kartą kwalifikacyjną i podpisanie jej kodem SMS na własny numer telefonu.</p><p><a href="'.esc_url($url).'">Otwórz i podpisz kartę kwalifikacyjną</a></p><p>Ten link jest przeznaczony wyłącznie dla Ciebie. Nie przekazuj go innym osobom. Link jest ważny 30 dni.</p>';
         $ok=BCS_Mailer::send($signer['email'],'Basketmania Camp - karta kwalifikacyjna do podpisu',$body,['Content-Type: text/html; charset=UTF-8'],[],$id);
         $signer['mail_sent_at']=$ok?BCS_Utils::now():null;
@@ -187,7 +188,7 @@ final class BCS_Qualification {
         if (!hash_equals($card['hash'],hash('sha256',$card['html']))) throw new RuntimeException('Nieprawidłowy skrót dokumentu. Skontaktuj się z organizatorem.');
         if (!empty($card['signers'][$role]['signed_at'])) throw new RuntimeException('Ten podpis został już zapisany.');
         if ($role==='organizer' && self::stage($card)!=='card_organizer') throw new RuntimeException('Najpierw muszą podpisać wszyscy wymagani rodzice.');
-        if (empty($card['signers'][$role]['opened_at'])) throw new RuntimeException('Najpierw otwórz i przeczytaj kartę.');
+        if (empty($card['signers'][$role]['opened_at']) || ($role!=='organizer' && !hash_equals($card['hash'],(string)($card['signers'][$role]['reviewed_hash']??'')))) throw new RuntimeException('Najpierw otwórz i przeczytaj kartę.');
     }
 
     public static function endpoint(): void {
@@ -228,18 +229,31 @@ final class BCS_Qualification {
                 if ($op==='send' || $op==='sign') {
                     if (($_SERVER['REQUEST_METHOD']??'')!=='POST' || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['card_nonce']??'')),'bcs_card_'.$id.'_'.$role.'_'.$card['hash'])) throw new RuntimeException('Sesja wygasła. Odśwież kartę.');
                     self::signing_allowed($r,$card,$role);
-                    if (empty($_POST['read'])) throw new RuntimeException('Zaznacz oświadczenie o zapoznaniu się z kartą.');
+                    self::require_acceptance($_POST);
                     if ($op==='send') $message=self::send_code($id,$card,$role);
                     else $message=self::sign($id,$card,$role,(string)($_POST['code']??''));
-                } elseif ($op==='view') {
-                    if (empty($card['signers'][$role]['opened_at'])) {$card['signers'][$role]['opened_at']=BCS_Utils::now();self::save($id,$card);}
-                } elseif ($op!=='download') throw new RuntimeException('Nieznana operacja.');
+                } elseif ($op==='document' || ($op==='view' && $role==='organizer')) {
+                    if (empty($card['signers'][$role]['reviewed_hash']) && empty($card['signers'][$role]['signed_at'])) $card['signers'][$role]['opened_at']=BCS_Utils::now();
+                    $card['signers'][$role]['reviewed_hash']=$card['hash'];self::save($id,$card);
+                } elseif (!in_array($op,['download','view'],true)) throw new RuntimeException('Nieznana operacja.');
             });
             $card=self::card($id);
             nocache_headers();header('Referrer-Policy: no-referrer');header('X-Robots-Tag: noindex, nofollow');header('X-Frame-Options: SAMEORIGIN');
             if ($op==='download') { self::download($card);exit; }
+            if ($op==='document') {
+                header('Content-Type: text/html; charset=UTF-8');
+                echo str_replace('</head>','<meta name="bcs-card-reviewed" content="'.esc_attr($card['hash']).'"><style>'.BCS_Agreement_PDF_V2::preview_css().'</style></head>',self::final_html($card));exit;
+            }
+            if ($role!=='organizer') {
+                if (in_array($op,['send','sign'],true)) wp_send_json_success(['message'=>$message,'signed'=>!empty($card['signers'][$role]['signed_at']),'expires'=>$card['signers'][$role]['challenge']['expires']??0]);
+                wp_safe_redirect(self::portal_url($id,$role,$token));exit;
+            }
             self::page($id,$card,$role,$token,$message);exit;
-        } catch (Throwable $e) { wp_die(esc_html($e->getMessage()),'Karta kwalifikacyjna',['response'=>409,'back_link'=>true]); }
+        } catch (Throwable $e) { if ($role!=='organizer' && in_array($op,['send','sign'],true)) wp_send_json_error(['message'=>$e->getMessage()],409); wp_die(esc_html($e->getMessage()),'Karta kwalifikacyjna',['response'=>409,'back_link'=>true]); }
+    }
+
+    private static function require_acceptance(array $input): void {
+        if (($input['read']??'')!=='1') throw new RuntimeException('Zaznacz oświadczenie o zapoznaniu się z kartą i akceptacji jej treści.');
     }
 
     private static function send_code(int $id,array &$card,string $role): string {
@@ -334,9 +348,53 @@ final class BCS_Qualification {
         return $html.'</div>';
     }
 
+    public static function portal_url(int $id,string $role,string $token): string {
+        $page=get_page_by_path('panel-rodzica');
+        return add_query_arg(['qualification'=>$id,'card_role'=>$role,'card_token'=>$token],$page?get_permalink($page):home_url('/panel-rodzica/'));
+    }
+
+    public static function portal_headers(): void {
+        if (empty($_GET['qualification'])) return;
+        if (!defined('DONOTCACHEPAGE')) define('DONOTCACHEPAGE',true);
+        nocache_headers();
+        header('Referrer-Policy: no-referrer');
+        header('X-Robots-Tag: noindex, nofollow');
+    }
+
+    public static function portal_view(): string {
+        $id=absint($_GET['qualification']??0);
+        $role=sanitize_key($_GET['card_role']??'');
+        $token=sanitize_text_field(wp_unslash($_GET['card_token']??''));
+        try {
+            // A card invitation never grants the shared registration/contract token.
+            if (!in_array($role,['parent','second_parent'],true)) throw new RuntimeException('Nieprawidłowy link rodzica.');
+            $card=self::card($id);$r=self::registration($id);
+            if (!$card||!$r) throw new RuntimeException('Karta nie jest jeszcze dostępna.');
+            self::authorize($id,$card,$role,$token);
+            if ($r->status==='cancelled') throw new RuntimeException('Zgłoszenie zostało anulowane.');
+            wp_enqueue_style('bcs-front');self::assets();
+            $settings=get_option('bcs_settings',[]);
+            $logo=$settings['portal_logo_url']??(BCS_URL.'assets/images/logo-basketmania-camp-white.png');
+            $html='<div class="bcs-wrap bcs-parent-dashboard"><header class="bcs-parent-header bcs-parent-header-modern"><div class="bcs-parent-logo"><img src="'.esc_url($logo).'" alt="Basketmania Camp"></div><div class="bcs-parent-title"><span>Strefa uczestnika</span><h2>Panel Rodzica</h2></div><div class="bcs-parent-access"><span class="bcs-secure-pill">Bezpieczny dostęp</span></div></header>';
+            $html.='<section class="bcs-parent-hero bcs-parent-hero-modern"><div class="bcs-parent-hero-copy"><span class="bcs-eyebrow">Twój turnus</span><h1>'.esc_html($r->camp_name).'</h1><p>'.esc_html($r->start_date.' – '.$r->end_date.' · '.$r->location).'</p></div><div class="bcs-parent-person"><div><small>Uczestnik</small><strong>'.esc_html($r->child_first_name.' '.$r->child_last_name).'</strong></div></div></section>';
+            return $html.self::parent_controls($id,$card,$role,$token).'</div>';
+        } catch (Throwable $e) { return '<div class="bcs-wrap"><div class="bcs-alert">'.esc_html($e->getMessage()).'</div></div>'; }
+    }
+
+    private static function parent_controls(int $id,array $card,string $role,string $token): string {
+        $s=$card['signers'][$role];$signed=!empty($s['signed_at']);
+        $html='<section class="bcs-card bcs-qualification-signing" data-card-hash="'.esc_attr($card['hash']).'" data-card-expires="'.(int)($s['challenge']['expires']??0).'" data-card-endpoint="'.esc_url(self::url($id,$role,$token,'send')).'"><h2>Karta kwalifikacyjna</h2><p>Podpisujący: <strong>'.esc_html($s['name']).'</strong> · SMS: '.esc_html(BCS_Utils::mask_phone($s['phone'])).'</p><p>Otwórz dokument, zapoznaj się z całą treścią, następnie zaznacz akceptację i potwierdź podpis kodem SMS.</p><button type="button" class="bcs-button bcs-secondary" data-card-open data-document-url="'.esc_url(self::url($id,$role,$token,'document')).'">Otwórz kartę kwalifikacyjną</button>';
+        if (!$signed) {
+            $html.='<form data-card-sign-form>'.wp_nonce_field('bcs_card_'.$id.'_'.$role.'_'.$card['hash'],'card_nonce',false,false).'<label class="bcs-check"><input type="checkbox" name="read" value="1" disabled required> '.esc_html(self::DECLARATION).'</label><button type="button" class="bcs-button" data-card-send disabled>Potwierdź podpis karty SMS-em</button><p data-card-message role="status" aria-live="polite"></p>';
+            $html.='<div class="bcs-modal" data-card-otp hidden><div class="bcs-modal-backdrop" data-card-close></div><div class="bcs-modal-dialog" role="dialog" aria-modal="true" aria-label="Podpis karty kodem SMS"><button type="button" class="bcs-modal-close" data-card-close aria-label="Zamknij">×</button><h3>Wpisz kod SMS</h3><p data-card-timer role="status"></p><label>Kod SMS<input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"></label><button type="submit" class="bcs-button" data-card-sign>Potwierdź podpis karty</button><p data-card-otp-message role="status" aria-live="polite"></p></div></div></form>';
+        } else $html.='<div class="bcs-success">✓ Twój podpis karty został zapisany. '.(self::stage($card)==='card_signed'?'Dokument jest podpisany przez wszystkie wymagane osoby.':'Oczekujemy na pozostałe wymagane podpisy.').'</div>';
+        if (self::stage($card)==='card_signed') $html.='<p><a class="bcs-button bcs-secondary" href="'.esc_url(self::url($id,$role,$token,'download')).'">Pobierz podpisaną kartę PDF</a></p>';
+        return $html.'<div class="bcs-modal bcs-document-modal" data-card-document hidden><div class="bcs-modal-backdrop" data-card-close></div><div class="bcs-modal-dialog bcs-document-dialog" role="dialog" aria-modal="true" aria-label="Podgląd karty kwalifikacyjnej"><button type="button" class="bcs-modal-close" data-card-close aria-label="Zamknij">×</button><h3>Karta kwalifikacyjna Basketmania Camp</h3><iframe title="Podgląd karty kwalifikacyjnej" referrerpolicy="no-referrer"></iframe></div></div></section>';
+    }
+
     public static function portal_panel(int $id,string $portal_token): string {
         $card=self::card($id);if(!$card)return '';
-        return '<section class="bcs-card"><h2>Karta kwalifikacyjna</h2><p>'.esc_html(BCS_Workflow::statuses()[self::stage($card)]).'</p><p>Każdy rodzic otrzymuje osobny e-mail z własnym linkiem do podpisu i pobrania dokumentu.</p></section>';
+        return '<section class="bcs-card"><h2>Karta kwalifikacyjna</h2><p>'.esc_html(BCS_Workflow::statuses()[self::stage($card)]).'</p><p>Aby otworzyć i podpisać kartę w Panelu Rodzica, użyj swojego osobnego linku z wiadomości „Karta kwalifikacyjna do podpisu”. Każdy rodzic korzysta z własnego linku i numeru telefonu.</p></section>';
     }
 
     public static function guard_draft(): void {
