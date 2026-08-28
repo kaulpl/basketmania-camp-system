@@ -389,23 +389,21 @@ final class BCS_Qualification {
         header('X-Robots-Tag: noindex, nofollow');
     }
 
-    public static function portal_view(): string {
+    public static function portal_context(): array {
         $id=absint($_GET['qualification']??0);
         $role=sanitize_key($_GET['card_role']??'');
         $token=sanitize_text_field(wp_unslash($_GET['card_token']??''));
+        if (!in_array($role,['parent','second_parent'],true)) throw new RuntimeException('Nieprawidłowy link rodzica.');
+        $card=self::card($id);$r=self::registration($id);
+        if (!$card||!$r) throw new RuntimeException('Karta nie jest jeszcze dostępna.');
+        self::authorize($id,$card,$role,$token);
+        if ($r->status==='cancelled') throw new RuntimeException('Zgłoszenie zostało anulowane.');
+        return ['id'=>$id,'role'=>$role,'token'=>$token];
+    }
+
+    public static function portal_view(): string {
         try {
-            // A card invitation never grants the shared registration/contract token.
-            if (!in_array($role,['parent','second_parent'],true)) throw new RuntimeException('Nieprawidłowy link rodzica.');
-            $card=self::card($id);$r=self::registration($id);
-            if (!$card||!$r) throw new RuntimeException('Karta nie jest jeszcze dostępna.');
-            self::authorize($id,$card,$role,$token);
-            if ($r->status==='cancelled') throw new RuntimeException('Zgłoszenie zostało anulowane.');
-            wp_enqueue_style('bcs-front');self::assets();
-            $settings=get_option('bcs_settings',[]);
-            $logo=$settings['portal_logo_url']??(BCS_URL.'assets/images/logo-basketmania-camp-white.png');
-            $html='<div class="bcs-wrap bcs-parent-dashboard"><header class="bcs-parent-header bcs-parent-header-modern"><div class="bcs-parent-logo"><img src="'.esc_url($logo).'" alt="Basketmania Camp"></div><div class="bcs-parent-title"><span>Strefa uczestnika</span><h2>Panel Rodzica</h2></div><div class="bcs-parent-access"><span class="bcs-secure-pill">Bezpieczny dostęp</span></div></header>';
-            $html.='<section class="bcs-parent-hero bcs-parent-hero-modern"><div class="bcs-parent-hero-copy"><span class="bcs-eyebrow">Twój turnus</span><h1>'.esc_html($r->camp_name).'</h1><p>'.esc_html($r->start_date.' – '.$r->end_date.' · '.$r->location).'</p></div><div class="bcs-parent-person"><div><small>Uczestnik</small><strong>'.esc_html($r->child_first_name.' '.$r->child_last_name).'</strong></div></div></section>';
-            return $html.self::parent_controls($id,$card,$role,$token).'</div>';
+            return BCS_Frontend::render_portal(self::portal_context());
         } catch (Throwable $e) { return '<div class="bcs-wrap"><div class="bcs-alert">'.esc_html($e->getMessage()).'</div></div>'; }
     }
 
@@ -420,8 +418,13 @@ final class BCS_Qualification {
         return $html.'<div class="bcs-modal bcs-document-modal" data-card-document hidden><div class="bcs-modal-backdrop" data-card-close></div><div class="bcs-modal-dialog bcs-document-dialog" role="dialog" aria-modal="true" aria-label="Podgląd karty kwalifikacyjnej"><button type="button" class="bcs-modal-close" data-card-close aria-label="Zamknij">×</button><h3>Karta kwalifikacyjna Basketmania Camp</h3><iframe title="Podgląd karty kwalifikacyjnej" referrerpolicy="no-referrer"></iframe></div></div></section>';
     }
 
-    public static function portal_panel(int $id,string $portal_token): string {
-        $card=self::card($id);if(!$card)return '';
+    public static function portal_panel(int $id,string $portal_token,?array $context=null): string {
+        $card=self::card($id);
+        if(!$card)return '<section class="bcs-card"><h2>Karta kwalifikacyjna</h2><p>Karta będzie dostępna po zaksięgowaniu pełnej wpłaty.</p></section>';
+        if ($context && (int)$context['id']===$id) {
+            self::authorize($id,$card,$context['role'],$context['token']);
+            return self::parent_controls($id,$card,$context['role'],$context['token']);
+        }
         return '<section class="bcs-card"><h2>Karta kwalifikacyjna</h2><p>'.esc_html(BCS_Workflow::statuses()[self::stage($card)]).'</p><p>Aby otworzyć i podpisać kartę w Panelu Rodzica, użyj swojego osobnego linku z wiadomości „Karta kwalifikacyjna do podpisu”. Każdy rodzic korzysta z własnego linku i numeru telefonu.</p></section>';
     }
 
