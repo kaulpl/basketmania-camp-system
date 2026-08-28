@@ -1,3 +1,10 @@
+## 1.12.1 - 2026-08-28
+
+- Fixed form approval popup reading the legacy alternate phone instead of the second parent's dedicated fields.
+- Displayed each parent's name, email and phone in separate sections in the popup and registration card.
+- Preserved clearly labeled legacy contact data and displayed the sole-guardian declaration instead of a second signer.
+- Added regression coverage for database-row mapping, distinct phones, missing legacy data, escaping and sole guardians.
+
 ## 1.12 - 2026-08-28
 
 - Removed parent draft delivery; the organizer explicitly sends the contract after form verification.

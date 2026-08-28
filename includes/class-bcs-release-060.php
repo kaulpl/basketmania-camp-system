@@ -69,16 +69,22 @@ final class BCS_Release_060 {
 
     private static function display_sections(object $r): array {
         return [
-            'Rodzic / opiekun prawny' => [
-                ['Imię i nazwisko', trim((string)$r->parent_first_name.' '.(string)$r->parent_last_name)],
-                ['Samodzielna opieka', !empty($r->sole_guardian) ? 'Tak' : 'Nie'],
-                ['Imię drugiego rodzica', $r->second_parent_first_name ?? ''],
-                ['Nazwisko drugiego rodzica', $r->second_parent_last_name ?? ''],
-                ['E-mail drugiego rodzica', $r->second_parent_email ?? ''],
-                ['Telefon drugiego rodzica', $r->second_parent_phone ?? ''],
+            'Rodzic / opiekun prawny 1' => [
+                ['Imię i nazwisko', trim((string)($r->parent_first_name ?? '').' '.(string)($r->parent_last_name ?? ''))],
                 ['E-mail', $r->parent_email ?? ''],
-                ['Telefon I', $r->parent_phone ?? ''],
-                ['Telefon II', $r->parent_phone_alt ?? ''],
+                ['Telefon', $r->parent_phone ?? ''],
+                ['Samodzielna opieka', !empty($r->sole_guardian) ? 'Tak' : 'Nie'],
+            ],
+            'Rodzic / opiekun prawny 2' => !empty($r->sole_guardian) ? [
+                ['Oświadczenie', 'Rodzic/opiekun prawny oświadczył że sprawuje opiekę nad uczestnikiem obozu samodzielnie', true],
+            ] : [
+                ['Imię i nazwisko', trim((string)($r->second_parent_first_name ?? '').' '.(string)($r->second_parent_last_name ?? ''))],
+                ['E-mail', $r->second_parent_email ?? ''],
+                ['Telefon', $r->second_parent_phone ?? ''],
+            ],
+            'Adres i dodatkowe dane kontaktowe' => [
+                ['Dodatkowy telefon (starszy formularz)', $r->parent_phone_alt ?? ''],
+                ['Imiona i nazwiska rodziców (starsze pole zbiorcze)', $r->parents_names ?? ''],
                 ['Kod pocztowy', $r->parent_postal_code ?? ''],
                 ['Miejscowość', $r->parent_city ?? ''],
                 ['Ulica', $r->parent_street ?? ''],
