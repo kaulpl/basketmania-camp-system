@@ -1,3 +1,11 @@
+## 1.12.8 - 2026-08-28
+
+- Integrated qualification invitations into the standard Parent Panel renderer with all existing summary and document sections.
+- Added a sixth workflow step: qualification signatures between payment and invoice.
+- Card-scoped links retain independent signing tokens; form editing and contract signing are not granted through those links.
+- Reduced and left-aligned the sole-guardian switch and removed the unfinished regulations/consents placeholder.
+- Extended full-panel rendering and credential-isolation regression tests.
+
 ## 1.12.7 - 2026-08-28
 
 - Organizer card signing now uses the same OTP popup classes and layout as organizer contract signing.

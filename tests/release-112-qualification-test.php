@@ -17,6 +17,11 @@ class BCS_Mailer {static $mails=[];static function send(...$args){self::$mails[]
 class FakeDB {public $prefix='wp_';public $saved=[];function replace($table,$row){$this->saved[$row['registration_id']]=$row;return 1;}function prepare($q,...$a){foreach($a as $v)$q=preg_replace('/%[ds]/',(string)$v,$q,1);return $q;}function query($q){return 1;}function update($table,$data,$where){$GLOBALS['readiness_updates'][]=$data;return 1;}function get_var($q){if(str_contains($q,'SELECT payload')){preg_match('/registration_id=(\d+)/',$q,$m);return $this->saved[(int)($m[1]??0)]['payload']??null;}return 1;}function get_row($q){return $GLOBALS['payment_fixture']??null;}}
 $GLOBALS['wpdb']=new FakeDB();
 require BCS_DIR.'includes/class-bcs-qualification.php';
+require BCS_DIR.'includes/class-bcs-frontend.php';
+require BCS_DIR.'includes/class-bcs-workflow-engine.php';
+class BCS_Locks {static function remaining($id){return 0;}static function ttl(){return 60;}static function active($id){return false;}}
+class BCS_Document_Engine {static function download_url($id,$doc,...$args){return 'https://example.test/download/'.$id.'/'.$doc;}}
+function wp_date($format,$time){return date($format,$time);}
 function check($condition,$message){if(!$condition)throw new RuntimeException($message);}
 function invoke($method,...$args){$r=new ReflectionMethod(BCS_Qualification::class,$method);return $r->invokeArgs(null,$args);}
 function fails($fn,$message){try{$fn();}catch(RuntimeException $e){return;}throw new RuntimeException($message);}
@@ -150,8 +155,13 @@ if (is_readable(BCS_DIR.'vendor/autoload.php')) {
     $panelCard['signers']['second_parent']['token_hash']=hash('sha256','panel-secret');
     invoke('save',112,$panelCard);
     $_GET=['qualification'=>112,'card_role'=>'second_parent','card_token'=>'panel-secret'];
+    $fixture=(object)array_merge(array_fill_keys(['id','admin_confirmed_at','form_status','agreement_status','total_amount','paid_amount','form_verified_at','agreement_real_id','agreement_number','stay_contact','parent_first_name','parent_last_name','parent_phone','parent_email','parent_postal_code','parent_city','parent_street','parent_house_number','parent_address','child_first_name','child_last_name','child_birth_date','child_pesel','child_height','child_weight','shirt_size','child_club','child_address','special_educational_needs','medical_notes','dietary_notes','vaccination_tetanus','vaccination_diphtheria','vaccination_other','authorized_pickup','camp_notes','invoice_requested','invoice_buyer_name','invoice_street','invoice_postal_code','invoice_city','invoice_nip','invoice_notes','camp_name','start_date','end_date','location','invoice_real_id','agreement_real_status','status','organizer_name','organizer_address','organizer_nip','bank_name','bank_account'],''),(array)$fixture,['id'=>112,'admin_confirmed_at'=>'2026-08-28','form_status'=>'complete','agreement_real_status'=>'accepted','agreement_real_id'=>12,'agreement_number'=>'TEST','public_token'=>'shared-secret-not-for-card-link']);
+    $GLOBALS['payment_fixture']=$fixture;
     $panel=BCS_Qualification::portal_view();
     check(str_contains($panel,'Panel Rodzica') && str_contains($panel,'data-card-sign-form'),'Authorized second parent opens real portal view');
+    foreach (['Droga do udziału w obozie','bcs-steps-six',' / 6','Dane i formularze','Dokumenty PDF','Płatność','Umowa'] as $part) check(str_contains($panel,$part),'Shared full panel includes '.$part);
+    check(!str_contains($panel,'shared-secret-not-for-card-link') && !str_contains($panel,'id="bcs-otp"') && !str_contains($panel,'class="bcs-camp-form"'),'Card link cannot leak edit/agreement credentials');
+    check(substr_count($panel,'data-card-sign-form')===1,'Only one signing module');
     check(empty(BCS_Qualification::card(112)['signers']['second_parent']['reviewed_hash']),'Portal landing does not mark document reviewed');
     $_GET['card_role']='parent';
     check(!str_contains(BCS_Qualification::portal_view(),'data-card-sign-form'),'Cannot use second-parent invitation to sign as first parent');
@@ -163,4 +173,5 @@ if (is_readable(BCS_DIR.'vendor/autoload.php')) {
 
 $organizerUi=file_get_contents(BCS_DIR.'assets/js/qualification-organizer.js');
 foreach (['bcs-otp079-dialog','bcs-otp079-code','bcs-otp079-actions','Kod SMS Organizatora','signing_context',"card_nonce:context.nonce",'bcs-card-reviewed','autocomplete="one-time-code"'] as $needle) check(str_contains($organizerUi,$needle),'Organizer popup parity and secure flow: '.$needle);
+check(!str_contains(file_get_contents(BCS_DIR.'includes/class-bcs-frontend.php'),'<h3>Regulaminy i zgody</h3>'),'Removed placeholder regulations module');
 ob_end_flush();
