@@ -104,24 +104,31 @@ class BCS_Payments {
             return new WP_Error('payment_details_mismatch','Dane płatności Stripe są niezgodne.');
         }
 
-        $now=BCS_Utils::now();
-        $claimed=$wpdb->query($wpdb->prepare(
-            "UPDATE ".BCS_DB::table('payments')." SET status='paid',paid_at=COALESCE(paid_at,%s),external_id=%s,updated_at=%s WHERE id=%d AND status<>'paid'",
-            $now,$session_id,$now,$payment_id
-        ));
-        if($claimed===false) return new WP_Error('payment_update_failed','Nie udało się zapisać płatności.');
-        $r=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('registrations')." WHERE id=%d",$registration_id));
-        if(!$r) return new WP_Error('registration_not_found','Nie znaleziono zgłoszenia.');
-        $paid_total=(float)$wpdb->get_var($wpdb->prepare(
-            "SELECT COALESCE(SUM(amount),0) FROM ".BCS_DB::table('payments')." WHERE registration_id=%d AND status='paid'",
-            $registration_id
-        ));
-        $new=min((float)$r->total_amount,$paid_total);
-        $paid=(float)$r->total_amount>0 && $new>=(float)$r->total_amount;
-        $updated=$wpdb->update(BCS_DB::table('registrations'),[
-            'payment_id'=>$payment_id,'paid_amount'=>$new,'status'=>$paid?'paid':'partially_paid','updated_at'=>$now,
-        ],['id'=>$registration_id]);
-        if($updated===false) return new WP_Error('registration_payment_update_failed','Nie udało się oznaczyć zgłoszenia jako opłacone.');
+        $committed=false;
+        try {
+            if($wpdb->query('START TRANSACTION')===false) return new WP_Error('payment_transaction_failed','Nie udało się rozpocząć księgowania.');
+            // Serialize Stripe and manual deposits against the same registration balance.
+            $r=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('registrations')." WHERE id=%d FOR UPDATE",$registration_id));
+            if(!$r) return new WP_Error('registration_not_found','Nie znaleziono zgłoszenia.');
+            $now=BCS_Utils::now();
+            $claimed=$wpdb->query($wpdb->prepare(
+                "UPDATE ".BCS_DB::table('payments')." SET status='paid',paid_at=COALESCE(paid_at,%s),external_id=%s,updated_at=%s WHERE id=%d AND status<>'paid'",
+                $now,$session_id,$now,$payment_id
+            ));
+            if($claimed===false) return new WP_Error('payment_update_failed','Nie udało się zapisać płatności.');
+            $paid_total=(float)$wpdb->get_var($wpdb->prepare(
+                "SELECT COALESCE(SUM(amount),0) FROM ".BCS_DB::table('payments')." WHERE registration_id=%d AND status='paid'",
+                $registration_id
+            ));
+            $new=min((float)$r->total_amount,$paid_total);
+            $paid=(float)$r->total_amount>0 && $new>=(float)$r->total_amount;
+            $updated=$wpdb->update(BCS_DB::table('registrations'),[
+                'payment_id'=>$payment_id,'paid_amount'=>$new,'status'=>$paid?'paid':'partially_paid','updated_at'=>$now,
+            ],['id'=>$registration_id]);
+            if($updated===false) return new WP_Error('registration_payment_update_failed','Nie udało się oznaczyć zgłoszenia jako opłacone.');
+            if($wpdb->query('COMMIT')===false) return new WP_Error('payment_transaction_failed','Nie udało się zatwierdzić księgowania.');
+            $committed=true;
+        } finally { if(!$committed) $wpdb->query('ROLLBACK'); }
         if($paid && class_exists('BCS_Workflow')) BCS_Workflow_Engine::refresh_invoice_readiness($registration_id);
         if($claimed===1){
             BCS_Utils::log('stripe_payment_confirmed',['payment_id'=>$payment_id,'session_id'=>$session_id],$registration_id,(int)$r->agreement_id);
