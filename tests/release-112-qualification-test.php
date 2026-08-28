@@ -12,7 +12,7 @@ function get_page_by_path($path){return null;}function home_url($path){return 'h
 require BCS_DIR.'includes/class-bcs-workflow.php';
 class BCS_DB {static function table($s){return 'wp_bcs_'.$s;}}
 class BCS_Utils {static function normalize_phone($v){$v=preg_replace('/\D/','',$v);return strlen($v)===9?'48'.$v:$v;}static function now(){return '2026-08-28 12:00:00';}static function log(...$args){}static function client_ip(){return '192.0.2.1';}static function mask_phone($v){return '***'.substr($v,-3);}static function registration_address($r){return 'ul. Testowa 1, 00-001 Testowo';}}
-class BCS_SMS {static $codes=[];static function send($phone,$text){preg_match('/: (\d{6})\./',$text,$m);self::$codes[$phone]=$m[1]??'';return ['success'=>true,'message_id'=>'sms-'.count(self::$codes)];}}
+class BCS_SMS {static $codes=[];static $messages=[];static function send($phone,$text){self::$messages[]=$text;preg_match('/: (\d{6})\./',$text,$m);self::$codes[$phone]=$m[1]??'';return ['success'=>true,'message_id'=>'sms-'.count(self::$codes)];}}
 class BCS_Mailer {static $mails=[];static function send(...$args){self::$mails[]=$args;return true;}}
 class FakeDB {public $prefix='wp_';public $saved=[];function replace($table,$row){$this->saved[$row['registration_id']]=$row;return 1;}function prepare($q,...$a){foreach($a as $v)$q=preg_replace('/%[ds]/',(string)$v,$q,1);return $q;}function query($q){return 1;}function update($table,$data,$where){$GLOBALS['readiness_updates'][]=$data;return 1;}function get_var($q){if(str_contains($q,'SELECT payload')){preg_match('/registration_id=(\d+)/',$q,$m);return $this->saved[(int)($m[1]??0)]['payload']??null;}return 1;}function get_row($q){return $GLOBALS['payment_fixture']??null;}}
 $GLOBALS['wpdb']=new FakeDB();
@@ -85,6 +85,23 @@ check(!BCS_Workflow::invoice_available(999),'Missing qualification card blocks i
 invoke('sync_status',1,$card);
 check(end($GLOBALS['readiness_updates'])['invoice_status']==='ready_to_generate','Last signature refreshes invoice readiness');
 unset($GLOBALS['payment_fixture']);
+require BCS_DIR.'includes/class-bcs-crm.php';
+$actionRow=(object)['id'=>1,'status'=>'paid','total_amount'=>3000,'paid_amount'=>3000];
+$ready=$card;unset($ready['signers']['organizer']['signed_at']);invoke('save',1,$ready);
+$button=BCS_Qualification::organizer_action($actionRow);
+check(str_contains($button,'Podpisz kartę kwalifikacyjną') && str_contains($button,'data-qualification-admin-preview'),'Organizer signing button uses popup after parents sign');
+$listMethod=new ReflectionMethod(BCS_CRM::class,'list_quick_actions_html');
+check(str_contains($listMethod->invoke(null,$actionRow),'Podpisz kartę kwalifikacyjną'),'Registration list shows signing action from actual signatures');
+$pending=$ready;unset($pending['signers']['second_parent']['signed_at']);invoke('save',1,$pending);
+check(BCS_Qualification::organizer_action($actionRow)==='','No signing action before both parents');
+$pending['sole_guardian']=1;unset($pending['signers']['second_parent']);invoke('save',1,$pending);
+check(BCS_Qualification::organizer_action($actionRow)!=='','Sole guardian signature unlocks organizer action');
+$actionRow->status='cancelled';check(BCS_Qualification::organizer_action($actionRow)==='','Cancelled registration hides signing');
+$actionRow->status='paid';$actionRow->paid_amount=500;check(BCS_Qualification::organizer_action($actionRow)==='','Partial payment hides signing');
+$actionRow->paid_amount=3000;invoke('save',1,$card);
+check(BCS_Qualification::organizer_action($actionRow)==='','Signed card hides signing action');
+foreach (BCS_SMS::$messages as $sms) check(!str_contains($sms,'#') && str_contains($sms,'kod podpisu karty kwalifikacyjnej:'),'No qualification serial in SMS');
+check(str_contains(file_get_contents(BCS_DIR.'includes/class-bcs-crm.php'),'echo BCS_Qualification::organizer_action($r);'),'Registration detail uses same signing action');
 $adminPanel=BCS_Qualification::admin_panel(1);
 check(str_contains($adminPanel,'data-qualification-admin-preview'),'CRM preview opens through popup trigger');
 check(str_contains($adminPanel,'op=download'),'Signed PDF remains a separate download');
@@ -113,6 +130,7 @@ if (is_readable(BCS_DIR.'vendor/autoload.php')) {
         file_put_contents('/tmp/qualification-'.$name.'.pdf',$pdf->output());file_put_contents('/tmp/qualification-'.$name.'.html',$html);
         ob_start();invoke('page',1,$sample,'parent','secret','Test');$preview=ob_get_clean();
         check(str_contains($preview,'bcs-card-controls'), 'Signing controls mounted');
+        check(str_contains($preview,'<h1>Karta kwalifikacyjna</h1>') && !str_contains($preview,'Karta kwalifikacyjna #'),'Preview has no card serial');
         check(str_contains($preview,'name="bcs-card-stage" content="card_signed"'),'Popup detects completed signature to refresh CRM');
         $unsigned=$sample;unset($unsigned['signers']['parent']['signed_at']);ob_start();invoke('page',1,$unsigned,'parent','secret','Test');$form=ob_get_clean();check(str_contains($form,'name="card_nonce"')&&str_contains($form,'value="send"')&&str_contains($form,'value="sign"'),'Unsigned parent has nonce-protected signing form');
         file_put_contents('/tmp/qualification-'.$name.'-preview.html',$preview);

@@ -276,7 +276,7 @@ final class BCS_Qualification {
         if (strlen(preg_replace('/\D/','',$s['phone']))<9) throw new RuntimeException('Brak prawidłowego telefonu organizatora. Uzupełnij go przed utworzeniem karty.');
         $minutes=max(2,min(30,(int)($settings['otp_minutes']??2)));$code=(string)random_int(100000,999999);
         $history[]=$now;$s['send_history']=$history;self::save($id,$card); // even provider failures consume the rate limit
-        $result=BCS_SMS::send($s['phone'],'Basketmania Camp: kod podpisu karty kwalifikacyjnej #'.$id.': '.$code.'. Ważny '.$minutes.' min. Nie udostępniaj kodu.');
+        $result=BCS_SMS::send($s['phone'],'Basketmania Camp: kod podpisu karty kwalifikacyjnej: '.$code.'. Ważny '.$minutes.' min. Nie udostępniaj kodu.');
         if (empty($result['success'])) throw new RuntimeException('Nie udało się wysłać SMS. Spróbuj później.');
         $s['challenge']=['hash'=>wp_hash_password($code),'expires'=>$now+$minutes*MINUTE_IN_SECONDS,'attempts'=>0,'message_id'=>(string)($result['message_id']??''),'sent_at'=>BCS_Utils::now(),'document_hash'=>$card['hash'],'user'=>$role==='organizer'?get_current_user_id():0];
         self::save($id,$card);
@@ -330,7 +330,7 @@ final class BCS_Qualification {
 
     private static function page(int $id,array $card,string $role,string $token,string $message): void {
         $s=$card['signers'][$role];$can=empty($s['signed_at'])&&($role!=='organizer'||self::stage($card)==='card_organizer');
-        $controls='<div class="bcs-card-controls"><h1>Karta kwalifikacyjna #'.$id.'</h1><p>'.esc_html($message).'</p><p>Podpisujący: '.esc_html($s['name']).'</p>';
+        $controls='<div class="bcs-card-controls"><h1>Karta kwalifikacyjna</h1><p>'.esc_html($message).'</p><p>Podpisujący: '.esc_html($s['name']).'</p>';
         if ($can) {
             $controls.='<form method="post" action="'.esc_url(self::url($id,$role,$token)).'">'.wp_nonce_field('bcs_card_'.$id.'_'.$role.'_'.$card['hash'],'card_nonce',true,false).'<label><input type="checkbox" name="read" value="1" required> '.esc_html(self::DECLARATION).'</label><p><button name="op" value="send">Wyślij kod SMS</button></p><label>Kod SMS <input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label> <button name="op" value="sign">Podpisz kartę</button></form>';
         } else $controls.='<p>'.(!empty($s['signed_at'])?'Twój podpis został zapisany.':'Oczekuje na podpisy rodziców.').'</p>';
@@ -342,13 +342,22 @@ final class BCS_Qualification {
         header('Content-Type: text/html; charset=UTF-8');echo preg_replace_callback('~(<body[^>]*>)~i',static fn($m)=>$m[1].$controls,$html,1);
     }
 
+    public static function organizer_action(object $r): string {
+        if ($r->status==='cancelled' || !self::fully_paid($r)) return '';
+        $card=self::card((int)$r->id);
+        if (!$card || !isset($card['signers']['organizer']) || self::stage($card)!=='card_organizer') return '';
+        $parents=!empty($card['sole_guardian'])?['parent']:['parent','second_parent'];
+        foreach ($parents as $role) if (empty($card['signers'][$role]['signed_at'])) return '';
+        return '<a class="button button-primary bcs-action-available" data-qualification-admin-preview href="'.esc_url(self::url((int)$r->id)).'">Podpisz kartę kwalifikacyjną</a>';
+    }
+
     public static function admin_panel(int $id): string {
         $card=self::card($id);
         $html='<div class="bcs-full bcs-qualification-panel"><h3>Karta kwalifikacyjna</h3>';
         if ($card) {
             $html.='<p>'.esc_html(BCS_Workflow::statuses()[self::stage($card)]).'</p>';
             foreach ($card['signers'] as $role=>$s) $html.='<p>'.esc_html($s['name']).': '.(!empty($s['signed_at'])?'podpisano '.esc_html($s['signed_at']):($role==='organizer'?'oczekuje':(!empty($s['mail_sent_at'])?'wysłano zaproszenie':'błąd wysyłki zaproszenia'))).'</p>';
-            $html.='<p><a class="button" data-qualification-admin-preview href="'.esc_url(self::url($id)).'">'.(self::stage($card)==='card_organizer'?'Otwórz kartę i podpisz SMS-em':'Podgląd karty kwalifikacyjnej').'</a></p>';
+            $html.='<p><a class="button" data-qualification-admin-preview href="'.esc_url(self::url($id)).'">'.(self::stage($card)==='card_organizer'?'Podpisz kartę kwalifikacyjną':'Podgląd karty kwalifikacyjnej').'</a></p>';
             if (self::stage($card)==='card_signed') $html.='<p><a class="button button-primary" href="'.esc_url(self::url($id,'organizer','','download')).'">Pobierz podpisaną kartę kwalifikacyjną PDF</a></p>';
         } else $html.='<p>Karta zostanie wysłana po pełnej wpłacie. Wymagane są kompletne dane rodziców i zaakceptowany formularz.</p>';
         if (!$card) {
