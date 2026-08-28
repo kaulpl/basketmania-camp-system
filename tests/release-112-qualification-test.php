@@ -9,12 +9,12 @@ class WP_Error {function __construct(public $code,public $message){} function ge
 function is_wp_error($v){return $v instanceof WP_Error;}function sanitize_text_field($v){return trim(strip_tags($v));}function wp_unslash($v){return $v;}
 function is_email($v){return filter_var($v,FILTER_VALIDATE_EMAIL)!==false;}function esc_html($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}function esc_attr($s){return esc_html($s);}function esc_url($s){return $s;}function get_option($k,$d=[]){return $d;}function wp_json_encode($v,$flags=0){return json_encode($v,$flags);}function wp_hash_password($c){return password_hash($c,PASSWORD_DEFAULT);}function wp_check_password($c,$h){return password_verify($c,$h);}function get_current_user_id(){return 7;}function current_user_can($v){return $GLOBALS['admin']??false;}function wp_verify_nonce($n,$a){return $n==='valid';}function wp_create_nonce($a){return 'valid';}function wp_nonce_field($a,$name='_wpnonce',$referer=true,$echo=true){return '<input name="'.$name.'" value="valid">';}function admin_url($p){return 'https://example.test/'.$p;}function add_query_arg($a,$url){return $url.'?'.http_build_query($a);}
 function get_page_by_path($path){return null;}function home_url($path){return 'https://example.test'.$path;}
-class BCS_Workflow {static function statuses(){return ['card_parents'=>'Rodzice','card_organizer'=>'Organizator','card_signed'=>'Podpisano'];}}
+require BCS_DIR.'includes/class-bcs-workflow.php';
 class BCS_DB {static function table($s){return 'wp_bcs_'.$s;}}
 class BCS_Utils {static function normalize_phone($v){$v=preg_replace('/\D/','',$v);return strlen($v)===9?'48'.$v:$v;}static function now(){return '2026-08-28 12:00:00';}static function log(...$args){}static function client_ip(){return '192.0.2.1';}static function mask_phone($v){return '***'.substr($v,-3);}static function registration_address($r){return 'ul. Testowa 1, 00-001 Testowo';}}
 class BCS_SMS {static $codes=[];static function send($phone,$text){preg_match('/: (\d{6})\./',$text,$m);self::$codes[$phone]=$m[1]??'';return ['success'=>true,'message_id'=>'sms-'.count(self::$codes)];}}
 class BCS_Mailer {static $mails=[];static function send(...$args){self::$mails[]=$args;return true;}}
-class FakeDB {public $prefix='wp_';public $saved=[];function replace($table,$row){$this->saved[$row['registration_id']]=$row;return 1;}function prepare($q,...$a){foreach($a as $v)$q=preg_replace('/%[ds]/',(string)$v,$q,1);return $q;}function query($q){return 1;}function get_var($q){if(str_contains($q,'SELECT payload')){preg_match('/registration_id=(\d+)/',$q,$m);return $this->saved[(int)($m[1]??0)]['payload']??null;}return 1;}function get_row($q){return $GLOBALS['payment_fixture']??null;}}
+class FakeDB {public $prefix='wp_';public $saved=[];function replace($table,$row){$this->saved[$row['registration_id']]=$row;return 1;}function prepare($q,...$a){foreach($a as $v)$q=preg_replace('/%[ds]/',(string)$v,$q,1);return $q;}function query($q){return 1;}function update($table,$data,$where){$GLOBALS['readiness_updates'][]=$data;return 1;}function get_var($q){if(str_contains($q,'SELECT payload')){preg_match('/registration_id=(\d+)/',$q,$m);return $this->saved[(int)($m[1]??0)]['payload']??null;}return 1;}function get_row($q){return $GLOBALS['payment_fixture']??null;}}
 $GLOBALS['wpdb']=new FakeDB();
 require BCS_DIR.'includes/class-bcs-qualification.php';
 function check($condition,$message){if(!$condition)throw new RuntimeException($message);}
@@ -62,6 +62,29 @@ fails(fn()=>invoke('signing_allowed',$r,$card,'parent'),'Replay rejected');
 $args=[1,&$card,'second_parent',$second];(new ReflectionMethod(BCS_Qualification::class,'sign'))->invokeArgs(null,$args);check(BCS_Qualification::stage($card)==='card_organizer','Both parents unlock organizer');
 invoke('signing_allowed',$r,$card,'organizer');$args=[1,&$card,'organizer'];(new ReflectionMethod(BCS_Qualification::class,'send_code'))->invokeArgs(null,$args);$args=[1,&$card,'organizer',BCS_SMS::$codes['48600555666']];(new ReflectionMethod(BCS_Qualification::class,'sign'))->invokeArgs(null,$args);
 check(BCS_Qualification::stage($card)==='card_signed','All signed');check(!isset($card['signers']['organizer']['challenge']),'Used challenge removed');
+// Actual shared invoice gate: payment alone and parent signatures cannot unlock it.
+$invoiceRow=(object)array_merge((array)$r,['agreement_status'=>'accepted','invoice_status'=>'not_generated','start_date'=>'2027-07-01']);
+$GLOBALS['payment_fixture']=$invoiceRow;
+check(BCS_Workflow::invoice_available(1),'All required signatures unlock invoice');
+foreach (['parent','second_parent','organizer'] as $missingRole) {
+    $pending=$card;unset($pending['signers'][$missingRole]['signed_at']);invoke('save',1,$pending);
+    check(!BCS_Workflow::invoice_available(1),'Invoice blocked while awaiting '.$missingRole);
+}
+$pending=$card;unset($pending['signers']['second_parent']);invoke('save',1,$pending);
+check(!BCS_Workflow::invoice_available(1),'Missing second parent never implies sole custody');
+$pending['sole_guardian']=1;invoke('save',1,$pending);
+check(BCS_Workflow::invoice_available(1),'Declared sole guardian plus organizer unlocks invoice');
+unset($pending['signers']['organizer']['signed_at']);invoke('save',1,$pending);
+check(!BCS_Workflow::invoice_available(1),'Sole guardian still requires organizer');
+invoke('save',1,$card);
+$invoiceRow->paid_amount=0;check(!BCS_Workflow::invoice_available(1),'Signatures do not replace payment');
+$invoiceRow->paid_amount=$invoiceRow->total_amount;
+$invoiceRow->status='cancelled';check(!BCS_Workflow::invoice_available(1),'Cancelled registration stays blocked');
+$invoiceRow->status='paid';
+check(!BCS_Workflow::invoice_available(999),'Missing qualification card blocks invoicing');
+invoke('sync_status',1,$card);
+check(end($GLOBALS['readiness_updates'])['invoice_status']==='ready_to_generate','Last signature refreshes invoice readiness');
+unset($GLOBALS['payment_fixture']);
 $adminPanel=BCS_Qualification::admin_panel(1);
 check(str_contains($adminPanel,'data-qualification-admin-preview'),'CRM preview opens through popup trigger');
 check(str_contains($adminPanel,'op=download'),'Signed PDF remains a separate download');
@@ -94,7 +117,7 @@ if (is_readable(BCS_DIR.'vendor/autoload.php')) {
         $unsigned=$sample;unset($unsigned['signers']['parent']['signed_at']);ob_start();invoke('page',1,$unsigned,'parent','secret','Test');$form=ob_get_clean();check(str_contains($form,'name="card_nonce"')&&str_contains($form,'value="send"')&&str_contains($form,'value="sign"'),'Unsigned parent has nonce-protected signing form');
         file_put_contents('/tmp/qualification-'.$name.'-preview.html',$preview);
     }
-    $fixture=(object)array_merge((array)$r,$input,['form_verified_at'=>'2026-08-28','organizer_name'=>'Test organizer','organizer_phone'=>'600555666','organizer_representative'=>'Test organizer','organizer_email'=>'org@example.test','name'=>'Test organizer','legal_form'=>'','address'=>'Testowo','nip'=>'','regon'=>'','krs'=>'','email'=>'org@example.test','phone'=>'600555666']);
+    $fixture=(object)array_merge((array)$r,$input,['invoice_status'=>'not_generated','agreement_status'=>'accepted','form_verified_at'=>'2026-08-28','organizer_name'=>'Test organizer','organizer_phone'=>'600555666','organizer_representative'=>'Test organizer','organizer_email'=>'org@example.test','name'=>'Test organizer','legal_form'=>'','address'=>'Testowo','nip'=>'','regon'=>'','krs'=>'','email'=>'org@example.test','phone'=>'600555666']);
     $GLOBALS['payment_fixture']=$fixture;BCS_Mailer::$mails=[];
     BCS_Qualification::payment_received(112);$created=BCS_Qualification::card(112);
     check($created!==null && count(BCS_Mailer::$mails)===2,'Full payment creates a card and two invitations');

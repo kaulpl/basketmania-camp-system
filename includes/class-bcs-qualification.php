@@ -118,9 +118,21 @@ final class BCS_Qualification {
         return empty($card['signers']['organizer']['signed_at'])?'card_organizer':'card_signed';
     }
 
+    public static function invoice_signatures_complete(int $id): bool {
+        $card=self::card($id);
+        if (!$card || empty($card['html']) || empty($card['hash']) || !hash_equals($card['hash'],hash('sha256',$card['html']))) return false;
+        $required=!empty($card['sole_guardian'])?['parent','organizer']:['parent','second_parent','organizer'];
+        foreach ($required as $role) {
+            $signer=$card['signers'][$role]??[];
+            if (empty($signer['signed_at']) || !hash_equals($card['hash'],(string)($signer['document_hash']??''))) return false;
+        }
+        return true;
+    }
+
     private static function sync_status(int $id,array $card): void {
         global $wpdb;
         $wpdb->query($wpdb->prepare('UPDATE '.BCS_DB::table('registrations')." SET status=%s,updated_at=%s WHERE id=%d AND status<>'cancelled'",self::stage($card),BCS_Utils::now(),$id));
+        BCS_Workflow::refresh_invoice_readiness($id);
     }
 
     public static function payment_received(int $id): void {

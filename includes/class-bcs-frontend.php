@@ -192,7 +192,7 @@ class BCS_Frontend {
         if($r->status==='cancelled') return ['Zgłoszenie anulowane','To zgłoszenie zostało anulowane. W razie pytań skontaktuj się z organizatorem.'];
         if (str_starts_with((string)$r->status,'card_')) return [BCS_Workflow::statuses()[$r->status]??'Karta kwalifikacyjna', $r->status==='card_signed'?'Karta została podpisana przez wszystkie wymagane osoby.':'Podpisy karty kwalifikacyjnej są zbierane niezależnie od umowy. Każdy rodzic otrzymuje własny link e-mailem.'];
         if($paid && !empty($r->invoice_real_id)) return ['Płatność zaksięgowana','Faktura jest gotowa do pobrania. Osobna karta kwalifikacyjna wymaga podpisów rodziców i organizatora.'];
-        if($paid) return ['Płatność zaksięgowana','Dziękujemy. Organizator przygotuje dokument sprzedaży zgodnie z obowiązującym workflow.'];
+        if($paid) return ['Płatność zaksięgowana','Dziękujemy. Oczekujemy na podpisy karty kwalifikacyjnej przez wymaganych rodziców, a następnie organizatora. Dopiero po tych podpisach będzie można wygenerować fakturę.'];
         if($r->agreement_status==='accepted') return ['Oczekujemy na płatność','Umowa została podpisana. Prosimy o wpłatę kwoty wskazanej w umowie.'];
         if(($r->agreement_real_status??'')==='pending') return ['Umowa gotowa do podpisu','Otwórz umowę, zapoznaj się z jej treścią i potwierdź podpis kodem SMS.'];
         if(!empty($r->form_verified_at)) return ['Formularz zaakceptowany','Organizator zaakceptował formularz. Umowa oczekuje na wysłanie do podpisu przez organizatora.'];

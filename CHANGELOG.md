@@ -1,3 +1,10 @@
+## 1.12.4 - 2026-08-28
+
+- Invoice generation now requires the qualification card signed by every required parent and then the organizer, in addition to existing payment/contract/date rules.
+- Signing updates invoice readiness without automatically creating or sending an invoice.
+- CRM availability and direct generation share the server guard; existing invoices and KSeF retries remain accessible.
+- Updated blocked-action hints and regression coverage for both-parent and sole-guardian paths.
+
 ## 1.12.3 - 2026-08-28
 
 - Opened qualification card previews from registration Documents in an accessible popup without leaving the CRM.

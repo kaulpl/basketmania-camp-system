@@ -189,6 +189,7 @@ class BCS_Workflow {
         $r=$wpdb->get_row($wpdb->prepare("SELECT r.status,r.agreement_status,r.total_amount,r.paid_amount,c.start_date FROM ".BCS_DB::table('registrations')." r JOIN ".BCS_DB::table('camps')." c ON c.id=r.camp_id WHERE r.id=%d",$id));
         if(!$r || $r->status==='cancelled' || $r->agreement_status!=='accepted') return false;
         if((float)$r->total_amount<=0 || (float)$r->paid_amount<(float)$r->total_amount) return false;
+        if(class_exists('BCS_Qualification') && !BCS_Qualification::invoice_signatures_complete($id)) return false;
         $camp_year=(int)substr((string)$r->start_date,0,4);
         if($camp_year<2000) return false;
         return self::test_mode_enabled() || BCS_Utils::today('Y-m-d') >= sprintf('%04d-01-01',$camp_year);
