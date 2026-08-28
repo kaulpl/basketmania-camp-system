@@ -506,7 +506,7 @@ class BCS_CRM {
                 echo '<span class="bcs-action-done bcs-invoice-completed"><span class="dashicons dashicons-yes-alt"></span> Faktura wygenerowana — wykonano</span>';
                 if($r->invoice_status==='generated') self::simple_action($id,'invoice_send','Wyślij fakturę','button bcs-action-reminder');
             } elseif($invoice_available) self::simple_action($id,'invoice_generate','Wygeneruj fakturę','button bcs-action-available');
-            else { $invoice_hint=BCS_Workflow_Engine::test_mode_enabled()?'Faktura dostępna po podpisaniu umowy i pełnej płatności':'Faktura dostępna po podpisaniu umowy, pełnej płatności i od 1 stycznia roku turnusu'; echo '<span class="button disabled bcs-button-disabled" aria-disabled="true">'.esc_html($invoice_hint).'</span>'; }
+            else { $invoice_hint=BCS_Workflow_Engine::test_mode_enabled()?'Faktura dostępna po pełnej płatności, podpisaniu umowy oraz karty kwalifikacyjnej przez rodziców i organizatora':'Faktura dostępna po pełnej płatności, podpisaniu umowy oraz karty kwalifikacyjnej przez rodziców i organizatora, od 1 stycznia roku turnusu'; echo '<span class="button disabled bcs-button-disabled" aria-disabled="true">'.esc_html($invoice_hint).'</span>'; }
             echo '<form method="post" class="bcs-crm-action bcs-cancel-action" data-confirm="Anulować to zgłoszenie? Rekord pozostanie w CRM, ale nie będzie wliczany do liczby uczestników ani podsumowań finansowych.">';
             wp_nonce_field('bcs_crm_'.$id);
             echo '<input type="hidden" name="registration_id" value="'.$id.'"><button class="button bcs-button-danger" name="bcs_crm_action" value="cancel_registration"><span class="dashicons dashicons-dismiss"></span> Anuluj zgłoszenie</button></form>';

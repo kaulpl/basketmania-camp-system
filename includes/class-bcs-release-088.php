@@ -213,6 +213,9 @@ final class BCS_Release_088 {
      * billing_ksef_description -> Fa/DodatkowyOpis.
      */
     public static function generate_guarded(int $registrationId): array {
+        if (class_exists('BCS_Qualification') && !BCS_Invoices::has_invoice($registrationId) && !BCS_Qualification::invoice_signatures_complete($registrationId)) {
+            return ['success'=>false,'message'=>'Najpierw karta kwalifikacyjna musi zostać podpisana przez wszystkich wymaganych rodziców, a następnie organizatora. Dopiero wtedy można wygenerować fakturę.'];
+        }
         $r = BCS_Release_087::ensure_profile($registrationId);
         if (!$r) return ['success'=>false,'message'=>'Nie znaleziono zgłoszenia.'];
 
