@@ -194,6 +194,25 @@ final class BCS_Qualification {
         $id=absint($_REQUEST['registration_id']??0);$role=sanitize_key($_REQUEST['role']??'');$token=sanitize_text_field(wp_unslash($_REQUEST['token']??''));$op=sanitize_key($_REQUEST['op']??'view');
         $message='';
         try {
+            if (($_SERVER['REQUEST_METHOD']??'GET')==='POST' && $op==='save_parents') {
+                if (!current_user_can('manage_options') || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_wpnonce']??'')),'bcs_qualification_'.$id)) throw new RuntimeException('Brak uprawnień.');
+                self::locked($id,function()use($id){
+                    if (self::card($id)) throw new RuntimeException('Karta została już wysłana. Dane podpisujących są zablokowane.');
+                    $r=self::registration($id);
+                    if (!$r || $r->status==='cancelled') throw new RuntimeException('Nieprawidłowe zgłoszenie.');
+                    $input=(array)$r;
+                    foreach (self::editor_fields() as $key=>$meta) $input[$key]=$_POST[$key]??'';
+                    $data=self::parent_data($input);
+                    if (is_wp_error($data)) throw new RuntimeException($data->get_error_message());
+                    // Supplement only the second parent / custody declaration. Never change the first signer of an existing contract.
+                    $data=array_intersect_key($data,self::editor_fields()+['parents_names'=>true]);
+                    global $wpdb;
+                    if ($wpdb->update(BCS_DB::table('registrations'),$data,['id'=>$id])===false) throw new RuntimeException('Nie udało się zapisać danych.');
+                    BCS_Utils::log('qualification_parents_completed',['fields'=>array_keys($data)],$id);
+                });
+                self::payment_received($id);
+                wp_safe_redirect(admin_url('admin.php?page=bcs-registrations&view='.$id));exit;
+            }
             if (($_SERVER['REQUEST_METHOD']??'GET')==='POST' && $op==='retry') {
                 if (!current_user_can('manage_options') || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['_wpnonce']??'')),'bcs_qualification_'.$id)) throw new RuntimeException('Brak uprawnień.');
                 $existing=self::card($id);
@@ -305,6 +324,12 @@ final class BCS_Qualification {
             $html.='<p><a class="button" href="'.esc_url(self::url($id)).'">'.(self::stage($card)==='card_organizer'?'Otwórz kartę i podpisz SMS-em':'Podgląd karty kwalifikacyjnej').'</a></p>';
             if (self::stage($card)==='card_signed') $html.='<p><a class="button button-primary" href="'.esc_url(self::url($id,'organizer','','download')).'">Pobierz podpisaną kartę kwalifikacyjną PDF</a></p>';
         } else $html.='<p>Karta zostanie wysłana po pełnej wpłacie. Wymagane są kompletne dane rodziców i zaakceptowany formularz.</p>';
+        if (!$card) {
+            $r=self::registration($id);
+            if ($r && is_wp_error(self::parent_data((array)$r))) {
+                $html.='<form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><h4>Uzupełnij dane drugiego rodzica do osobnej karty</h4><p>Pierwszy rodzic: '.esc_html(trim($r->parent_first_name.' '.$r->parent_last_name)).'. Dane pierwszego podpisującego umowę pozostają bez zmian. Oświadczenie o samodzielnej opiece zaznaczaj wyłącznie na podstawie informacji od rodzica.</p><input type="hidden" name="action" value="bcs_qualification"><input type="hidden" name="op" value="save_parents"><input type="hidden" name="registration_id" value="'.$id.'">'.wp_nonce_field('bcs_qualification_'.$id,'_wpnonce',true,false).self::parent_fields($r).'<button class="button">Zapisz dane rodziców do karty</button></form>';
+            }
+        }
         if (!$card||self::stage($card)==='card_parents') $html.='<form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="bcs_qualification"><input type="hidden" name="op" value="retry"><input type="hidden" name="registration_id" value="'.$id.'">'.wp_nonce_field('bcs_qualification_'.$id,'_wpnonce',true,false).'<button class="button">Wyślij / ponów zaproszenia do podpisu karty</button><p>Nowe linki zastępują poprzednie linki niepodpisanych rodziców.</p></form>';
         return $html.'</div>';
     }

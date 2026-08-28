@@ -63,6 +63,16 @@ if (is_readable(BCS_DIR.'vendor/autoload.php')) {
         $sample['hash']=hash('sha256',$sample['html']);
         foreach ($sample['signers'] as &$signer) $signer['document_hash']=$sample['hash'];unset($signer);
         $html=invoke('final_html',$sample);
+        if ($name==='two') {
+            $variants=[
+                'explicit-pages'=>str_replace('@page{margin:32mm 15mm 20mm 15mm}','@page{margin:32mm 15mm 20mm 15mm}@page :left{margin:32mm 15mm 20mm 15mm}@page :right{margin:32mm 15mm 20mm 15mm}',$html),
+                'div-content'=>str_replace(['<main class="bcs-v2-content">','</main>'],['<div class="bcs-v2-content">','</div>'],$html),
+                'no-main-margin'=>str_replace('.bcs-v2-content{display:block;margin:0;padding:0;', '.bcs-v2-content{display:block;', $html),
+            ];
+            foreach ($variants as $variant=>$variantHtml) {
+                $v=new Dompdf\Dompdf(['defaultFont'=>'DejaVu Sans']);$v->loadHtml($variantHtml,'UTF-8');$v->setPaper('A4');$v->render();file_put_contents('/tmp/qualification-'.$variant.'.pdf',$v->output());
+            }
+        }
         $pdf=new Dompdf\Dompdf(['isRemoteEnabled'=>false,'isPhpEnabled'=>false,'defaultFont'=>'DejaVu Sans']);$pdf->loadHtml($html,'UTF-8');$pdf->setPaper('A4');$pdf->render();
         check($pdf->getCanvas()->get_page_count()>=2,'Card has content and evidence pages');
         file_put_contents('/tmp/qualification-'.$name.'.pdf',$pdf->output());file_put_contents('/tmp/qualification-'.$name.'.html',$html);
