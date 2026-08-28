@@ -1,5 +1,6 @@
 <?php
 /** Behavioral regression tests. No live SMS, mail or customer data. */
+ob_start();
 define('ABSPATH',__DIR__.'/');define('BCS_DIR',dirname(__DIR__).'/');define('BCS_URL','https://example.test/plugin/');
 define('DAY_IN_SECONDS',86400);define('HOUR_IN_SECONDS',3600);define('MINUTE_IN_SECONDS',60);
 class WP_Error {function __construct(public $code,public $message){} function get_error_message(){return $this->message;}}
@@ -58,7 +59,7 @@ if (is_readable(BCS_DIR.'vendor/autoload.php')) {
         $sample=$card;
         if ($data['sole_guardian']) unset($sample['signers']['second_parent']);
         $sample['sole_guardian']=$data['sole_guardian'];
-        $sample['html']=BCS_Agreement_PDF_V2_Finalizer::finalize(BCS_Agreement_PDF_V2::prepare_pdf_html(BCS_Qualification::render_body($r,$data).'<footer class="bcs-document-footer">Organizator Testowy - ul. Testowa 1 - NIP: dane testowe</footer>','Karta kwalifikacyjna',0));
+        $sample['html']=BCS_Qualification::prepare_html(BCS_Qualification::render_body($r,$data).'<footer class="bcs-document-footer">Organizator Testowy - ul. Testowa 1 - NIP: dane testowe</footer>');
         $sample['hash']=hash('sha256',$sample['html']);
         foreach ($sample['signers'] as &$signer) $signer['document_hash']=$sample['hash'];unset($signer);
         $html=invoke('final_html',$sample);
@@ -71,3 +72,5 @@ if (is_readable(BCS_DIR.'vendor/autoload.php')) {
     }
     echo "PASS: rendered qualification card variants\n";
 }
+
+ob_end_flush();

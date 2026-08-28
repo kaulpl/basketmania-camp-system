@@ -61,7 +61,8 @@ final class BCS_Qualification {
             }
             if (!is_email($data[$prefix.'_email'])) return new WP_Error('email','Wpisz prawidłowy adres e-mail każdego rodzica.');
             $data[$prefix.'_phone']=BCS_Utils::normalize_phone($data[$prefix.'_phone']);
-            if (strlen(preg_replace('/\D/','',$data[$prefix.'_phone']))<9) return new WP_Error('phone','Wpisz prawidłowy numer telefonu każdego rodzica.');
+            if (str_starts_with($data[$prefix.'_phone'],'00')) $data[$prefix.'_phone']=substr($data[$prefix.'_phone'],2);
+            if (!preg_match('/^[1-9][0-9]{8,14}$/D',$data[$prefix.'_phone'])) return new WP_Error('phone','Wpisz prawidłowy numer telefonu każdego rodzica.');
         }
         if (!$data['sole_guardian'] && ($data['parent_phone']===$data['second_parent_phone'] || strcasecmp($data['parent_email'],$data['second_parent_email'])===0)) return new WP_Error('distinct','Rodzice muszą mieć osobne adresy e-mail i różne numery telefonów do podpisu SMS.');
         $data['parents_names']=trim($data['parent_first_name'].' '.$data['parent_last_name']).($data['sole_guardian']?'':'; '.trim($data['second_parent_first_name'].' '.$data['second_parent_last_name']));
@@ -138,8 +139,7 @@ final class BCS_Qualification {
                 $signers['organizer']=['name'=>trim((string)$r->organizer_representative)?:$r->organizer_name,'email'=>$r->organizer_email,'phone'=>BCS_Utils::normalize_phone((string)$r->organizer_phone)];
                 $html=self::render_body($r,$parents);
                 // Store a full PDF layout, including organizer footer and logo, as the signed snapshot.
-                $html=BCS_Agreement_PDF_V2::prepare_pdf_html($html,'Karta kwalifikacyjna',$id);
-                $html=BCS_Agreement_PDF_V2_Finalizer::finalize($html);
+                $html=self::prepare_html($html,$id);
                 $card=['html'=>$html,'hash'=>hash('sha256',$html),'created_at'=>BCS_Utils::now(),'sole_guardian'=>$parents['sole_guardian'],'signers'=>$signers];
                 self::save($id,$card);
                 BCS_Utils::log('qualification_created',['hash'=>$card['hash'],'parents'=>count($signers)-1],$id);
@@ -252,12 +252,19 @@ final class BCS_Qualification {
         return 'Podpis został zapisany. '.(self::stage($card)==='card_signed'?'Karta jest podpisana przez wszystkie wymagane osoby.':'Pozostali podpisujący mają własne linki i kody SMS.');
     }
 
+    public static function prepare_html(string $body,int $id=0): string {
+        $html=BCS_Agreement_PDF_V2::prepare_pdf_html($body,'Karta kwalifikacyjna',$id);
+        // Keep physical page margins on @page; do not reset the HTML root margin.
+        $html=str_replace('html,body{margin:0;padding:0;', 'body{padding:0;', $html);
+        return str_replace('</head>','<style>.bcs-card-field{page-break-inside:avoid}.bcs-card-proof p{font-size:8.5pt;line-height:1.2;margin:0 0 3px}.bcs-card-proof h3{margin-top:12px}.bcs-card-proof{word-wrap:break-word}</style></head>',$html);
+    }
+
     private static function proof(array $card): string {
-        $html='<section style="page-break-before:always"><h2>Dowód podpisów SMS</h2><p>Karta kwalifikacyjna uczestnika wypoczynku</p><p>SHA-256 podpisanej wersji: <span style="font-size:8pt;word-wrap:break-word">'.esc_html($card['hash']).'</span></p>';
+        $html='<section class="bcs-card-proof" style="page-break-before:always"><h2>Dowód podpisów SMS</h2><p>Karta kwalifikacyjna uczestnika wypoczynku</p><p>SHA-256 podpisanej wersji: <span style="font-size:8pt;word-wrap:break-word">'.esc_html($card['hash']).'</span></p>';
         if (!empty($card['sole_guardian'])) $html.='<p>'.esc_html(self::SOLE_DECLARATION).'.</p>';
         foreach ($card['signers'] as $role=>$s) {
             $html.='<div style="page-break-inside:avoid"><h3>'.esc_html($role==='organizer'?'Organizator wypoczynku':($role==='parent'?'Pierwszy rodzic / opiekun prawny':'Drugi rodzic / opiekun prawny')).'</h3>';
-            foreach (['Imię i nazwisko'=>$s['name'],'E-mail'=>$s['email'],'Numer telefonu'=>$s['phone'],'Pierwsze otwarcie'=>$s['opened_at']??'','Podpisano (Europe/Warsaw)'=>$s['signed_at']??'Oczekuje na podpis','SMS wysłano'=>$s['sms_sent_at']??'','Identyfikator SMS'=>$s['sms_message_id']??'','Adres IP'=>$s['ip']??'','Identyfikator konta organizatora'=>$s['admin_user_id']??'','Oświadczenie'=>$s['declaration']??''] as $label=>$value) $html.='<p><strong>'.esc_html($label).':</strong> '.esc_html((string)$value).'</p>';
+            foreach (['Imię i nazwisko'=>$s['name'],'E-mail'=>$s['email'],'Numer telefonu'=>$s['phone'],'Pierwsze otwarcie'=>$s['opened_at']??'','Podpisano (Europe/Warsaw)'=>$s['signed_at']??'Oczekuje na podpis','SMS wysłano'=>$s['sms_sent_at']??'','Identyfikator SMS'=>$s['sms_message_id']??'','Adres IP'=>$s['ip']??'','Oświadczenie'=>$s['declaration']??''] as $label=>$value) $html.='<p><strong>'.esc_html($label).':</strong> '.esc_html((string)$value).'</p>';
             $html.='</div>';
         }
         return $html.'</section>';
@@ -269,6 +276,7 @@ final class BCS_Qualification {
 
     private static function download(array $card): void {
         if (self::stage($card)!=='card_signed') throw new RuntimeException('PDF podpisanej karty będzie dostępny po wszystkich podpisach.');
+        if (!hash_equals($card['hash'],hash('sha256',$card['html']))) throw new RuntimeException('Nieprawidłowy skrót dokumentu.');
         if (!BCS_PDF::available()) throw new RuntimeException('Generator PDF jest niedostępny.');
         $dompdf=new \Dompdf\Dompdf(['isRemoteEnabled'=>false,'isPhpEnabled'=>false,'defaultFont'=>'DejaVu Sans']);
         $dompdf->loadHtml(self::final_html($card),'UTF-8');$dompdf->setPaper('A4');$dompdf->render();
@@ -343,7 +351,7 @@ final class BCS_Qualification {
 
     public static function render_body(object $r,array $parents): string {
         $e=static fn($v)=>nl2br(esc_html((string)$v));
-        $field=static fn($label,$value)=>'<p><strong>'.esc_html($label).'</strong><br>'.$e($value).'</p>';
+        $field=static fn($label,$value)=>'<p class="bcs-card-field"><strong>'.esc_html($label).'</strong><br>'.$e($value).'</p>';
         $html='<h1>KARTA KWALIFIKACYJNA UCZESTNIKA WYPOCZYNKU</h1><h2>I. INFORMACJE DOTYCZĄCE WYPOCZYNKU</h2>';
         $html.=$field('1. Forma wypoczynku','[ ] kolonia   [ ] zimowisko   [X] obóz   [ ] biwak   [ ] półkolonia   [ ] inna forma').$field('2. Termin wypoczynku',$r->start_date.' - '.$r->end_date).$field('3. Adres wypoczynku, miejsce lokalizacji wypoczynku',$r->location).$field('Trasa wypoczynku o charakterze wędrownym','Nie dotyczy').$field('Nazwa kraju w przypadku wypoczynku organizowanego za granicą','Nie dotyczy');
         $html.='<p>Podpis organizatora wypoczynku: potwierdzenie SMS w dowodzie podpisów.</p><h2>II. INFORMACJE DOTYCZĄCE UCZESTNIKA WYPOCZYNKU</h2>';

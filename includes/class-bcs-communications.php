@@ -103,10 +103,14 @@ class BCS_Communications {
     public static function templates(): array {
         if (class_exists('BCS_Templates')) {
             $all = BCS_Template_Engine::all();
-            return (array)($all['emails'] ?? self::default_templates());
+            $templates=(array)($all['emails'] ?? self::default_templates());
+            unset($templates['draft_agreement']);
+            return $templates;
         }
         $saved = get_option('bcs_message_templates', []);
-        return array_replace_recursive(self::default_templates(), is_array($saved) ? $saved : []);
+        $templates=array_replace_recursive(self::default_templates(), is_array($saved) ? $saved : []);
+        unset($templates['draft_agreement']);
+        return $templates;
     }
 
     public static function handle_admin_actions(): void {
