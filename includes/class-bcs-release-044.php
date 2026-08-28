@@ -37,7 +37,7 @@ final class BCS_Release_044 {
         }
 
         $result = BCS_Workflow::last_form_verification_result();
-        wp_send_json_success(['message'=>'Formularz obozowy został zatwierdzony. Utworzono draft umowy i proces przeszedł do kolejnego etapu.','status'=>(string)$after->status,'email'=>!empty($result['email']),'draft'=>!empty($result['draft'])]);
+        wp_send_json_success(['message'=>'Formularz obozowy został zatwierdzony. Umowa oczekuje na ręczne wysłanie do podpisu przez organizatora.','status'=>(string)$after->status,'email'=>!empty($result['email']),'draft'=>!empty($result['draft'])]);
     }
 
     public static function admin_footer(): void {

@@ -369,6 +369,7 @@ class BCS_Admin {
         if ($data['parent_address'] === '') $data['parent_address'] = sanitize_textarea_field(wp_unslash($_POST['parent_address'] ?? $existing->parent_address));
         if ($data['paid_amount'] > $data['total_amount']) $data['paid_amount'] = $data['total_amount'];
         $wpdb->update(BCS_DB::table('registrations'), $data, ['id' => $id]);
+        BCS_Qualification::payment_received($id);
         BCS_Utils::log('registration_edited_by_admin', ['changed_fields' => array_keys($data)], $id, (int)$existing->agreement_id);
         self::redirect('bcs-registrations', ['saved' => 1, 'edit' => $id]);
     }
@@ -393,6 +394,7 @@ class BCS_Admin {
         $wpdb->delete(BCS_DB::table('invoices'), ['registration_id' => $id]);
         $wpdb->delete(BCS_DB::table('logs'), ['registration_id' => $id]);
         $wpdb->delete(BCS_DB::table('agreements'), ['registration_id' => $id]);
+        $wpdb->delete(BCS_DB::table('qualification_cards'), ['registration_id' => $id]);
         $wpdb->delete(BCS_DB::table('registrations'), ['id' => $id]);
         
         self::redirect('bcs-registrations', ['deleted' => 1]);

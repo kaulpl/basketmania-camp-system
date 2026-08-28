@@ -42,6 +42,7 @@ class BCS_Agreements {
             '{{ORGANIZER_EMAIL}}'=>esc_html((string)$reg->organizer_email),'{{ORGANIZER_PHONE}}'=>esc_html((string)$reg->organizer_phone),'{{ORGANIZER_REPRESENTATIVE}}'=>esc_html((string)$reg->organizer_representative),
             '{{BANK_NAME}}'=>esc_html((string)$reg->bank_name),'{{BANK_ACCOUNT}}'=>esc_html(BCS_Utils::format_bank_account((string)$reg->bank_account)),
         ];
+        $template=BCS_Qualification::separate_card($template);
         $html=strtr($template,$replace);$hash=hash('sha256',$html);
         $data=['organizer_id'=>(int)$reg->organizer_id,'agreement_number'=>$number,'version'=>$include_date?'1.0':'template','html'=>$html,'document_hash'=>$hash,'status'=>$status];
         if($existing){$wpdb->update(BCS_DB::table('agreements'),$data,['id'=>$existing->id]);$agreement_id=(int)$existing->id;}
@@ -82,8 +83,8 @@ class BCS_Agreements {
         global $wpdb;
         $row = $wpdb->get_row($wpdb->prepare("SELECT r.agreement_id, a.* FROM ".BCS_DB::table('registrations')." r LEFT JOIN ".BCS_DB::table('agreements')." a ON a.id=r.agreement_id WHERE r.id=%d",$registration_id));
         if (!$row || empty($row->agreement_id) || $row->status !== 'draft' || trim((string)$row->html) === '') return 0;
-        $agreement_id = (int)$row->agreement_id;$html = (string)$row->html;$hash = hash('sha256', $html);$now = BCS_Utils::now();
-        $updated = $wpdb->update(BCS_DB::table('agreements'), ['status'=>'pending','version'=>'1.0','document_hash'=>$hash], ['id'=>$agreement_id]);
+        $agreement_id = (int)$row->agreement_id;$html = BCS_Qualification::separate_card((string)$row->html);$hash = hash('sha256', $html);$now = BCS_Utils::now();
+        $updated = $wpdb->update(BCS_DB::table('agreements'), ['status'=>'pending','version'=>'1.0','html'=>$html,'document_hash'=>$hash], ['id'=>$agreement_id]);
         if ($updated === false) return 0;
         self::save_version($agreement_id, $registration_id, 'sent', $html, $hash, (string)$row->agreement_number);
         $wpdb->update(BCS_DB::table('registrations'), ['agreement_status'=>'pending','updated_at'=>$now], ['id'=>$registration_id]);

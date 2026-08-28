@@ -71,7 +71,11 @@ final class BCS_Release_060 {
         return [
             'Rodzic / opiekun prawny' => [
                 ['Imię i nazwisko', trim((string)$r->parent_first_name.' '.(string)$r->parent_last_name)],
-                ['Imiona i nazwiska rodziców', $r->parents_names ?? ''],
+                ['Samodzielna opieka', !empty($r->sole_guardian) ? 'Tak' : 'Nie'],
+                ['Imię drugiego rodzica', $r->second_parent_first_name ?? ''],
+                ['Nazwisko drugiego rodzica', $r->second_parent_last_name ?? ''],
+                ['E-mail drugiego rodzica', $r->second_parent_email ?? ''],
+                ['Telefon drugiego rodzica', $r->second_parent_phone ?? ''],
                 ['E-mail', $r->parent_email ?? ''],
                 ['Telefon I', $r->parent_phone ?? ''],
                 ['Telefon II', $r->parent_phone_alt ?? ''],
@@ -125,7 +129,11 @@ final class BCS_Release_060 {
             ['title'=>'Rodzic / opiekun prawny', 'fields'=>[
                 ['name'=>'parent_first_name','label'=>'Imię opiekuna','type'=>'text'],
                 ['name'=>'parent_last_name','label'=>'Nazwisko opiekuna','type'=>'text'],
-                ['name'=>'parents_names','label'=>'Imiona i nazwiska rodziców','type'=>'text'],
+                ['name'=>'sole_guardian','label'=>'samodzielnie sprawuje opiekę nad uczestnikiem obozu','type'=>'checkbox'],
+                ['name'=>'second_parent_first_name','label'=>'Imię drugiego rodzica','type'=>'text'],
+                ['name'=>'second_parent_last_name','label'=>'Nazwisko drugiego rodzica','type'=>'text'],
+                ['name'=>'second_parent_email','label'=>'E-mail drugiego rodzica','type'=>'email'],
+                ['name'=>'second_parent_phone','label'=>'Telefon drugiego rodzica','type'=>'text'],
                 ['name'=>'parent_email','label'=>'E-mail','type'=>'email'],
                 ['name'=>'parent_phone','label'=>'Telefon I','type'=>'text'],
                 ['name'=>'parent_phone_alt','label'=>'Telefon II','type'=>'text'],
@@ -218,7 +226,7 @@ final class BCS_Release_060 {
             $id = (int)$r->id;
             $html .= '<section class="bcs-form-verification-inline-060">'
                 .'<h3>Potwierdzenie poprawności formularza</h3>'
-                .'<p>Po sprawdzeniu wszystkich powyższych grup potwierdź poprawność formularza. System zablokuje edycję w Panelu Rodzica, wyśle informację o akceptacji i przygotuje draft umowy.</p>'
+                .'<p>Po sprawdzeniu wszystkich powyższych grup potwierdź poprawność formularza. System zablokuje edycję w Panelu Rodzica, przygotuje umowę. Organizator osobno zatwierdza wysyłkę do podpisu.</p>'
                 .'<form method="post" class="bcs-form-verification-form-060">'
                 .wp_nonce_field('bcs_crm_'.$id, '_wpnonce', true, false)
                 .'<input type="hidden" name="registration_id" value="'.$id.'">'

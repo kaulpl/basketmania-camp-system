@@ -409,7 +409,7 @@ class BCS_CRM {
             $email_ok=!empty($verify_result['email']);
             $draft_ok=!empty($verify_result['draft']);
             echo '<div class="notice notice-success is-dismissible"><p><strong>Formularz obozowy został potwierdzony przez Organizatora.</strong></p>';
-            echo '<p>E-mail do rodzica: '.($email_ok?'przekazany do wysyłki':'nie został wysłany — sprawdź logi poczty').'. Draft umowy PDF: '.($draft_ok?'wygenerowany':'zostanie wygenerowany przy pobraniu dokumentu').'.</p></div>';
+            echo '<p>Formularz zatwierdzony. Umowa oczekuje na ręczne wysłanie do podpisu przez organizatora. Draft nie jest wysyłany rodzicom.</p></div>';
         } elseif(isset($_GET['crm_done'])) {
             echo '<div class="notice '.(!empty($_GET['crm_done'])?'notice-success':'notice-error').' is-dismissible"><p>'.(!empty($_GET['crm_done'])?'Działanie zostało wykonane.':'Nie udało się wykonać działania. Sprawdź ustawienia i logi komunikacji.').'</p></div>';
         }
@@ -429,7 +429,7 @@ class BCS_CRM {
         echo '<div class="bcs-crm-layout"><main><section class="bcs-panel"><h2>Podsumowanie</h2><div class="bcs-stat-grid"><div><span>Status</span><strong><span class="bcs-badge '.esc_attr(self::status_class($r->status)).'">'.esc_html(BCS_Workflow_Engine::statuses()[$r->status]??$r->status).'</span></strong></div><div><span>Formularz obozowy</span><strong class="bcs-summary-value">'.$form_check.esc_html(!empty($r->form_verified_at)?'Zweryfikowany':(($r->form_status??'')==='complete'?'Oczekuje na weryfikację':'Do uzupełnienia')).$form_download.'</strong></div><div><span>Umowa</span><strong class="bcs-summary-value">'.$agreement_check.esc_html($r->agreement_number?:'—').$agreement_download.'</strong></div><div><span>Płatność</span><strong>'.$payment_check.number_format((float)$r->paid_amount,2,',',' ').' / '.number_format((float)$r->total_amount,2,',',' ').' zł</strong></div>'.(!empty($r->invoice_real_id)?'<div><span>Faktura</span><strong class="bcs-summary-value">'.$invoice_check.esc_html($r->invoice_number?:'Wygenerowana').$invoice_download.'</strong></div>':'').'</div><p><strong>Turnus:</strong> '.esc_html($r->camp_name).' · '.esc_html($r->start_date.' – '.$r->end_date).' · '.esc_html($r->location).'</p><p><strong>Kontakt:</strong> <a href="mailto:'.esc_attr($r->parent_email).'">'.esc_html($r->parent_email).'</a> · <a href="tel:'.esc_attr($r->parent_phone).'">'.esc_html($r->parent_phone).'</a></p></section>';
         echo self::important_notes_panel($r);
         echo self::camp_form_accordion($r);
-        if(($r->form_status??'')==='complete' && empty($r->form_verified_at)) echo '<section class="bcs-panel bcs-form-verification"><h2>Weryfikacja formularza obozowego</h2><p>Formularz został uzupełniony przez rodzica i oczekuje na sprawdzenie. Po potwierdzeniu system wyśle e-mail z informacją o akceptacji oraz draftem umowy w PDF.</p><form method="post">'.wp_nonce_field('bcs_crm_'.$id,'_wpnonce',true,false).'<input type="hidden" name="registration_id" value="'.$id.'"><button class="button button-primary" name="bcs_crm_action" value="verify_form"><span class="dashicons dashicons-yes-alt"></span> Potwierdź poprawność formularza obozowego</button></form></section>';
+        if(($r->form_status??'')==='complete' && empty($r->form_verified_at)) echo '<section class="bcs-panel bcs-form-verification"><h2>Weryfikacja formularza obozowego</h2><p>Formularz został uzupełniony przez rodzica i oczekuje na sprawdzenie. Po potwierdzeniu umowa będzie oczekiwać na ręczne wysłanie do podpisu przez organizatora.</p><form method="post">'.wp_nonce_field('bcs_crm_'.$id,'_wpnonce',true,false).'<input type="hidden" name="registration_id" value="'.$id.'"><button class="button button-primary" name="bcs_crm_action" value="verify_form"><span class="dashicons dashicons-yes-alt"></span> Potwierdź poprawność formularza obozowego</button></form></section>';
         echo self::agreement_accordion($r,$versions);
         echo self::documents_panel($r,$versions);
         echo self::mail_correspondence_panel($id);
@@ -588,6 +588,7 @@ class BCS_CRM {
         if($agreement_ready)$html.='<a class="button" href="'.esc_url(BCS_Document_Engine::download_url((int)$r->id,$r->agreement_status==='accepted'?'agreement_signed':'agreement_current')).'">Pobierz aktualną umowę PDF</a>';
         if($complete)$html.='<a class="button button-primary bcs-complete-download" href="'.esc_url(BCS_Document_Engine::download_url((int)$r->id,'complete')).'"><span class="dashicons dashicons-download"></span> Pobierz komplet dokumentów PDF</a>';
         else$html.='<p class="bcs-muted bcs-full">Komplet PDF pojawi się po: uzupełnieniu formularza, podpisaniu umowy, pełnej płatności oraz wygenerowaniu i wysłaniu faktury.</p>';
+        $html .= BCS_Qualification::admin_panel((int)$r->id);
         return $html.'</div></div></details></section>';
     }
 

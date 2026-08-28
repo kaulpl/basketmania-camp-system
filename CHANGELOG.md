@@ -1,3 +1,14 @@
+## 1.12 - 2026-08-28
+
+- Removed parent draft delivery; the organizer explicitly sends the contract after form verification.
+- Separated the qualification card from newly prepared contracts, preserving existing sent/signed contracts.
+- Added individual second-parent identity, email and phone fields and a sole-guardian switch with server validation.
+- Full payment triggers separate parent invitations. Each signer has a scoped, expiring link and independent SMS challenge.
+- Organizer signing is blocked until every required parent signs; sole custody requires only the declared guardian.
+- Added immutable card snapshots, SHA-256 evidence, SMS IDs, signing timestamps, protected PDF downloads and CRM statuses.
+- Added missing-parent completion for existing registrations before card creation; no assumption of sole custody is made for old records.
+- Tags and installable ZIP releases are published after versioned changes reach main.
+
 ## [0.25.3] - 2026-07-24
 
 ### Dodano

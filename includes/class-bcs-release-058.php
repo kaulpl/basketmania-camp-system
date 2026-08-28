@@ -200,7 +200,7 @@ final class BCS_Release_058 {
                 } catch (error) { content.innerHTML = '<div class="notice notice-error inline"><p>'+String(error.message || 'Nie udało się pobrać formularza.')+'</p></div>'; result.textContent = error.message || 'Nie udało się pobrać formularza.'; result.className = 'bcs-form-review-result-058 is-error'; }
             };
             const verifyCurrent = async () => {
-                if (!current || verifying) return; verifying = true; confirmButton.disabled = true; confirmButton.textContent = 'Potwierdzanie…'; result.textContent = 'Trwa potwierdzanie formularza i przygotowanie draftu umowy.'; result.className = 'bcs-form-review-result-058';
+                if (!current || verifying) return; verifying = true; confirmButton.disabled = true; confirmButton.textContent = 'Potwierdzanie…'; result.textContent = 'Trwa potwierdzanie formularza. Umowę wyślesz osobnym przyciskiem.'; result.className = 'bcs-form-review-result-058';
                 try {
                     const data = await post({action:cfg.verifyAction,registration_id:current.registrationId,quick_action:'verify_form',nonce:current.nonce});
                     applyRowState(current.row, data); result.textContent = data.message || 'Formularz obozowy został zaakceptowany.'; result.className = 'bcs-form-review-result-058 is-success'; confirmButton.hidden = true; popup(result.textContent, true);

@@ -103,10 +103,14 @@ class BCS_Communications {
     public static function templates(): array {
         if (class_exists('BCS_Templates')) {
             $all = BCS_Template_Engine::all();
-            return (array)($all['emails'] ?? self::default_templates());
+            $templates=(array)($all['emails'] ?? self::default_templates());
+            unset($templates['draft_agreement']);
+            return $templates;
         }
         $saved = get_option('bcs_message_templates', []);
-        return array_replace_recursive(self::default_templates(), is_array($saved) ? $saved : []);
+        $templates=array_replace_recursive(self::default_templates(), is_array($saved) ? $saved : []);
+        unset($templates['draft_agreement']);
+        return $templates;
     }
 
     public static function handle_admin_actions(): void {
@@ -199,6 +203,7 @@ class BCS_Communications {
     public static function render(string $text, array $vars): string { return strtr($text, $vars); }
 
     public static function send_to_registration(int $registration_id, string $template_key, string $channel='email', string $custom_subject='', string $custom_body='', bool $with_package=false): bool {
+        if ($template_key === 'draft_agreement') return false; // Drafts are internal only.
         $context = self::registration_context($registration_id);
         $templates = self::templates();
         if (!$context || empty($templates[$template_key])) return false;

@@ -127,6 +127,7 @@ class BCS_Payments {
             BCS_Utils::log('stripe_payment_confirmed',['payment_id'=>$payment_id,'session_id'=>$session_id],$registration_id,(int)$r->agreement_id);
             if($paid) BCS_Communication_Engine::send_to_registration($registration_id,'paid','email','', '', false);
         }
+        if ($paid) BCS_Qualification::payment_received($registration_id);
         return ['registration_id'=>$registration_id,'payment_id'=>$payment_id,'paid'=>$paid,'duplicate'=>$claimed===0];
     }
 

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Basketmania Camp System
  * Description: Niezależny system zapisów, CRM, umów potwierdzanych kodem SMS, płatności Stripe i dokumentów dla Basketmania Camp.
- * Version: 1.11
+ * Version: 1.12
  * Author: Basketmania Camp
  * Text Domain: basketmania-camp
  * Requires at least: 6.5
@@ -11,7 +11,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('BCS_VERSION', '1.11');
+define('BCS_VERSION', '1.12');
 define('BCS_FILE', __FILE__);
 define('BCS_DIR', plugin_dir_path(__FILE__));
 define('BCS_URL', plugin_dir_url(__FILE__));
@@ -154,6 +154,7 @@ require_once BCS_DIR . 'includes/class-bcs-document-engine.php';
 require_once BCS_DIR . 'includes/class-bcs-communication-engine.php';
 require_once BCS_DIR . 'includes/class-bcs-core.php';
 require_once BCS_DIR . 'includes/class-bcs-crm.php';
+require_once BCS_DIR . 'includes/class-bcs-qualification.php';
 
 register_activation_hook(__FILE__, ['BCS_DB', 'activate']);
 
@@ -276,4 +277,5 @@ add_action('plugins_loaded', function () {
     BCS_Workflow::init();
     BCS_Core::init();
     BCS_CRM::init();
+    BCS_Qualification::init();
 });
