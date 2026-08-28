@@ -5,12 +5,12 @@ define('ABSPATH',__DIR__.'/');define('BCS_DIR',dirname(__DIR__).'/');define('BCS
 define('DAY_IN_SECONDS',86400);define('HOUR_IN_SECONDS',3600);define('MINUTE_IN_SECONDS',60);
 class WP_Error {function __construct(public $code,public $message){} function get_error_message(){return $this->message;}}
 function is_wp_error($v){return $v instanceof WP_Error;}function sanitize_text_field($v){return trim(strip_tags($v));}function wp_unslash($v){return $v;}
-function is_email($v){return filter_var($v,FILTER_VALIDATE_EMAIL)!==false;}function esc_html($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}function esc_attr($s){return esc_html($s);}function esc_url($s){return $s;}function get_option($k,$d=[]){return $d;}function wp_json_encode($v,$flags=0){return json_encode($v,$flags);}function wp_hash_password($c){return password_hash($c,PASSWORD_DEFAULT);}function wp_check_password($c,$h){return password_verify($c,$h);}function get_current_user_id(){return 7;}function current_user_can($v){return $GLOBALS['admin']??false;}function wp_verify_nonce($n,$a){return $n==='valid';}function wp_create_nonce($a){return 'valid';}function admin_url($p){return 'https://example.test/'.$p;}function add_query_arg($a,$url){return $url.'?'.http_build_query($a);}
+function is_email($v){return filter_var($v,FILTER_VALIDATE_EMAIL)!==false;}function esc_html($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}function esc_attr($s){return esc_html($s);}function esc_url($s){return $s;}function get_option($k,$d=[]){return $d;}function wp_json_encode($v,$flags=0){return json_encode($v,$flags);}function wp_hash_password($c){return password_hash($c,PASSWORD_DEFAULT);}function wp_check_password($c,$h){return password_verify($c,$h);}function get_current_user_id(){return 7;}function current_user_can($v){return $GLOBALS['admin']??false;}function wp_verify_nonce($n,$a){return $n==='valid';}function wp_create_nonce($a){return 'valid';}function wp_nonce_field($a,$name='_wpnonce',$referer=true,$echo=true){return '<input name="'.$name.'" value="valid">';}function admin_url($p){return 'https://example.test/'.$p;}function add_query_arg($a,$url){return $url.'?'.http_build_query($a);}
 class BCS_DB {static function table($s){return 'wp_bcs_'.$s;}}
 class BCS_Utils {static function normalize_phone($v){$v=preg_replace('/\D/','',$v);return strlen($v)===9?'48'.$v:$v;}static function now(){return '2026-08-28 12:00:00';}static function log(...$args){}static function client_ip(){return '192.0.2.1';}static function mask_phone($v){return '***'.substr($v,-3);}static function registration_address($r){return 'ul. Testowa 1, 00-001 Testowo';}}
 class BCS_SMS {static $codes=[];static function send($phone,$text){preg_match('/: (\d{6})\./',$text,$m);self::$codes[$phone]=$m[1]??'';return ['success'=>true,'message_id'=>'sms-'.count(self::$codes)];}}
 class BCS_Mailer {static $mails=[];static function send(...$args){self::$mails[]=$args;return true;}}
-class FakeDB {public $prefix='wp_';public $saved=[];function replace($table,$row){$this->saved[$row['registration_id']]=$row;return 1;}function prepare($q,...$a){return $q;}function query($q){return 1;}function get_var($q){return 1;}}
+class FakeDB {public $prefix='wp_';public $saved=[];function replace($table,$row){$this->saved[$row['registration_id']]=$row;return 1;}function prepare($q,...$a){foreach($a as $v)$q=preg_replace('/%[ds]/',(string)$v,$q,1);return $q;}function query($q){return 1;}function get_var($q){if(str_contains($q,'SELECT payload')){preg_match('/registration_id=(\d+)/',$q,$m);return $this->saved[(int)($m[1]??0)]['payload']??null;}return 1;}function get_row($q){return $GLOBALS['payment_fixture']??null;}}
 $GLOBALS['wpdb']=new FakeDB();
 require BCS_DIR.'includes/class-bcs-qualification.php';
 function check($condition,$message){if(!$condition)throw new RuntimeException($message);}
@@ -63,23 +63,24 @@ if (is_readable(BCS_DIR.'vendor/autoload.php')) {
         $sample['hash']=hash('sha256',$sample['html']);
         foreach ($sample['signers'] as &$signer) $signer['document_hash']=$sample['hash'];unset($signer);
         $html=invoke('final_html',$sample);
-        if ($name==='two') {
-            $variants=[
-                'explicit-pages'=>str_replace('@page{margin:32mm 15mm 20mm 15mm}','@page{margin:32mm 15mm 20mm 15mm}@page :left{margin:32mm 15mm 20mm 15mm}@page :right{margin:32mm 15mm 20mm 15mm}',$html),
-                'div-content'=>str_replace(['<main class="bcs-v2-content">','</main>'],['<div class="bcs-v2-content">','</div>'],$html),
-                'no-main-margin'=>str_replace('.bcs-v2-content{display:block;margin:0;padding:0;', '.bcs-v2-content{display:block;', $html),
-            ];
-            foreach ($variants as $variant=>$variantHtml) {
-                $v=new Dompdf\Dompdf(['defaultFont'=>'DejaVu Sans']);$v->loadHtml($variantHtml,'UTF-8');$v->setPaper('A4');$v->render();file_put_contents('/tmp/qualification-'.$variant.'.pdf',$v->output());
-            }
-        }
         $pdf=new Dompdf\Dompdf(['isRemoteEnabled'=>false,'isPhpEnabled'=>false,'defaultFont'=>'DejaVu Sans']);$pdf->loadHtml($html,'UTF-8');$pdf->setPaper('A4');$pdf->render();
         check($pdf->getCanvas()->get_page_count()>=2,'Card has content and evidence pages');
         file_put_contents('/tmp/qualification-'.$name.'.pdf',$pdf->output());file_put_contents('/tmp/qualification-'.$name.'.html',$html);
         ob_start();invoke('page',1,$sample,'parent','secret','Test');$preview=ob_get_clean();
         check(str_contains($preview,'bcs-card-controls'), 'Signing controls mounted');
+        $unsigned=$sample;unset($unsigned['signers']['parent']['signed_at']);ob_start();invoke('page',1,$unsigned,'parent','secret','Test');$form=ob_get_clean();check(str_contains($form,'name="card_nonce"')&&str_contains($form,'value="send"')&&str_contains($form,'value="sign"'),'Unsigned parent has nonce-protected signing form');
         file_put_contents('/tmp/qualification-'.$name.'-preview.html',$preview);
     }
+    $fixture=(object)array_merge((array)$r,$input,['form_verified_at'=>'2026-08-28','organizer_name'=>'Test organizer','organizer_phone'=>'600555666','organizer_representative'=>'Test organizer','organizer_email'=>'org@example.test','name'=>'Test organizer','legal_form'=>'','address'=>'Testowo','nip'=>'','regon'=>'','krs'=>'','email'=>'org@example.test','phone'=>'600555666']);
+    $GLOBALS['payment_fixture']=$fixture;BCS_Mailer::$mails=[];
+    BCS_Qualification::payment_received(112);$created=BCS_Qualification::card(112);
+    check($created!==null && count(BCS_Mailer::$mails)===2,'Full payment creates a card and two invitations');
+    check(count($created['signers'])===3,'Required signatures frozen');
+    BCS_Qualification::payment_received(112);check(count(BCS_Mailer::$mails)===2,'Duplicate payment does not resend successful invitations');
+    check(BCS_Qualification::card(112)['hash']===$created['hash'],'Duplicate payment preserves snapshot');
+    $fixture->paid_amount=100;BCS_Qualification::payment_received(113);check(BCS_Qualification::card(113)===null,'Deposit does not create a card');
+    $fixture->paid_amount=3000;$fixture->sole_guardian=1;BCS_Qualification::payment_received(114);check(count(BCS_Qualification::card(114)['signers'])===2,'Sole custody freezes only parent and organizer');
+    check(count(BCS_Mailer::$mails)===3,'Sole guardian gets one invitation');
     echo "PASS: rendered qualification card variants\n";
 }
 
