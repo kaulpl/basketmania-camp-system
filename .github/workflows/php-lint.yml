@@ -23,7 +23,9 @@ jobs:
       - name: Deposit JavaScript syntax
         run: node --check assets/js/deposits.js
       - name: Qualification JavaScript syntax
-        run: node --check assets/js/qualification.js
+        run: |
+          node --check assets/js/qualification.js
+          node --check assets/js/qualification-organizer.js
       - name: Upload qualification preview artifacts
         if: always()
         uses: actions/upload-artifact@v4

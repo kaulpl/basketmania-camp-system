@@ -1,3 +1,9 @@
+## 1.12.7 - 2026-08-28
+
+- Organizer card signing now uses the same OTP popup classes and layout as organizer contract signing.
+- Kept explicit document review and acceptance before SMS, with inline errors, OTP AutoFill and retry handling.
+- Preview-only actions retain the document popup; signing completion refreshes CRM.
+
 ## 1.12.6 - 2026-08-28
 
 - Removed the visible qualification-card serial from SMS codes and organizer preview headings; internal authorization IDs remain unchanged.

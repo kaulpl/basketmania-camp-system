@@ -110,7 +110,7 @@
     const close = () => { if (dialog?.open) dialog.close(); };
     document.addEventListener('click', event => {
         const link = event.target.closest('[data-qualification-admin-preview]');
-        if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        if (!link || link.hasAttribute('data-qualification-organizer-sign') || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
         if (!dialog) {
             dialog = document.createElement('dialog');

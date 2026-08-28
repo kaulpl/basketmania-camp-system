@@ -80,6 +80,7 @@ final class BCS_Qualification {
     }
 
     public static function assets(): void {
+        wp_enqueue_script('bcs-qualification-organizer',BCS_URL.'assets/js/qualification-organizer.js',[],BCS_VERSION,true);
         wp_enqueue_script('bcs-qualification',BCS_URL.'assets/js/qualification.js',[],BCS_VERSION,true);
         wp_enqueue_style('bcs-qualification',BCS_URL.'assets/css/qualification.css',[],BCS_VERSION);
     }
@@ -247,10 +248,15 @@ final class BCS_Qualification {
                 } elseif ($op==='document' || ($op==='view' && $role==='organizer')) {
                     if (empty($card['signers'][$role]['reviewed_hash']) && empty($card['signers'][$role]['signed_at'])) $card['signers'][$role]['opened_at']=BCS_Utils::now();
                     $card['signers'][$role]['reviewed_hash']=$card['hash'];self::save($id,$card);
-                } elseif (!in_array($op,['download','view'],true)) throw new RuntimeException('Nieznana operacja.');
+                } elseif (!in_array($op,['download','view','signing_context'],true)) throw new RuntimeException('Nieznana operacja.');
             });
             $card=self::card($id);
             nocache_headers();header('Referrer-Policy: no-referrer');header('X-Robots-Tag: noindex, nofollow');header('X-Frame-Options: SAMEORIGIN');
+            if ($op==='signing_context') {
+                if ($role!=='organizer') throw new RuntimeException('Brak uprawnień.');
+                wp_send_json_success(['nonce'=>wp_create_nonce('bcs_card_'.$id.'_'.$role.'_'.$card['hash']),'hash'=>$card['hash'],'document_url'=>self::url($id,$role,$token,'document'),'phone'=>BCS_Utils::mask_phone($card['signers'][$role]['phone']),'name'=>$card['signers'][$role]['name'],'declaration'=>self::DECLARATION,'expires'=>$card['signers'][$role]['challenge']['expires']??0]);
+            }
+            if ($role==='organizer' && in_array($op,['send','sign'],true) && ($_POST['response']??'')==='json') wp_send_json_success(['message'=>$message,'signed'=>!empty($card['signers'][$role]['signed_at']),'expires'=>$card['signers'][$role]['challenge']['expires']??0]);
             if ($op==='download') { self::download($card);exit; }
             if ($op==='document') {
                 header('Content-Type: text/html; charset=UTF-8');
@@ -261,7 +267,7 @@ final class BCS_Qualification {
                 wp_safe_redirect(self::portal_url($id,$role,$token));exit;
             }
             self::page($id,$card,$role,$token,$message);exit;
-        } catch (Throwable $e) { if ($role!=='organizer' && in_array($op,['send','sign'],true)) wp_send_json_error(['message'=>$e->getMessage()],409); wp_die(esc_html($e->getMessage()),'Karta kwalifikacyjna',['response'=>409,'back_link'=>true]); }
+        } catch (Throwable $e) { if (($role!=='organizer' || ($_POST['response']??'')==='json' || $op==='signing_context') && in_array($op,['send','sign','signing_context'],true)) wp_send_json_error(['message'=>$e->getMessage()],409); wp_die(esc_html($e->getMessage()),'Karta kwalifikacyjna',['response'=>409,'back_link'=>true]); }
     }
 
     private static function require_acceptance(array $input): void {
@@ -348,7 +354,7 @@ final class BCS_Qualification {
         if (!$card || !isset($card['signers']['organizer']) || self::stage($card)!=='card_organizer') return '';
         $parents=!empty($card['sole_guardian'])?['parent']:['parent','second_parent'];
         foreach ($parents as $role) if (empty($card['signers'][$role]['signed_at'])) return '';
-        return '<a class="button button-primary bcs-action-available" data-qualification-admin-preview href="'.esc_url(self::url((int)$r->id)).'">Podpisz kartę kwalifikacyjną</a>';
+        return '<a class="button button-primary bcs-action-available" data-qualification-organizer-sign data-qualification-admin-preview href="'.esc_url(self::url((int)$r->id)).'">Podpisz kartę kwalifikacyjną</a>';
     }
 
     public static function admin_panel(int $id): string {
@@ -357,7 +363,7 @@ final class BCS_Qualification {
         if ($card) {
             $html.='<p>'.esc_html(BCS_Workflow::statuses()[self::stage($card)]).'</p>';
             foreach ($card['signers'] as $role=>$s) $html.='<p>'.esc_html($s['name']).': '.(!empty($s['signed_at'])?'podpisano '.esc_html($s['signed_at']):($role==='organizer'?'oczekuje':(!empty($s['mail_sent_at'])?'wysłano zaproszenie':'błąd wysyłki zaproszenia'))).'</p>';
-            $html.='<p><a class="button" data-qualification-admin-preview href="'.esc_url(self::url($id)).'">'.(self::stage($card)==='card_organizer'?'Podpisz kartę kwalifikacyjną':'Podgląd karty kwalifikacyjnej').'</a></p>';
+            $html.='<p><a class="button" '.(self::stage($card)==='card_organizer'?'data-qualification-organizer-sign ':'').'data-qualification-admin-preview href="'.esc_url(self::url($id)).'">'.(self::stage($card)==='card_organizer'?'Podpisz kartę kwalifikacyjną':'Podgląd karty kwalifikacyjnej').'</a></p>';
             if (self::stage($card)==='card_signed') $html.='<p><a class="button button-primary" href="'.esc_url(self::url($id,'organizer','','download')).'">Pobierz podpisaną kartę kwalifikacyjną PDF</a></p>';
         } else $html.='<p>Karta zostanie wysłana po pełnej wpłacie. Wymagane są kompletne dane rodziców i zaakceptowany formularz.</p>';
         if (!$card) {

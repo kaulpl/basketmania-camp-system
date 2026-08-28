@@ -89,6 +89,7 @@ require BCS_DIR.'includes/class-bcs-crm.php';
 $actionRow=(object)['id'=>1,'status'=>'paid','total_amount'=>3000,'paid_amount'=>3000];
 $ready=$card;unset($ready['signers']['organizer']['signed_at']);invoke('save',1,$ready);
 $button=BCS_Qualification::organizer_action($actionRow);
+check(str_contains($button,'data-qualification-organizer-sign'),'Signing opens dedicated organizer OTP popup');
 check(str_contains($button,'Podpisz kartę kwalifikacyjną') && str_contains($button,'data-qualification-admin-preview'),'Organizer signing button uses popup after parents sign');
 $listMethod=new ReflectionMethod(BCS_CRM::class,'list_quick_actions_html');
 check(str_contains($listMethod->invoke(null,$actionRow),'Podpisz kartę kwalifikacyjną'),'Registration list shows signing action from actual signatures');
@@ -160,4 +161,6 @@ if (is_readable(BCS_DIR.'vendor/autoload.php')) {
     echo "PASS: rendered qualification card variants and scoped Parent Panel\n";
 }
 
+$organizerUi=file_get_contents(BCS_DIR.'assets/js/qualification-organizer.js');
+foreach (['bcs-otp079-dialog','bcs-otp079-code','bcs-otp079-actions','Kod SMS Organizatora','signing_context',"card_nonce:context.nonce",'bcs-card-reviewed','autocomplete="one-time-code"'] as $needle) check(str_contains($organizerUi,$needle),'Organizer popup parity and secure flow: '.$needle);
 ob_end_flush();
