@@ -1,3 +1,9 @@
+## 1.12.3 - 2026-08-28
+
+- Opened qualification card previews from registration Documents in an accessible popup without leaving the CRM.
+- Organizer SMS signing remains available inside the popup; closing after signing refreshes the registration status.
+- Kept signed PDF download as a separate action and preserved authenticated document access.
+
 ## 1.12.2 - 2026-08-28
 
 - Parent qualification invitations now open a signer-scoped Parent Panel view; existing links redirect there too.
