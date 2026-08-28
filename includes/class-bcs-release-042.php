@@ -9,7 +9,7 @@ final class BCS_Release_042 {
     }
 
     private static function fields(): array {
-        return [
+        return BCS_Qualification::editor_fields() + [
             'parent_first_name'=>['Imię opiekuna','text'],'parent_last_name'=>['Nazwisko opiekuna','text'],'parents_names'=>['Imiona i nazwiska rodziców','text'],'parent_email'=>['E-mail','email'],'parent_phone'=>['Telefon I','text'],'parent_phone_alt'=>['Telefon II','text'],'parent_postal_code'=>['Kod pocztowy','text'],'parent_city'=>['Miejscowość','text'],'parent_street'=>['Ulica','text'],'parent_house_number'=>['Nr domu / lokalu','text'],'child_first_name'=>['Imię uczestnika','text'],'child_last_name'=>['Nazwisko uczestnika','text'],'child_address'=>['Adres uczestnika','textarea'],'child_birth_date'=>['Data urodzenia','date'],'child_pesel'=>['PESEL','text'],'child_height'=>['Wzrost (cm)','number'],'child_weight'=>['Waga (kg)','number'],'shirt_size'=>['Rozmiar stroju','text'],'child_club'=>['Klub','text'],'special_educational_needs'=>['Specjalne potrzeby edukacyjne','textarea'],'medical_notes'=>['Uwagi zdrowotne','textarea'],'dietary_notes'=>['Dieta i żywienie','textarea'],'vaccination_tetanus'=>['Szczepienie przeciw tężcowi – rok','text'],'vaccination_diphtheria'=>['Szczepienie przeciw błonicy – rok','text'],'vaccination_other'=>['Inne szczepienia','textarea'],'stay_contact'=>['Kontakt podczas pobytu','textarea'],'authorized_pickup'=>['Osoby upoważnione do odbioru','textarea'],'camp_notes'=>['Dodatkowe informacje dla organizatora','textarea'],'invoice_requested'=>['Faktura','checkbox'],'invoice_buyer_name'=>['Nabywca faktury','text'],'invoice_street'=>['Ulica do faktury','text'],'invoice_postal_code'=>['Kod pocztowy do faktury','text'],'invoice_city'=>['Miejscowość do faktury','text'],'invoice_nip'=>['NIP nabywcy','text'],'invoice_notes'=>['Dodatkowe dane na fakturze','textarea'],
         ];
     }
@@ -57,7 +57,7 @@ final class BCS_Release_042 {
 
         $values = [];
         foreach (self::fields() as $key => $meta) {
-            $values[$key] = $key === 'invoice_requested' ? (int)!empty($r->{$key}) : (string)($r->{$key} ?? '');
+            $values[$key] = in_array($key, ['invoice_requested','sole_guardian'], true) ? (int)!empty($r->{$key}) : (string)($r->{$key} ?? '');
         }
         if (trim((string)$values['child_address']) === '') {
             $values['child_address'] = BCS_Utils::registration_address($r);
@@ -95,6 +95,9 @@ final class BCS_Release_042 {
             }
         }
 
+        $parents = BCS_Qualification::parent_data($_POST);
+        if (is_wp_error($parents)) wp_send_json_error(['message'=>$parents->get_error_message()],422);
+        $data = array_merge($data, $parents);
         $data['parent_address'] = self::parent_address($data, $r);
         if (trim((string)$data['child_address']) === '') {
             $data['child_address'] = $data['parent_address'];

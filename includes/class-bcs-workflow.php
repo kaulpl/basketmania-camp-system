@@ -50,7 +50,10 @@ class BCS_Workflow {
             'new'=>'Nowe zgłoszenie',
             'admin_confirmed'=>'Oczekuje na formularz obozowy',
             'form_complete'=>'Formularz obozowy do zaakceptowania',
-            'draft_sent'=>'Formularz zaakceptowany – wysłano draft umowy obozowej',
+            'draft_sent'=>'Formularz zaakceptowany – umowa oczekuje na wysłanie',
+            'card_parents'=>'Karta kwalifikacyjna – oczekuje na rodziców',
+            'card_organizer'=>'Karta kwalifikacyjna – oczekuje na organizatora',
+            'card_signed'=>'Karta kwalifikacyjna podpisana',
             'agreement_sent'=>'Umowa wysłana do podpisania',
             'awaiting_bank_payment'=>'Oczekuje na przelew',
             'stripe_link_sent'=>'Link Stripe wysłany',
@@ -104,6 +107,7 @@ class BCS_Workflow {
         $r=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('registrations')." WHERE id=%d",$id));
         if(!$r || $r->status==='cancelled' || $r->form_status!=='complete') return false;
 
+        if (is_wp_error(BCS_Qualification::parent_data((array)$r))) return false;
         $agreement_id=(int)$r->agreement_id;
         if(!$agreement_id) $agreement_id=BCS_Agreements::build_for_registration($id,'draft',false);
         if(!$agreement_id) return false;
@@ -113,28 +117,14 @@ class BCS_Workflow {
             'form_verified_at'=>$now,
             'form_verified_by'=>get_current_user_id(),
             'status'=>'draft_sent',
-            'draft_sent_at'=>$now,
+            'draft_sent_at'=>null,
             'updated_at'=>$now
         ],['id'=>$id]);
         if($updated===false) return false;
 
-        // PDF draftu jest generowany pomocniczo, ale jego brak nie cofa zatwierdzenia formularza.
-        $draft=BCS_Document_Engine::agreement_pdf($id,'draft');
-        $draft_ready=(bool)($draft && is_file($draft));
-
-        // Informacja do rodzica korzysta z edytowalnego szablonu komunikacji.
-        $email_sent=BCS_Communication_Engine::send_to_registration($id,'camp_form_verified','both');
-        self::$last_form_verification_result = [
-            'verified'=>true,
-            'email'=>$email_sent,
-            'draft'=>$draft_ready,
-        ];
-        BCS_Utils::log('camp_form_verified',[
-            'draft_pdf'=>$draft_ready?$draft:'',
-            'draft_ready'=>$draft_ready,
-            'email'=>$r->parent_email,
-            'email_sent'=>$email_sent,
-        ],$id,$agreement_id);
+        // Wersja robocza pozostaje wyłącznie w panelu administratora.
+        self::$last_form_verification_result = ['verified'=>true,'email'=>false,'draft'=>false];
+        BCS_Utils::log('camp_form_verified',['manual_agreement_send_required'=>true],$id,$agreement_id);
         return true;
     }
 
@@ -149,13 +139,14 @@ class BCS_Workflow {
     public static function send_agreement(int $id): bool {
         global $wpdb;
         $r=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('registrations')." WHERE id=%d",$id));
-        if(!$r || $r->status==='cancelled' || empty($r->form_verified_at))return false;
+        if(!current_user_can('manage_options') || !$r || $r->status==='cancelled' || empty($r->form_verified_at))return false;
         $available=$r->agreement_available_from ?: self::default_agreement_date($r);
         $test_mode=self::test_mode_enabled();
         if(!$test_mode && current_time('Y-m-d') < $available) return false;
         $is_reminder=($r->agreement_status==='pending' && !empty($r->agreement_id));
         if($is_reminder){
-            $agreement_id=(int)$r->agreement_id;
+            if (is_wp_error(BCS_Qualification::parent_data((array)$r))) return false;
+        $agreement_id=(int)$r->agreement_id;
         } else {
             // Publikujemy dokładnie ten draft, który został utworzony po weryfikacji
             // formularza i ewentualnie poprawiony przez administratora. Nie generujemy
@@ -254,6 +245,7 @@ class BCS_Workflow {
         if($updated===false) return false;
         self::refresh_invoice_readiness($id);
         if(class_exists('BCS_Communications'))BCS_Communication_Engine::send_to_registration($id,'paid','email','', '', false);
+        BCS_Qualification::payment_received($id);
         BCS_Utils::log('bank_payment_marked_paid',['payment_id'=>$external_id,'payment_record_id'=>$payment_id,'confirmed_at'=>$paid_at,'booked_at'=>$now], $id,(int)$r->agreement_id); return true;
     }
 

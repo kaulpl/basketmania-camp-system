@@ -16,6 +16,17 @@ jobs:
         run: |
           find . -type f -name '*.php' -not -path './vendor/*' -print0 \
             | xargs -0 -n1 php -l
+      - name: Qualification card workflow and security tests
+        run: php tests/release-112-qualification-test.php
+      - name: Qualification JavaScript syntax
+        run: node --check assets/js/qualification.js
+      - name: Upload qualification preview artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qualification-1.12-preview
+          path: /tmp/qualification-*
+          if-no-files-found: ignore
       - name: Agreement renderer regression test
         run: php tests/agreement-renderer-051-test.php
       - name: Parent test autofill regression test

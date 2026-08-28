@@ -75,6 +75,9 @@ jobs:
       - name: Verify DOMPDF
         run: php -r "require 'vendor/autoload.php'; if (!class_exists('Dompdf\\Dompdf')) { fwrite(STDERR, 'DOMPDF is missing from the release build.'); exit(1); }"
 
+      - name: Qualification card regression tests
+        run: php tests/release-112-qualification-test.php
+
       - name: Prepare plugin directory
         shell: bash
         run: |

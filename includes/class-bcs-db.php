@@ -2,7 +2,7 @@
 if (!defined('ABSPATH')) exit;
 
 class BCS_DB {
-    public const DB_VERSION = '0.25.3';
+    public const DB_VERSION = '1.12';
     public static function init(): void {}
 
     public static function maybe_upgrade(): void {
@@ -78,6 +78,11 @@ class BCS_DB {
             status VARCHAR(30) NOT NULL DEFAULT 'new',
             parent_first_name VARCHAR(100) NOT NULL,
             parent_last_name VARCHAR(100) NOT NULL,
+            second_parent_first_name VARCHAR(100) NOT NULL DEFAULT '',
+            second_parent_last_name VARCHAR(100) NOT NULL DEFAULT '',
+            second_parent_email VARCHAR(190) NOT NULL DEFAULT '',
+            second_parent_phone VARCHAR(30) NOT NULL DEFAULT '',
+            sole_guardian TINYINT(1) NOT NULL DEFAULT 0,
             parent_email VARCHAR(190) NOT NULL,
             parent_phone VARCHAR(30) NOT NULL,
             parent_phone_alt VARCHAR(30) NULL,
