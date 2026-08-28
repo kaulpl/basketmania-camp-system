@@ -23,12 +23,22 @@ final class BCS_Release_058 {
 
     private static function sections(object $r): array {
         return [
-            'Rodzic / opiekun prawny' => [
-                ['Imię i nazwisko', trim((string)$r->parent_first_name.' '.(string)$r->parent_last_name)],
-                ['Imiona i nazwiska rodziców', $r->parents_names ?? ''],
+            'Rodzic / opiekun prawny 1' => [
+                ['Imię i nazwisko', trim((string)($r->parent_first_name ?? '').' '.(string)($r->parent_last_name ?? ''))],
                 ['E-mail', $r->parent_email ?? ''],
-                ['Telefon I', $r->parent_phone ?? ''],
-                ['Telefon II', $r->parent_phone_alt ?? ''],
+                ['Telefon', $r->parent_phone ?? ''],
+                ['Samodzielna opieka', !empty($r->sole_guardian) ? 'Tak' : 'Nie'],
+            ],
+            'Rodzic / opiekun prawny 2' => !empty($r->sole_guardian) ? [
+                ['Oświadczenie', 'Rodzic/opiekun prawny oświadczył że sprawuje opiekę nad uczestnikiem obozu samodzielnie', true],
+            ] : [
+                ['Imię i nazwisko', trim((string)($r->second_parent_first_name ?? '').' '.(string)($r->second_parent_last_name ?? ''))],
+                ['E-mail', $r->second_parent_email ?? ''],
+                ['Telefon', $r->second_parent_phone ?? ''],
+            ],
+            'Adres i dodatkowe dane kontaktowe' => [
+                ['Dodatkowy telefon (starszy formularz)', $r->parent_phone_alt ?? ''],
+                ['Imiona i nazwiska rodziców (starsze pole zbiorcze)', $r->parents_names ?? ''],
                 ['Kod pocztowy', $r->parent_postal_code ?? ''],
                 ['Miejscowość', $r->parent_city ?? ''],
                 ['Ulica', $r->parent_street ?? ''],
@@ -111,7 +121,7 @@ final class BCS_Release_058 {
             'html'=>self::preview_html($row),
             'can_verify'=>$can_verify,
             'message'=>$can_verify
-                ? 'Sprawdź wszystkie dane. Potwierdzenie zablokuje edycję formularza w Panelu Rodzica i uruchomi przygotowanie draftu umowy.'
+                ? 'Sprawdź wszystkie dane. Potwierdzenie zablokuje edycję formularza w Panelu Rodzica i przygotuje umowę. Wysłanie umowy do podpisu wymaga osobnego kliknięcia przez organizatora.'
                 : 'Formularz został już potwierdzony albo nie jest gotowy do weryfikacji.',
         ]);
     }
