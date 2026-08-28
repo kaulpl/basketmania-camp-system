@@ -2,6 +2,8 @@
 /** Behavioral regression tests. No live SMS, mail or customer data. */
 ob_start();
 define('ABSPATH',__DIR__.'/');define('BCS_DIR',dirname(__DIR__).'/');define('BCS_URL','https://example.test/plugin/');
+define('BCS_VERSION','test');
+function absint($v){return abs((int)$v);}function sanitize_key($v){return preg_replace('/[^a-z0-9_]/','',strtolower($v));}function wp_enqueue_style(...$args){}function wp_enqueue_script(...$args){}
 define('DAY_IN_SECONDS',86400);define('HOUR_IN_SECONDS',3600);define('MINUTE_IN_SECONDS',60);
 class WP_Error {function __construct(public $code,public $message){} function get_error_message(){return $this->message;}}
 function is_wp_error($v){return $v instanceof WP_Error;}function sanitize_text_field($v){return trim(strip_tags($v));}function wp_unslash($v){return $v;}
@@ -96,7 +98,19 @@ if (is_readable(BCS_DIR.'vendor/autoload.php')) {
     $fixture->paid_amount=100;BCS_Qualification::payment_received(113);check(BCS_Qualification::card(113)===null,'Deposit does not create a card');
     $fixture->paid_amount=3000;$fixture->sole_guardian=1;BCS_Qualification::payment_received(114);check(count(BCS_Qualification::card(114)['signers'])===2,'Sole custody freezes only parent and organizer');
     check(count(BCS_Mailer::$mails)===3,'Sole guardian gets one invitation');
-    echo "PASS: rendered qualification card variants\n";
+    $panelCard=BCS_Qualification::card(112);
+    $panelCard['signers']['second_parent']['token_hash']=hash('sha256','panel-secret');
+    invoke('save',112,$panelCard);
+    $_GET=['qualification'=>112,'card_role'=>'second_parent','card_token'=>'panel-secret'];
+    $panel=BCS_Qualification::portal_view();
+    check(str_contains($panel,'Panel Rodzica') && str_contains($panel,'data-card-sign-form'),'Authorized second parent opens real portal view');
+    check(empty(BCS_Qualification::card(112)['signers']['second_parent']['reviewed_hash']),'Portal landing does not mark document reviewed');
+    $_GET['card_role']='parent';
+    check(!str_contains(BCS_Qualification::portal_view(),'data-card-sign-form'),'Cannot use second-parent invitation to sign as first parent');
+    $_GET['card_role']='organizer';
+    check(!str_contains(BCS_Qualification::portal_view(),'data-card-sign-form'),'Portal cannot expose organizer signature');
+    $_GET=[];
+    echo "PASS: rendered qualification card variants and scoped Parent Panel\n";
 }
 
 ob_end_flush();
