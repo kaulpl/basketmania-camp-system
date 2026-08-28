@@ -9,6 +9,7 @@ class WP_Error {function __construct(public $code,public $message){} function ge
 function is_wp_error($v){return $v instanceof WP_Error;}function sanitize_text_field($v){return trim(strip_tags($v));}function wp_unslash($v){return $v;}
 function is_email($v){return filter_var($v,FILTER_VALIDATE_EMAIL)!==false;}function esc_html($s){return htmlspecialchars((string)$s,ENT_QUOTES,'UTF-8');}function esc_attr($s){return esc_html($s);}function esc_url($s){return $s;}function get_option($k,$d=[]){return $d;}function wp_json_encode($v,$flags=0){return json_encode($v,$flags);}function wp_hash_password($c){return password_hash($c,PASSWORD_DEFAULT);}function wp_check_password($c,$h){return password_verify($c,$h);}function get_current_user_id(){return 7;}function current_user_can($v){return $GLOBALS['admin']??false;}function wp_verify_nonce($n,$a){return $n==='valid';}function wp_create_nonce($a){return 'valid';}function wp_nonce_field($a,$name='_wpnonce',$referer=true,$echo=true){return '<input name="'.$name.'" value="valid">';}function admin_url($p){return 'https://example.test/'.$p;}function add_query_arg($a,$url){return $url.'?'.http_build_query($a);}
 function get_page_by_path($path){return null;}function home_url($path){return 'https://example.test'.$path;}
+class BCS_Workflow {static function statuses(){return ['card_parents'=>'Rodzice','card_organizer'=>'Organizator','card_signed'=>'Podpisano'];}}
 class BCS_DB {static function table($s){return 'wp_bcs_'.$s;}}
 class BCS_Utils {static function normalize_phone($v){$v=preg_replace('/\D/','',$v);return strlen($v)===9?'48'.$v:$v;}static function now(){return '2026-08-28 12:00:00';}static function log(...$args){}static function client_ip(){return '192.0.2.1';}static function mask_phone($v){return '***'.substr($v,-3);}static function registration_address($r){return 'ul. Testowa 1, 00-001 Testowo';}}
 class BCS_SMS {static $codes=[];static function send($phone,$text){preg_match('/: (\d{6})\./',$text,$m);self::$codes[$phone]=$m[1]??'';return ['success'=>true,'message_id'=>'sms-'.count(self::$codes)];}}
@@ -61,6 +62,10 @@ fails(fn()=>invoke('signing_allowed',$r,$card,'parent'),'Replay rejected');
 $args=[1,&$card,'second_parent',$second];(new ReflectionMethod(BCS_Qualification::class,'sign'))->invokeArgs(null,$args);check(BCS_Qualification::stage($card)==='card_organizer','Both parents unlock organizer');
 invoke('signing_allowed',$r,$card,'organizer');$args=[1,&$card,'organizer'];(new ReflectionMethod(BCS_Qualification::class,'send_code'))->invokeArgs(null,$args);$args=[1,&$card,'organizer',BCS_SMS::$codes['48600555666']];(new ReflectionMethod(BCS_Qualification::class,'sign'))->invokeArgs(null,$args);
 check(BCS_Qualification::stage($card)==='card_signed','All signed');check(!isset($card['signers']['organizer']['challenge']),'Used challenge removed');
+$adminPanel=BCS_Qualification::admin_panel(1);
+check(str_contains($adminPanel,'data-qualification-admin-preview'),'CRM preview opens through popup trigger');
+check(str_contains($adminPanel,'op=download'),'Signed PDF remains a separate download');
+check(substr_count($adminPanel,'data-qualification-admin-preview')===1,'Only preview, not download, is intercepted');
 $proof=invoke('proof',$card);foreach(['Anna','Jan','Organizator','sms-1','sms-2','sms-3',$card['hash']] as $v)check(str_contains($proof,$v),'Proof contains '.$v);
 $one=$card;unset($one['signers']['second_parent']);unset($one['signers']['organizer']['signed_at']);$one['sole_guardian']=1;check(BCS_Qualification::stage($one)==='card_organizer','Sole parent path');
 $auth=$card;$auth['signers']['parent']['token_hash']=hash('sha256','secret');$auth['signers']['parent']['token_expires']=time()+60;
@@ -85,6 +90,7 @@ if (is_readable(BCS_DIR.'vendor/autoload.php')) {
         file_put_contents('/tmp/qualification-'.$name.'.pdf',$pdf->output());file_put_contents('/tmp/qualification-'.$name.'.html',$html);
         ob_start();invoke('page',1,$sample,'parent','secret','Test');$preview=ob_get_clean();
         check(str_contains($preview,'bcs-card-controls'), 'Signing controls mounted');
+        check(str_contains($preview,'name="bcs-card-stage" content="card_signed"'),'Popup detects completed signature to refresh CRM');
         $unsigned=$sample;unset($unsigned['signers']['parent']['signed_at']);ob_start();invoke('page',1,$unsigned,'parent','secret','Test');$form=ob_get_clean();check(str_contains($form,'name="card_nonce"')&&str_contains($form,'value="send"')&&str_contains($form,'value="sign"'),'Unsigned parent has nonce-protected signing form');
         file_put_contents('/tmp/qualification-'.$name.'-preview.html',$preview);
     }

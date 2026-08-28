@@ -103,3 +103,46 @@
         update();
     });
 })();
+
+// Organizer preview stays in the registration; authenticated signing runs in the frame.
+(() => {
+    let dialog, frame, opener, initialStage, refresh = false;
+    const close = () => { if (dialog?.open) dialog.close(); };
+    document.addEventListener('click', event => {
+        const link = event.target.closest('[data-qualification-admin-preview]');
+        if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        if (!dialog) {
+            dialog = document.createElement('dialog');
+            dialog.className = 'bcs-qualification-admin-dialog';
+            dialog.setAttribute('aria-labelledby', 'bcs-qualification-admin-title');
+            dialog.innerHTML = '<header><h2 id="bcs-qualification-admin-title">Karta kwalifikacyjna</h2><button type="button" class="button" aria-label="Zamknij podgląd karty">Zamknij ×</button></header><iframe title="Podgląd i podpis karty kwalifikacyjnej" referrerpolicy="no-referrer"></iframe>';
+            document.body.append(dialog);
+            frame = dialog.querySelector('iframe');
+            dialog.querySelector('button').addEventListener('click', close);
+            dialog.addEventListener('click', e => {
+                const rect = dialog.getBoundingClientRect();
+                if (e.target === dialog && (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom)) close();
+            });
+            frame.addEventListener('load', () => {
+                try {
+                    const stage = frame.contentDocument?.querySelector('meta[name="bcs-card-stage"]')?.content;
+                    if (stage) {
+                        if (initialStage && stage !== initialStage) refresh = true;
+                        initialStage = stage;
+                    }
+                    frame.contentDocument?.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+                } catch (_) { /* The server still handles authorization and error messages. */ }
+            });
+            dialog.addEventListener('close', () => {
+                frame.src = 'about:blank';
+                opener?.focus();
+                if (refresh) window.location.reload();
+            });
+        }
+        opener = link; initialStage = null; refresh = false;
+        frame.src = link.href;
+        dialog.showModal();
+        dialog.querySelector('button').focus();
+    });
+})();

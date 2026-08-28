@@ -325,6 +325,7 @@ final class BCS_Qualification {
         if (self::stage($card)==='card_signed') $controls.='<p><a href="'.esc_url(self::url($id,$role,$token,'download')).'">Pobierz podpisaną kartę PDF</a></p>';
         $controls.='</div>';
         $html=self::final_html($card);
+        $html=str_replace('</head>','<meta name="bcs-card-stage" content="'.esc_attr(self::stage($card)).'"></head>',$html);
         $html=str_replace('</head>','<style>'.BCS_Agreement_PDF_V2::preview_css().'</style><style>.bcs-card-controls{padding:24px;background:#fff7ed;max-width:900px;margin:20px auto;font:16px Arial}.bcs-card-controls button{padding:12px;background:#172033;color:white;border:0;border-radius:8px;cursor:pointer}.bcs-card-controls input{padding:8px}@media print{.bcs-card-controls{display:none}}</style></head>',$html);
         header('Content-Type: text/html; charset=UTF-8');echo preg_replace_callback('~(<body[^>]*>)~i',static fn($m)=>$m[1].$controls,$html,1);
     }
@@ -335,7 +336,7 @@ final class BCS_Qualification {
         if ($card) {
             $html.='<p>'.esc_html(BCS_Workflow::statuses()[self::stage($card)]).'</p>';
             foreach ($card['signers'] as $role=>$s) $html.='<p>'.esc_html($s['name']).': '.(!empty($s['signed_at'])?'podpisano '.esc_html($s['signed_at']):($role==='organizer'?'oczekuje':(!empty($s['mail_sent_at'])?'wysłano zaproszenie':'błąd wysyłki zaproszenia'))).'</p>';
-            $html.='<p><a class="button" href="'.esc_url(self::url($id)).'">'.(self::stage($card)==='card_organizer'?'Otwórz kartę i podpisz SMS-em':'Podgląd karty kwalifikacyjnej').'</a></p>';
+            $html.='<p><a class="button" data-qualification-admin-preview href="'.esc_url(self::url($id)).'">'.(self::stage($card)==='card_organizer'?'Otwórz kartę i podpisz SMS-em':'Podgląd karty kwalifikacyjnej').'</a></p>';
             if (self::stage($card)==='card_signed') $html.='<p><a class="button button-primary" href="'.esc_url(self::url($id,'organizer','','download')).'">Pobierz podpisaną kartę kwalifikacyjną PDF</a></p>';
         } else $html.='<p>Karta zostanie wysłana po pełnej wpłacie. Wymagane są kompletne dane rodziców i zaakceptowany formularz.</p>';
         if (!$card) {
