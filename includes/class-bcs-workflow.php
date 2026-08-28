@@ -217,37 +217,7 @@ class BCS_Workflow {
     }
 
     public static function mark_bank_paid(int $id, string $paid_at = ''): bool {
-        global $wpdb;
-        $r=$wpdb->get_row($wpdb->prepare("SELECT * FROM ".BCS_DB::table('registrations')." WHERE id=%d",$id));
-        if(!$r || $r->status==='cancelled' || $r->agreement_status!=='accepted') return false;
-        if((float)$r->total_amount > 0 && (float)$r->paid_amount >= (float)$r->total_amount) return false;
-        $now=BCS_Utils::now();
-        if($paid_at==='') $paid_at=$now;
-        try {
-            $paid_date=new DateTimeImmutable($paid_at,BCS_Utils::timezone());
-            $today=new DateTimeImmutable('today',BCS_Utils::timezone());
-            if($paid_date>$today->setTime(23,59,59)) return false;
-            $paid_at=$paid_date->format('Y-m-d H:i:s');
-        } catch(Throwable $e) {
-            return false;
-        }
-        $external_id=str_replace(['-',' ',':'],'',$now);
-        $amount=max(0,(float)$r->total_amount-(float)$r->paid_amount);
-        $inserted=$wpdb->insert(BCS_DB::table('payments'),[
-            'registration_id'=>$id,'organizer_id'=>(int)$r->organizer_id,'provider'=>'bank',
-            'external_id'=>$external_id,'amount'=>$amount,'currency'=>'PLN','status'=>'paid',
-            'paid_at'=>$paid_at,'created_at'=>$now,'updated_at'=>$now,
-        ]);
-        if(!$inserted) return false;
-        $payment_id=(int)$wpdb->insert_id;
-        $updated=$wpdb->update(BCS_DB::table('registrations'),[
-            'payment_id'=>$payment_id,'paid_amount'=>$r->total_amount,'status'=>'paid','updated_at'=>$now,
-        ],['id'=>$id]);
-        if($updated===false) return false;
-        self::refresh_invoice_readiness($id);
-        if(class_exists('BCS_Communications'))BCS_Communication_Engine::send_to_registration($id,'paid','email','', '', false);
-        BCS_Qualification::payment_received($id);
-        BCS_Utils::log('bank_payment_marked_paid',['payment_id'=>$external_id,'payment_record_id'=>$payment_id,'confirmed_at'=>$paid_at,'booked_at'=>$now], $id,(int)$r->agreement_id); return true;
+        return BCS_Deposits::book($id,null,$paid_at);
     }
 
     public static function generate_invoice(int $id): bool {

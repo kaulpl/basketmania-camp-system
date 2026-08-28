@@ -18,6 +18,10 @@ jobs:
             | xargs -0 -n1 php -l
       - name: Qualification card workflow and security tests
         run: php tests/release-112-qualification-test.php
+      - name: Deposit and final payment regression tests
+        run: php tests/deposit-payments-test.php
+      - name: Deposit JavaScript syntax
+        run: node --check assets/js/deposits.js
       - name: Qualification JavaScript syntax
         run: node --check assets/js/qualification.js
       - name: Upload qualification preview artifacts

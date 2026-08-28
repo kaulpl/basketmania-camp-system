@@ -122,7 +122,7 @@ class BCS_CRM {
         if($r->status==='new') $quick.=self::workflow_button((int)$r->id,'confirm_registration','Potwierdź rejestrację');
         elseif(($r->form_status??'')==='complete' && empty($r->form_verified_at)) $quick.=self::list_action_form((int)$r->id,'verify_form','Akceptuj formularz','button');
         elseif(!empty($r->form_verified_at) && ($r->agreement_record_status??'')!=='accepted' && ($r->agreement_record_status??'')!=='pending') $quick.=self::workflow_button((int)$r->id,'send_agreement','Wyślij umowę');
-        elseif(($r->agreement_record_status??'')==='accepted' && (float)$r->paid_amount < (float)$r->total_amount) $quick.=self::list_action_form((int)$r->id,'mark_paid','Zaksięguj wpłatę','button');
+        elseif(($r->agreement_record_status??'')==='accepted' && (float)$r->paid_amount < (float)$r->total_amount) $quick.=self::list_action_form((int)$r->id,'mark_paid','Zaksięguj wpłatę','button').BCS_Deposits::button($r);
         elseif($r->invoice_status==='generated') $quick.=self::list_action_form((int)$r->id,'invoice_send','Wyślij fakturę','button');
         elseif(BCS_Workflow_Engine::invoice_available((int)$r->id)) $quick.=self::list_action_form((int)$r->id,'invoice_generate','Generuj fakturę','button');
         else $quick.='<span class="bcs-muted">Brak wymaganej akcji</span>';
@@ -492,6 +492,7 @@ class BCS_CRM {
                     ? '<form method="post" class="bcs-stripe-link-action-02014"><input type="hidden" name="registration_id" value="'.$id.'"><input type="hidden" name="nonce" value="'.esc_attr(wp_create_nonce('bcs_send_stripe_link_02014_'.$id)).'"><button type="submit" class="button bcs-action-available">Wyślij link Stripe</button></form>'
                     : '<span class="button disabled bcs-button-disabled bcs-action-unavailable" aria-disabled="true">Dostępne po zaakceptowaniu formularza obozowego</span>';
                 echo '<div class="bcs-payment-action-row">';
+                echo BCS_Deposits::button($r);
                 echo self::conditional_workflow_button($id,'mark_bank_paid','Zaksięguj wpłatę',$agreement_accepted,'Dostępne po podpisaniu umowy SMS-em');
                 echo $agreement_accepted
                     ? self::workflow_button($id,'remind_payment','Przypomnij o płatności (EMAIL + SMS)','bcs-action-reminder')
@@ -643,7 +644,7 @@ class BCS_CRM {
         'parent_portal_invite_sent'=>'Wysłano link do formularza zgłoszeniowego','parent_form_completed'=>'Uzupełniono pełny formularz uczestnika','parent_form_updated'=>'Zaktualizowano pełny formularz uczestnika','parent_form_save_blocked'=>'Zablokowano zapis formularza podczas pracy administratora','camp_form_verified'=>'Zweryfikowano i zaakceptowano formularz obozowy',
         'agreement_template_opened'=>'Rodzic otworzył wzór umowy','agreement_opened_for_signature'=>'Rodzic po raz pierwszy otworzył umowę do podpisu','agreement_sent_by_admin'=>'Wysłano umowę do podpisu','agreement_signature_reminder_sent'=>'Wysłano przypomnienie o podpisaniu umowy','auto_agreement_reminder'=>'Automatycznie wysłano przypomnienie o podpisaniu umowy','auto_payment'=>'Automatycznie wysłano przypomnienie o płatności','auto_pre_camp'=>'Automatycznie wysłano informacje przed obozem','auto_reservation'=>'Automatycznie wysłano starsze przypomnienie o umowie','agreement_accepted'=>'Zaakceptowano umowę kodem SMS','agreement_withdrawn_before_signature'=>'Wycofano umowę przed podpisaniem','agreement_draft_edited'=>'Zaktualizowano draft umowy',
         'stripe_link_sent'=>'Wysłano link do płatności Stripe','stripe_link_email_failed'=>'Nie udało się wysłać linku do płatności Stripe','stripe_payment_confirmed'=>'Potwierdzono płatność Stripe','bank_payment_marked_paid'=>'Potwierdzono wpłatę przelewem','payment_confirmation_sent'=>'Wysłano potwierdzenie wpłaty','payment_reminder_sent'=>'Wysłano przypomnienie o płatności',
-        'invoice_generated_manually'=>'Wygenerowano fakturę','invoice_duplicate_generation_blocked'=>'Zablokowano ponowne wygenerowanie faktury','invoice_downloaded_by_parent'=>'Rodzic pobrał fakturę','document_downloaded'=>'Pobrano dokument','document_download_denied'=>'Odrzucono próbę pobrania dokumentu',
+        'bank_deposit_recorded'=>'Zaksięgowano zadatek','invoice_generated_manually'=>'Wygenerowano fakturę','invoice_duplicate_generation_blocked'=>'Zablokowano ponowne wygenerowanie faktury','invoice_downloaded_by_parent'=>'Rodzic pobrał fakturę','document_downloaded'=>'Pobrano dokument','document_download_denied'=>'Odrzucono próbę pobrania dokumentu',
         'crm_phone'=>'Wykonano telefon','crm_note'=>'Dodano notatkę','crm_task'=>'Dodano zadanie','crm_email'=>'Wysłano wiadomość e-mail','crm_invoice_sent'=>'Wysłano fakturę'
     ];}
     private static function log_label(string $event):string{

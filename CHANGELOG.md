@@ -1,3 +1,11 @@
+## 1.12.5 - 2026-08-28
+
+- Added “Wpłacono zadatek” on registration cards and lists with a popup for the received amount.
+- Deposits create separate bank payment entries, preserve the agreed price and reduce the outstanding balance.
+- Final manual booking records only the remaining amount. Only full payment triggers qualification invitations.
+- Added decimal validation, idempotent deposit requests and transactional payment/balance updates; serialized Stripe balance updates with manual payments.
+- Added regression tests for deposits, final settlement, retries, rollback and eligibility.
+
 ## 1.12.4 - 2026-08-28
 
 - Invoice generation now requires the qualification card signed by every required parent and then the organizer, in addition to existing payment/contract/date rules.
