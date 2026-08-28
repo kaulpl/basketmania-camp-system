@@ -119,6 +119,8 @@ class BCS_CRM {
 
     private static function list_quick_actions_html(object $r): string {
         $quick='<div class="bcs-inline-actions">';
+        $card_signing=BCS_Qualification::organizer_action($r);
+        if ($card_signing!=='') return $quick.$card_signing.'</div>';
         if($r->status==='new') $quick.=self::workflow_button((int)$r->id,'confirm_registration','Potwierdź rejestrację');
         elseif(($r->form_status??'')==='complete' && empty($r->form_verified_at)) $quick.=self::list_action_form((int)$r->id,'verify_form','Akceptuj formularz','button');
         elseif(!empty($r->form_verified_at) && ($r->agreement_record_status??'')!=='accepted' && ($r->agreement_record_status??'')!=='pending') $quick.=self::workflow_button((int)$r->id,'send_agreement','Wyślij umowę');
@@ -502,6 +504,7 @@ class BCS_CRM {
         }
         echo '</div>';
         if($r->status !== 'cancelled') {
+            echo BCS_Qualification::organizer_action($r);
             $invoice_available=BCS_Workflow_Engine::invoice_available($id);
             if(!empty($r->invoice_real_id) || in_array((string)$r->invoice_status,['generated','sent'],true)) {
                 echo '<span class="bcs-action-done bcs-invoice-completed"><span class="dashicons dashicons-yes-alt"></span> Faktura wygenerowana — wykonano</span>';

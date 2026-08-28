@@ -1,3 +1,10 @@
+## 1.12.6 - 2026-08-28
+
+- Removed the visible qualification-card serial from SMS codes and organizer preview headings; internal authorization IDs remain unchanged.
+- Added “Podpisz kartę kwalifikacyjną” to registration list and detail quick actions after all required parents sign.
+- Actions use actual card signatures, support sole guardians, open the existing popup and disappear after organizer signing.
+- Added regression tests for action availability and number-free messages/headings.
+
 ## 1.12.5 - 2026-08-28
 
 - Added “Wpłacono zadatek” on registration cards and lists with a popup for the received amount.
