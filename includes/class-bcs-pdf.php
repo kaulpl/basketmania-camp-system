@@ -124,13 +124,15 @@ class BCS_PDF {
 
             // V2 nie używa Canvas: nagłówek, stopka i bezpieczne marginesy uczestniczą
             // w składzie dokumentu od początku. Canvas pozostaje wyłącznie dla fallbacku.
-            if (!$useAgreementV2 && !$preserve_layout) {
-                if (class_exists('BCS_Release_069')) {
-                    BCS_Release_069::apply_canvas_header_footer($pdf, $canvasSourceHtml, $title);
-                } elseif (class_exists('BCS_Release_068')) {
-                    BCS_Release_068::apply_canvas_header_footer($pdf, $html, $title);
-                } elseif (class_exists('BCS_Release_067')) {
-                    BCS_Release_067::apply_canvas_header_footer($pdf, $html, $title);
+            if (!$useAgreementV2) {
+                if (!$preserve_layout) {
+                    if (class_exists('BCS_Release_069')) {
+                        BCS_Release_069::apply_canvas_header_footer($pdf, $canvasSourceHtml, $title);
+                    } elseif (class_exists('BCS_Release_068')) {
+                        BCS_Release_068::apply_canvas_header_footer($pdf, $html, $title);
+                    } elseif (class_exists('BCS_Release_067')) {
+                        BCS_Release_067::apply_canvas_header_footer($pdf, $html, $title);
+                    }
                 }
             }
 
