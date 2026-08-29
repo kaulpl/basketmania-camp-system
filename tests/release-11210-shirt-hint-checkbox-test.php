@@ -10,10 +10,10 @@ $css=(string)file_get_contents($root.'/assets/css/qualification.css');
 $failures=[];
 $check=static function(bool $condition,string $message)use(&$failures):void{if(!$condition)$failures[]=$message;};
 
-$check(str_contains($plugin,'Version: 1.12.10')&&str_contains($plugin,"BCS_VERSION', '1.12.10'"),'Wersja 1.12.10 powinna być spójna.');
+$check(preg_match('/Version: ([0-9.]+)/',$plugin,$header)===1&&preg_match("/BCS_VERSION', '([0-9.]+)'/",$plugin,$constant)===1&&$header[1]===$constant[1]&&version_compare($header[1],'1.12.10','>='),'Wersja 1.12.10 lub nowsza powinna być spójna.');
 $check(str_contains($js,"[data-bcs-shirt-hint-092],[data-bcs-shirt-hint092]"),'Aktualizacja powinna znaleźć i usunąć także błędne podpowiedzi utworzone wcześniej.');
 $check(str_contains($js,"setAttribute('data-bcs-shirt-hint-092', '1')"),'Nowa podpowiedź powinna używać kanonicznego atrybutu.');
-$check(substr_count($js,"createElement('small')")===1,'Skrypt powinien mieć tylko jedno miejsce tworzenia podpowiedzi.');
+$check(substr_count($js,"createElement('output')")===1,'Skrypt powinien mieć tylko jedno miejsce tworzenia stałego pola podpowiedzi.');
 $check(str_contains($js,'if (item !== hint) item.remove()'),'Wszystkie nadmiarowe podpowiedzi powinny zostać usunięte.');
 $check(str_contains($qualification,'bcs-check bcs-check-left bcs-sole-guardian')&&!str_contains($qualification,'role="switch" name="sole_guardian"'),'Pole samodzielnej opieki powinno używać standardowego checkboxa formularza.');
 $check(str_contains($qualificationJs,"toggle.removeAttribute('role')")&&str_contains($qualificationJs,"classList.remove('bcs-sole-switch')"),'Skrypt powinien naprawiać również formularze wyrenderowane ze starszymi klasami.');

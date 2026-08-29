@@ -1,6 +1,11 @@
 (() => {
     'use strict';
 
+    if (window.BCSShirtSuggestionController092) {
+        window.BCSShirtSuggestionController092.mount();
+        return;
+    }
+
     const config = window.BCSShirtSuggestion092 || {};
     const sizes = Array.isArray(config.sizes) ? config.sizes.map(String) : [];
     const hintPrefix = String(config.hintPrefix || 'Sugerowany rozmiar dla podanego wzrostu:');
@@ -32,19 +37,31 @@
         return sizeField instanceof HTMLSelectElement ? sizeField : null;
     };
 
+    const isSuggestion = (element) => element instanceof HTMLElement && (
+        element.id === 'bcs-shirt-size-suggestion'
+        || element.hasAttribute('data-bcs-shirt-hint-092')
+        || element.hasAttribute('data-bcs-shirt-hint092')
+        || String(element.textContent || '').trim().startsWith(hintPrefix)
+    );
+
+    const removeDuplicateHints = (keep = null) => {
+        document.querySelectorAll('small,output,[data-bcs-shirt-hint-092],[data-bcs-shirt-hint092]').forEach((element) => {
+            if (element !== keep && isSuggestion(element)) element.remove();
+        });
+    };
+
     const ensureHint = (select) => {
         const form = select.closest('form') || document;
-        const existing = [...form.querySelectorAll('[data-bcs-shirt-hint-092],[data-bcs-shirt-hint092]')];
-        let hint = existing.find((item) => item.previousElementSibling === select) || existing[0] || null;
-        existing.forEach((item) => {
-            if (item !== hint) item.remove();
-        });
+        let hint = document.getElementById('bcs-shirt-size-suggestion');
+        removeDuplicateHints(hint);
         if (hint) {
             if (hint.previousElementSibling !== select) select.insertAdjacentElement('afterend', hint);
             return hint;
         }
-        hint = document.createElement('small');
+        hint = document.createElement('output');
+        hint.id = 'bcs-shirt-size-suggestion';
         hint.setAttribute('data-bcs-shirt-hint-092', '1');
+        hint.setAttribute('aria-live', 'polite');
         hint.style.display = 'block';
         hint.style.marginTop = '5px';
         hint.style.color = '#64748b';
@@ -88,10 +105,13 @@
     };
 
     const mount = (root = document) => {
+        removeDuplicateHints(document.getElementById('bcs-shirt-size-suggestion'));
         if (root instanceof HTMLInputElement && root.matches('input[name="child_height"]')) mountHeight(root);
         const scope = root instanceof Element || root instanceof Document ? root : document;
         scope.querySelectorAll('input[name="child_height"]').forEach(mountHeight);
     };
+
+    window.BCSShirtSuggestionController092 = {mount};
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => mount(), {once: true});
@@ -101,7 +121,12 @@
 
     new MutationObserver((records) => {
         records.forEach((record) => record.addedNodes.forEach((node) => {
-            if (node.nodeType === Node.ELEMENT_NODE) mount(node);
+            if (node.nodeType !== Node.ELEMENT_NODE) return;
+            if (isSuggestion(node) && node.id !== 'bcs-shirt-size-suggestion') {
+                node.remove();
+                return;
+            }
+            mount(node);
         }));
     }).observe(document.documentElement, {childList: true, subtree: true});
 })();
