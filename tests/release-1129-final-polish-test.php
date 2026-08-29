@@ -10,9 +10,9 @@ $invoice=(string)file_get_contents($root.'/includes/class-bcs-release-088.php');
 $failures=[];
 $check=static function(bool $condition,string $message)use(&$failures):void{if(!$condition)$failures[]=$message;};
 
-$check(str_contains($plugin,'Version: 1.12.9')&&str_contains($plugin,"BCS_VERSION', '1.12.9'"),'Wersja 1.12.9 powinna być spójna.');
+$check(preg_match('/Version: ([0-9.]+)/',$plugin,$header)===1&&preg_match("/BCS_VERSION', '([0-9.]+)'/",$plugin,$constant)===1&&$header[1]===$constant[1]&&version_compare($header[1],'1.12.9','>='),'Wersja 1.12.9 lub nowsza powinna być spójna.');
 $check(str_contains($css,'place-self:stretch!important')&&str_contains($css,'justify-content:flex-start!important'),'Przełącznik samodzielnej opieki powinien zaczynać się od lewej krawędzi.');
-$check(str_contains($css,'width:34px!important')&&str_contains($css,'font-size:13px'),'Przełącznik i opis powinny być pomniejszone.');
+$check(str_contains($css,'appearance:auto!important')&&str_contains($css,'-webkit-appearance:checkbox!important'),'Pole samodzielnej opieki powinno być standardowym checkboxem.');
 $check(str_contains($invoice,'$participant')&&str_contains($invoice,'$r->camp_name')&&str_contains($invoice,"wp_date('d.m.Y'"),'Domyślny opis faktury powinien łączyć uczestnika, nazwę turnusu i daty.');
 $check(str_contains($qualification,'public static function signed_document_html'),'Generator kompletu powinien używać podpisanej karty z dowodem podpisów.');
 $agreementPos=strpos($documents,'2. Podpisana umowa');
