@@ -3,6 +3,7 @@
  * Plugin Name: Basketmania Camp System
  * Description: Niezależny system zapisów, CRM, umów potwierdzanych kodem SMS, płatności Stripe i dokumentów dla Basketmania Camp.
  * Version: 1.12.17
+ * Release build: v1.12.17
  * Author: Basketmania Camp
  * Text Domain: basketmania-camp
  * Requires at least: 6.5
