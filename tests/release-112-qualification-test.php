@@ -140,6 +140,15 @@ if (is_readable(BCS_DIR.'vendor/autoload.php')) {
         check(str_contains($preview,'name="bcs-card-stage" content="card_signed"'),'Popup detects completed signature to refresh CRM');
         $unsigned=$sample;unset($unsigned['signers']['parent']['signed_at']);ob_start();invoke('page',1,$unsigned,'parent','secret','Test');$form=ob_get_clean();check(str_contains($form,'name="card_nonce"')&&str_contains($form,'value="send"')&&str_contains($form,'value="sign"'),'Unsigned parent has nonce-protected signing form');
         file_put_contents('/tmp/qualification-'.$name.'-preview.html',$preview);
+        if ($name==='two') {
+            invoke('save',1129,$sample);
+            $complete=BCS_Qualification::signed_document_html(1129,'<div class="page-break"></div><h2>2. Podpisana umowa</h2><p>Umowa testowa</p>');
+            $cardPosition=strpos($complete,'KARTA KWALIFIKACYJNA');$agreementPosition=strpos($complete,'2. Podpisana umowa');
+            check($cardPosition!==false&&$agreementPosition!==false&&$cardPosition<$agreementPosition,'Complete PDF begins with qualification card and then agreement');
+            $completePdf=new Dompdf\Dompdf(['isRemoteEnabled'=>false,'isPhpEnabled'=>false,'defaultFont'=>'DejaVu Sans']);$completePdf->loadHtml($complete,'UTF-8');$completePdf->setPaper('A4');$completePdf->render();
+            check($completePdf->getCanvas()->get_page_count()>=3,'Complete PDF has card, proof and agreement pages');
+            file_put_contents('/tmp/complete-documents-1.12.9.pdf',$completePdf->output());
+        }
     }
     $fixture=(object)array_merge((array)$r,$input,['invoice_status'=>'not_generated','agreement_status'=>'accepted','form_verified_at'=>'2026-08-28','organizer_name'=>'Test organizer','organizer_phone'=>'600555666','organizer_representative'=>'Test organizer','organizer_email'=>'org@example.test','name'=>'Test organizer','legal_form'=>'','address'=>'Testowo','nip'=>'','regon'=>'','krs'=>'','email'=>'org@example.test','phone'=>'600555666']);
     $GLOBALS['payment_fixture']=$fixture;BCS_Mailer::$mails=[];
