@@ -2,7 +2,7 @@
 declare(strict_types=1);
 $root=dirname(__DIR__);$plugin=(string)file_get_contents($root.'/basketmania-camp-system.php');$documents=(string)file_get_contents($root.'/includes/class-bcs-documents.php');$agreements=(string)file_get_contents($root.'/includes/class-bcs-agreements.php');$r050=(string)file_get_contents($root.'/includes/class-bcs-release-050.php');$r051=(string)file_get_contents($root.'/includes/class-bcs-release-051.php');$migration=(string)file_get_contents($root.'/includes/class-bcs-release-11216.php');$template=(string)file_get_contents($root.'/templates/agreement-default.html');$failures=[];
 $check=static function(bool $condition,string $message)use(&$failures):void{if(!$condition)$failures[]=$message;};
-$check(str_contains($plugin,'Version: 1.12.16')&&str_contains($plugin,"BCS_VERSION', '1.12.16'"),'Wersja 1.12.16 powinna być spójna.');
+$check(preg_match('/Version: ([0-9.]+)/',$plugin,$header)===1&&preg_match("/BCS_VERSION', '([0-9.]+)'/",$plugin,$constant)===1&&$header[1]===$constant[1]&&version_compare($header[1],'1.12.16','>='),'Wersja 1.12.16 lub nowsza powinna być spójna.');
 $check(str_contains($documents,'second_parent_first_name')&&str_contains($documents,'second_parent_email')&&str_contains($documents,'second_parent_phone'),'Formularz PDF powinien pobierać komplet danych drugiego rodzica z nowych pól bazy.');
 $check(str_contains($documents,'bcs-personal-form')&&str_contains($documents,'Rodzic / opiekun prawny 1')&&str_contains($documents,'Zdrowie, żywienie i szczepienia'),'Formularz PDF powinien mieć pogrupowany, spójny układ tabel.');
 $check(!str_contains($documents,'2. Formularz osobowy')&&!str_contains($documents,'3. Podpisana umowa'),'Komplet PDF nie może zawierać technicznych numerowanych nagłówków dokumentów.');
