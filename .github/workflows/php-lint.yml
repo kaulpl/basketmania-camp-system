@@ -33,6 +33,9 @@ jobs:
 
       - name: Release 1.12.15 complete PDF renderer test
         run: php tests/release-11215-complete-pdf-renderer-test.php
+
+      - name: Release 1.12.16 document parent data test
+        run: php tests/release-11216-document-parent-data-test.php
       - name: Deposit and final payment regression tests
         run: php tests/deposit-payments-test.php
       - name: Deposit JavaScript syntax
