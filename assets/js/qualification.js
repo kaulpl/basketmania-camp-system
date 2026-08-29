@@ -10,10 +10,10 @@
     const scan = () => document.querySelectorAll('[name="sole_guardian"]').forEach(toggle => {
         if (!toggle.dataset.qualificationReady) {
             toggle.dataset.qualificationReady = '1';
-            toggle.removeAttribute('role');
+            toggle.setAttribute('role','switch');
             const label = toggle.closest('label');
-            label?.classList.remove('bcs-sole-switch');
-            label?.classList.add('bcs-check','bcs-check-left','bcs-sole-guardian');
+            label?.classList.remove('bcs-sole-switch','bcs-sole-guardian');
+            label?.classList.add('bcs-check','bcs-check-left');
             toggle.addEventListener('change',()=>update(toggle));
             update(toggle);
         }

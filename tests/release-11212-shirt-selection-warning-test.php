@@ -2,7 +2,7 @@
 declare(strict_types=1);
 $root=dirname(__DIR__);$plugin=(string)file_get_contents($root.'/basketmania-camp-system.php');$js=(string)file_get_contents($root.'/assets/js/shirt-size-suggestion-092.js');$failures=[];
 $check=static function(bool $condition,string $message)use(&$failures):void{if(!$condition)$failures[]=$message;};
-$check(str_contains($plugin,'Version: 1.12.12')&&str_contains($plugin,"BCS_VERSION', '1.12.12'"),'Wersja 1.12.12 powinna być spójna.');
+$check(preg_match('/Version: ([0-9.]+)/',$plugin,$header)===1&&preg_match("/BCS_VERSION', '([0-9.]+)'/",$plugin,$constant)===1&&$header[1]===$constant[1]&&version_compare($header[1],'1.12.12','>='),'Wersja 1.12.12 lub nowsza powinna być spójna.');
 $check(!str_contains($js,"document.createElement('output')"),'Formularz nie powinien tworzyć widocznego napisu z podpowiedzią.');
 $check(str_contains($js,"heightChanged || current === '' || current === previous"),'Po wpisaniu wzrostu sugerowany rozmiar powinien zostać wybrany automatycznie.');
 $check(str_contains($js,"select.value = suggested")&&str_contains($js,"select.dispatchEvent(new Event('change'"),'Automatyczny wybór powinien aktualizować rzeczywiste pole formularza.');

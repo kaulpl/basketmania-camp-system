@@ -15,10 +15,10 @@ $check(str_contains($js,"[data-bcs-shirt-hint-092],[data-bcs-shirt-hint092]"),'A
 $check(!str_contains($js,"setAttribute('data-bcs-shirt-hint-092', '1')"),'Skrypt nie powinien już tworzyć stałej podpowiedzi pod polem.');
 $check(substr_count($js,"createElement('small')")===1,'Skrypt powinien mieć tylko jedno miejsce tworzenia ostrzeżenia.');
 $check(str_contains($js,'if (isOldHint(element)) element.remove()'),'Wszystkie stare podpowiedzi powinny zostać usunięte.');
-$check(str_contains($qualification,'bcs-check bcs-check-left bcs-sole-guardian')&&!str_contains($qualification,'role="switch" name="sole_guardian"'),'Pole samodzielnej opieki powinno używać standardowego checkboxa formularza.');
-$check(str_contains($qualificationJs,"toggle.removeAttribute('role')")&&str_contains($qualificationJs,"classList.remove('bcs-sole-switch')"),'Skrypt powinien naprawiać również formularze wyrenderowane ze starszymi klasami.');
+$check(str_contains($qualification,'bcs-check bcs-check-left bcs-span')&&str_contains($qualification,'role="switch" name="sole_guardian"'),'Pole samodzielnej opieki powinno używać standardowego slider-checkboxa formularza.');
+$check(str_contains($qualificationJs,"toggle.setAttribute('role','switch')")&&str_contains($qualificationJs,"classList.remove('bcs-sole-switch','bcs-sole-guardian')"),'Skrypt powinien naprawiać również formularze wyrenderowane ze starszymi klasami.');
 $check(!str_contains($css,'.bcs-sole-switch input{appearance:none'),'Arkusz nie może zmieniać checkboxa w pomniejszony slider.');
-$check(str_contains($css,'-webkit-appearance:checkbox!important')&&str_contains($css,'width:auto!important'),'Checkbox powinien zachować natywny, standardowy wygląd.');
+$check(!str_contains($css,'-webkit-appearance:checkbox!important')&&!str_contains($css,'width:auto!important'),'Lokalny arkusz nie powinien wymuszać natywnego, małego checkboxa.');
 
 if($failures){fwrite(STDERR,"Release 1.12.10 regression test FAILED:\n- ".implode("\n- ",$failures)."\n");exit(1);}
 echo "Release 1.12.10 shirt hint and checkbox checks passed.\n";
