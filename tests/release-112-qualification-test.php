@@ -142,11 +142,11 @@ if (is_readable(BCS_DIR.'vendor/autoload.php')) {
         file_put_contents('/tmp/qualification-'.$name.'-preview.html',$preview);
         if ($name==='two') {
             invoke('save',1129,$sample);
-            $complete=BCS_Qualification::signed_document_html(1129,'<div class="page-break"></div><h2>2. Podpisana umowa</h2><p>Umowa testowa</p>');
-            $cardPosition=strpos($complete,'KARTA KWALIFIKACYJNA');$agreementPosition=strpos($complete,'2. Podpisana umowa');
-            check($cardPosition!==false&&$agreementPosition!==false&&$cardPosition<$agreementPosition,'Complete PDF begins with qualification card and then agreement');
+            $complete=BCS_Qualification::signed_document_html(1129,'<div class="page-break" style="page-break-before:always"></div><h2>2. Formularz osobowy</h2><p>Formularz testowy</p><div class="page-break" style="page-break-before:always"></div><h2>3. Podpisana umowa</h2><p>Umowa testowa</p>');
+            $cardPosition=strpos($complete,'KARTA KWALIFIKACYJNA');$formPosition=strpos($complete,'2. Formularz osobowy');$agreementPosition=strpos($complete,'3. Podpisana umowa');
+            check($cardPosition!==false&&$formPosition!==false&&$agreementPosition!==false&&$cardPosition<$formPosition&&$formPosition<$agreementPosition,'Complete PDF order: qualification card, personal form, signed agreement');
             $completePdf=new Dompdf\Dompdf(['isRemoteEnabled'=>false,'isPhpEnabled'=>false,'defaultFont'=>'DejaVu Sans']);$completePdf->loadHtml($complete,'UTF-8');$completePdf->setPaper('A4');$completePdf->render();
-            check($completePdf->getCanvas()->get_page_count()>=3,'Complete PDF has card, proof and agreement pages');
+            check($completePdf->getCanvas()->get_page_count()>=4,'Complete PDF has qualification card, proof, personal form and agreement pages');
             file_put_contents('/tmp/complete-documents-1.12.9.pdf',$completePdf->output());
         }
     }

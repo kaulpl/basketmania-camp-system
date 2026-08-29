@@ -15,9 +15,9 @@ $check(str_contains($qualification,'bcs-check bcs-check-left bcs-span'),'Przeł�
 $check(!str_contains($css,'bcs-sole-guardian'),'Arkusz kwalifikacji nie powinien nadpisywać standardowego wyglądu checkboxa.');
 $check(str_contains($invoice,'$participant')&&str_contains($invoice,'$r->camp_name')&&str_contains($invoice,"wp_date('d.m.Y'"),'Domyślny opis faktury powinien łączyć uczestnika, nazwę turnusu i daty.');
 $check(str_contains($qualification,'public static function signed_document_html'),'Generator kompletu powinien używać podpisanej karty z dowodem podpisów.');
-$agreementPos=strpos($documents,'2. Podpisana umowa');
-$formPos=strpos($documents,'3. Formularz zgłoszeniowy');
-$check($agreementPos!==false&&$formPos!==false&&$agreementPos<$formPos,'Umowa powinna znajdować się przed formularzem w komplecie dokumentów.');
+$formPos=strpos($documents,'2. Formularz osobowy');
+$agreementPos=strpos($documents,'3. Podpisana umowa');
+$check($formPos!==false&&$agreementPos!==false&&$formPos<$agreementPos,'Formularz osobowy powinien znajdować się przed umową w komplecie dokumentów.');
 $check(str_contains($documents,'BCS_Qualification::signed_document_html'),'Karta kwalifikacyjna powinna otwierać kompletny PDF.');
 $check(str_contains($documents,'$filename=self::clean_name(')&&str_contains($documents,".'_'.trim((string)\$r->child_first_name)")&&str_contains($documents,".'_'.trim((string)\$r->child_last_name).'.pdf'"),'Nazwa pliku powinna zawierać numer zgłoszenia, rok, imię i nazwisko.');
 
