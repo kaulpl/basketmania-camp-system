@@ -72,11 +72,11 @@ $check(str_contains($js, 'input[name="child_height"]'), 'Skrypt sugestii powinie
 $check(str_contains($js, 'select[name="shirt_size"]'), 'Skrypt powinien ustawiać pole rozmiaru stroju.');
 $check(str_contains($js, 'value >= bounds.min && value < bounds.max'), 'JS powinien traktować dolną granicę jako należącą do rozmiaru, a górną jako przejście do następnego.');
 $check(str_contains($js, 'Sugerowany rozmiar'), 'Formularz powinien pokazywać rodzicowi czytelną sugestię rozmiaru.');
-$check(str_contains($js, "document.getElementById('bcs-shirt-size-suggestion')"), 'Formularz powinien utrzymywać tylko jedną podpowiedź rozmiaru.');
-$check(str_contains($js, "setAttribute('data-bcs-shirt-hint-092', '1')"), 'Tworzona podpowiedź powinna mieć dokładnie ten sam atrybut, po którym jest wyszukiwana.');
+$check(str_contains($js, "form.querySelector('[data-bcs-shirt-warning-092]')"), 'Formularz powinien utrzymywać tylko jedno ostrzeżenie o rozmiarze.');
+$check(!str_contains($js, "setAttribute('data-bcs-shirt-hint-092', '1')"), 'Zwykła podpowiedź pod polem nie powinna już być tworzona.');
 $check(!str_contains($js, 'hint.dataset.bcsShirtHint092'), 'Skrypt nie może używać niezgodnego atrybutu data-bcs-shirt-hint092.');
-$check(str_contains($js, 'if (element !== keep && isSuggestion(element)) element.remove()'), 'Powielone lub nieaktualne podpowiedzi powinny być usuwane.');
-$check(str_contains($js, "current === '' || current === previousAutomatic"), 'Automatyczna sugestia nie powinna nadpisywać ręcznie wybranego rozmiaru.');
+$check(str_contains($js, 'if (isOldHint(element)) element.remove()'), 'Powielone lub nieaktualne podpowiedzi powinny być usuwane.');
+$check(str_contains($js, "heightChanged || current === '' || current === previous"), 'Zmiana wzrostu powinna automatycznie wybrać sugerowany rozmiar.');
 
 $nodeOutput = [];
 $nodeExit = 1;
