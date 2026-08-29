@@ -78,9 +78,7 @@ class BCS_Documents {
     public static function form_pdf(int $id): string {
         $r = self::row($id);
         if (!$r) return '';
-        $body = '<h1>Formularz zgłoszeniowy - obozowy</h1>'
-            .'<p class="small">Zgłoszenie #'.(int)$r->id.' | wygenerowano '
-            .esc_html(BCS_Utils::today('d.m.Y H:i')).'</p>'.self::data_table($r);
+        $body = self::data_table($r);
         return self::pdf_or_error(
             self::html_document('Formularz zgłoszeniowy', $body),
             self::dir($id).'/01-formularz-zgloszeniowy.pdf',
@@ -203,9 +201,8 @@ class BCS_Documents {
         ));
         if (trim($signed_html) === '') $signed_html = (string)$r->agreement_html;
 
-        $following = '<div class="page-break" style="page-break-before:always"></div><h1>Komplet dokumentów Basketmania Camp</h1>'
-            .'<h2>2. Formularz osobowy</h2>'.self::data_table($r)
-            .'<div class="page-break" style="page-break-before:always"></div><h2>3. Podpisana umowa</h2>'.$signed_html;
+        $following = '<div class="page-break" style="page-break-before:always"></div>'.self::data_table($r)
+            .'<div class="page-break" style="page-break-before:always"></div>'.$signed_html;
         $body=BCS_Qualification::signed_document_html($id,$following);
         if ($body==='') return '';
         $year=preg_match('/^(\d{4})/',(string)$r->start_date,$match)?$match[1]:wp_date('Y');
@@ -224,48 +221,65 @@ class BCS_Documents {
             (string)($r->invoice_street ?? '')."\n"
             .trim((string)($r->invoice_postal_code ?? '').' '.(string)($r->invoice_city ?? ''))
         );
-        $rows = [
-            'Opiekun'=>trim($r->parent_first_name.' '.$r->parent_last_name),
-            'Imiona i nazwiska rodziców'=>$r->parents_names ?? '',
-            'E-mail'=>$r->parent_email,
-            'Telefon I'=>$r->parent_phone,
-            'Telefon II'=>$r->parent_phone_alt ?? '',
-            'Adres opiekuna'=>BCS_Utils::registration_address($r),
-            'Uczestnik'=>trim($r->child_first_name.' '.$r->child_last_name),
-            'Adres uczestnika (jeżeli inny)'=>$r->child_address ?? '',
-            'Data urodzenia'=>$r->child_birth_date,
-            'PESEL'=>$r->child_pesel,
-            'Wzrost'=>$r->child_height ? ((int)$r->child_height.' cm') : '',
-            'Waga'=>!empty($r->child_weight)
-                ? rtrim(rtrim(number_format((float)$r->child_weight, 1, '.', ''), '0'), '.').' kg'
-                : '',
-            'Rozmiar stroju'=>$r->shirt_size,
-            'Klub'=>$r->child_club,
-            'Specjalne potrzeby edukacyjne'=>$r->special_educational_needs ?? '',
-            'Stan zdrowia, rozwój psychofizyczny i leki'=>$r->medical_notes,
-            'Dieta, alergie i nietolerancje'=>$r->dietary_notes,
-            'Szczepienie przeciw tężcowi – rok'=>$r->vaccination_tetanus ?? '',
-            'Szczepienie przeciw błonicy – rok'=>$r->vaccination_diphtheria ?? '',
-            'Inne szczepienia'=>$r->vaccination_other ?? '',
-            'Kontakt podczas pobytu'=>$r->stay_contact,
-            'Osoby upoważnione do odbioru'=>$r->authorized_pickup,
-            'Dodatkowe informacje dla organizatora'=>$r->camp_notes,
-            'Faktura'=>!empty($r->invoice_requested) ? 'tak' : 'nie',
-            'Nabywca faktury'=>$r->invoice_buyer_name ?? '',
-            'Adres do faktury'=>$invoice_address,
-            'NIP nabywcy'=>$r->invoice_nip ?? '',
-            'Dodatkowe dane na fakturze'=>$r->invoice_notes ?? '',
-            'Turnus'=>$r->camp_name,
-            'Termin'=>$r->start_date.' - '.$r->end_date,
-            'Miejsce'=>$r->location,
+        $sole=!empty($r->sole_guardian);
+        $second_phone=trim((string)($r->second_parent_phone ?? ''));
+        $legacy_phone=trim((string)($r->parent_phone_alt ?? ''));
+        $sections = [
+            'Rodzic / opiekun prawny 1'=>[
+                'Imię i nazwisko'=>trim((string)$r->parent_first_name.' '.(string)$r->parent_last_name),
+                'E-mail'=>$r->parent_email,
+                'Numer telefonu'=>$r->parent_phone,
+                'Adres zamieszkania'=>BCS_Utils::registration_address($r),
+            ],
+            'Rodzic / opiekun prawny 2'=>$sole ? [
+                'Oświadczenie'=>'Rodzic/opiekun prawny oświadczył, że sprawuje opiekę nad uczestnikiem obozu samodzielnie.',
+            ] : [
+                'Imię i nazwisko'=>trim((string)($r->second_parent_first_name ?? '').' '.(string)($r->second_parent_last_name ?? '')),
+                'E-mail'=>$r->second_parent_email ?? '',
+                'Numer telefonu'=>$second_phone,
+            ],
+            'Uczestnik obozu'=>[
+                'Imię i nazwisko'=>trim((string)$r->child_first_name.' '.(string)$r->child_last_name),
+                'Adres uczestnika'=>trim((string)($r->child_address ?? '')) ?: BCS_Utils::registration_address($r),
+                'Data urodzenia'=>$r->child_birth_date,
+                'PESEL'=>$r->child_pesel,
+                'Wzrost'=>$r->child_height ? ((int)$r->child_height.' cm') : '',
+                'Waga'=>!empty($r->child_weight) ? rtrim(rtrim(number_format((float)$r->child_weight,1,'.',''),'0'),'.').' kg' : '',
+                'Rozmiar stroju'=>$r->shirt_size,
+                'Klub'=>$r->child_club,
+            ],
+            'Zdrowie, żywienie i szczepienia'=>[
+                'Specjalne potrzeby edukacyjne'=>$r->special_educational_needs ?? '',
+                'Stan zdrowia, rozwój psychofizyczny i przyjmowane leki'=>$r->medical_notes,
+                'Dieta, alergie i nietolerancje'=>$r->dietary_notes,
+                'Szczepienie przeciw tężcowi – rok'=>$r->vaccination_tetanus ?? '',
+                'Szczepienie przeciw błonicy – rok'=>$r->vaccination_diphtheria ?? '',
+                'Inne szczepienia'=>$r->vaccination_other ?? '',
+            ],
+            'Informacje dotyczące pobytu'=>[
+                'Kontakt podczas pobytu'=>$r->stay_contact,
+                'Osoby upoważnione do odbioru'=>$r->authorized_pickup,
+                'Dodatkowe informacje dla organizatora'=>$r->camp_notes,
+            ],
+            'Dane do faktury'=>[
+                'Faktura'=>!empty($r->invoice_requested) ? 'tak' : 'nie',
+                'Nabywca faktury'=>$r->invoice_buyer_name ?? '',
+                'Adres do faktury'=>$invoice_address,
+                'NIP nabywcy'=>$r->invoice_nip ?? '',
+                'Dodatkowe dane na fakturze'=>$r->invoice_notes ?? '',
+            ],
+            'Turnus'=>[
+                'Nazwa turnusu'=>$r->camp_name,
+                'Termin'=>$r->start_date.' – '.$r->end_date,
+                'Miejsce'=>$r->location,
+            ],
         ];
-        $html = '<table>';
-        foreach ($rows as $k=>$v) {
-            $html .= '<tr><th>'.esc_html($k).'</th><td>'
-                .nl2br(esc_html(trim((string)$v) !== '' ? (string)$v : '-'))
-                .'</td></tr>';
+        if ($legacy_phone!=='' && $legacy_phone!==$second_phone && $legacy_phone!==trim((string)$r->parent_phone)) {
+            $sections['Rodzic / opiekun prawny 1']['Dodatkowy numer telefonu']=$legacy_phone;
         }
-        return $html.'</table>';
+        $html='<section class="bcs-personal-form"><style>.bcs-personal-form{font-family:"DejaVu Sans",Arial,sans-serif;color:#172033}.bcs-personal-form h2{margin:18px 0 7px;padding:7px 10px;background:#172033;color:#fff;border-top:2px solid #f97316;font-size:12pt}.bcs-personal-form table{width:100%;border-collapse:collapse;margin:0 0 12px;page-break-inside:auto}.bcs-personal-form tr{page-break-inside:avoid}.bcs-personal-form th,.bcs-personal-form td{border:1px solid #d9dee8;padding:7px 9px;vertical-align:top;font-size:9.5pt;line-height:1.35}.bcs-personal-form th{width:38%;background:#f3f5f8;color:#172033;font-weight:700}.bcs-personal-form td{background:#fff}</style>';
+        foreach($sections as $title=>$rows){$html.='<h2>'.esc_html($title).'</h2><table>';foreach($rows as $label=>$value){$value=trim((string)$value);$html.='<tr><th>'.esc_html($label).'</th><td>'.nl2br(esc_html($value!==''?$value:'—')).'</td></tr>';}$html.='</table>';}
+        return $html.'</section>';
     }
 
     public static function build_package_attachments(int $id): array {
