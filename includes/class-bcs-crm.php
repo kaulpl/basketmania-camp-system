@@ -586,12 +586,12 @@ class BCS_CRM {
     }
 
     private static function documents_panel(object $r,array $versions): string {
-        $form_ready=($r->form_status??'')==='complete'&&!empty($r->form_verified_at);$agreement_ready=!empty($r->form_verified_at)&&!empty($r->agreement_id);$paid=(float)$r->total_amount>0&&(float)$r->paid_amount>=(float)$r->total_amount;$complete=$form_ready&&$r->agreement_status==='accepted'&&$paid&&$r->invoice_status==='sent';
+        $form_ready=($r->form_status??'')==='complete'&&!empty($r->form_verified_at);$agreement_ready=!empty($r->form_verified_at)&&!empty($r->agreement_id);$paid=(float)$r->total_amount>0&&(float)$r->paid_amount>=(float)$r->total_amount;$complete=$form_ready&&$r->agreement_status==='accepted'&&$paid&&class_exists('BCS_Qualification')&&BCS_Qualification::invoice_signatures_complete((int)$r->id);
         $html='<section class="bcs-panel bcs-accordion-panel bcs-pdf-panel"><details><summary><span><span class="dashicons dashicons-pdf"></span><strong>Dokumenty PDF</strong></span><span class="bcs-accordion-hint">Rozwiń dokumenty</span></summary><div class="bcs-accordion-content"><div class="bcs-document-actions">';
         if($form_ready)$html.='<a class="button button-primary" href="'.esc_url(BCS_Document_Engine::download_url((int)$r->id,'form')).'">Pobierz formularz obozowy PDF</a>';else$html.='<span class="bcs-muted">Formularz PDF będzie dostępny po jego uzupełnieniu.</span>';
         if($agreement_ready)$html.='<a class="button" href="'.esc_url(BCS_Document_Engine::download_url((int)$r->id,$r->agreement_status==='accepted'?'agreement_signed':'agreement_current')).'">Pobierz aktualną umowę PDF</a>';
         if($complete)$html.='<a class="button button-primary bcs-complete-download" href="'.esc_url(BCS_Document_Engine::download_url((int)$r->id,'complete')).'"><span class="dashicons dashicons-download"></span> Pobierz komplet dokumentów PDF</a>';
-        else$html.='<p class="bcs-muted bcs-full">Komplet PDF pojawi się po: uzupełnieniu formularza, podpisaniu umowy, pełnej płatności oraz wygenerowaniu i wysłaniu faktury.</p>';
+        else$html.='<p class="bcs-muted bcs-full">Komplet PDF pojawi się po: zaakceptowaniu formularza osobowego, podpisaniu umowy, pełnej płatności oraz podpisaniu karty kwalifikacyjnej przez wszystkie wymagane osoby.</p>';
         $html .= BCS_Qualification::admin_panel((int)$r->id);
         return $html.'</div></div></details></section>';
     }

@@ -2,7 +2,7 @@
 declare(strict_types=1);
 $root=dirname(__DIR__);$plugin=(string)file_get_contents($root.'/basketmania-camp-system.php');$qualification=(string)file_get_contents($root.'/includes/class-bcs-qualification.php');$js=(string)file_get_contents($root.'/assets/js/qualification.js');$css=(string)file_get_contents($root.'/assets/css/qualification.css');$standard=(string)file_get_contents($root.'/includes/class-bcs-release-0189.php');$failures=[];
 $check=static function(bool $condition,string $message)use(&$failures):void{if(!$condition)$failures[]=$message;};
-$check(str_contains($plugin,'Version: 1.12.13')&&str_contains($plugin,"BCS_VERSION', '1.12.13'"),'Wersja 1.12.13 powinna być spójna.');
+$check(preg_match('/Version:\s+1\.12\.(?:1[3-9]|[2-9][0-9])/', $plugin) === 1&&preg_match("/BCS_VERSION', '1\\.12\\.(?:1[3-9]|[2-9][0-9])'/", $plugin) === 1,'Wersja nie może być starsza niż 1.12.13.');
 $check(str_contains($qualification,'class="bcs-check bcs-check-left bcs-span"'),'Pole powinno korzystać wyłącznie ze standardowych klas formularza.');
 $check(str_contains($qualification,'type="checkbox" role="switch" name="sole_guardian"'),'Pole powinno być semantycznym slider-checkboxem.');
 $check(!str_contains($qualification,'bcs-sole-switch')&&!str_contains($qualification,'bcs-sole-guardian'),'Markup nie może zawierać klas ze starych poprawek.');
