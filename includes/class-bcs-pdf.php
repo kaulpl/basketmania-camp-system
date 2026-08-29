@@ -56,11 +56,12 @@ class BCS_PDF {
         return 0;
     }
 
-    public static function generate(string $html, string $path, string $title='Dokument'): bool {
+    public static function generate(string $html, string $path, string $title='Dokument', bool $preserve_layout=false): bool {
         if (!self::available()) return false;
         try {
             $useAgreementV2 = class_exists('BCS_Agreement_PDF_V2')
-                && BCS_Agreement_PDF_V2::is_agreement_document($html, $title);
+                && BCS_Agreement_PDF_V2::is_agreement_document($html, $title)
+                && !$preserve_layout;
             $canvasSourceHtml = $html;
 
             if ($useAgreementV2) {
@@ -74,7 +75,7 @@ class BCS_PDF {
                 if (class_exists('BCS_Agreement_PDF_V2_Finalizer')) {
                     $html = BCS_Agreement_PDF_V2_Finalizer::finalize($html);
                 }
-            } else {
+            } elseif (!$preserve_layout) {
                 // Pozostałe dokumenty oraz awaryjna kompatybilność zachowują dawny pipeline.
                 if (class_exists('BCS_Release_052')) {
                     $registration_id = self::agreement_registration_context();
@@ -124,12 +125,14 @@ class BCS_PDF {
             // V2 nie używa Canvas: nagłówek, stopka i bezpieczne marginesy uczestniczą
             // w składzie dokumentu od początku. Canvas pozostaje wyłącznie dla fallbacku.
             if (!$useAgreementV2) {
-                if (class_exists('BCS_Release_069')) {
-                    BCS_Release_069::apply_canvas_header_footer($pdf, $canvasSourceHtml, $title);
-                } elseif (class_exists('BCS_Release_068')) {
-                    BCS_Release_068::apply_canvas_header_footer($pdf, $html, $title);
-                } elseif (class_exists('BCS_Release_067')) {
-                    BCS_Release_067::apply_canvas_header_footer($pdf, $html, $title);
+                if (!$preserve_layout) {
+                    if (class_exists('BCS_Release_069')) {
+                        BCS_Release_069::apply_canvas_header_footer($pdf, $canvasSourceHtml, $title);
+                    } elseif (class_exists('BCS_Release_068')) {
+                        BCS_Release_068::apply_canvas_header_footer($pdf, $html, $title);
+                    } elseif (class_exists('BCS_Release_067')) {
+                        BCS_Release_067::apply_canvas_header_footer($pdf, $html, $title);
+                    }
                 }
             }
 

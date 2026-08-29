@@ -2,7 +2,7 @@
 declare(strict_types=1);
 $root=dirname(__DIR__);$plugin=(string)file_get_contents($root.'/basketmania-camp-system.php');$documents=(string)file_get_contents($root.'/includes/class-bcs-documents.php');$crm=(string)file_get_contents($root.'/includes/class-bcs-crm.php');$failures=[];
 $check=static function(bool $condition,string $message)use(&$failures):void{if(!$condition)$failures[]=$message;};
-$check(str_contains($plugin,'Version: 1.12.14')&&str_contains($plugin,"BCS_VERSION', '1.12.14'"),'Wersja 1.12.14 powinna być spójna.');
+$check(preg_match('/Version: ([0-9.]+)/',$plugin,$header)===1&&preg_match("/BCS_VERSION', '([0-9.]+)'/",$plugin,$constant)===1&&$header[1]===$constant[1]&&version_compare($header[1],'1.12.14','>='),'Wersja 1.12.14 lub nowsza powinna być spójna.');
 $card=strpos($documents,'BCS_Qualification::signed_document_html');$form=strpos($documents,'2. Formularz osobowy');$agreement=strpos($documents,'3. Podpisana umowa');
 $check($form!==false&&$agreement!==false&&$form<$agreement,'Po karcie kwalifikacyjnej powinien wystąpić formularz osobowy, a następnie umowa.');
 $check($card!==false,'Komplet powinien zaczynać się od podpisanej karty kwalifikacyjnej z dowodem podpisów.');

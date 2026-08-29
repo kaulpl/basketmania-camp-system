@@ -70,8 +70,8 @@ class BCS_Documents {
         return $dir;
     }
 
-    private static function pdf_or_error(string $html, string $path, string $title): string {
-        if (!BCS_PDF::generate($html, $path, $title)) return '';
+    private static function pdf_or_error(string $html, string $path, string $title, bool $preserve_layout=false): string {
+        if (!BCS_PDF::generate($html, $path, $title, $preserve_layout)) return '';
         return $path;
     }
 
@@ -214,7 +214,8 @@ class BCS_Documents {
         return self::pdf_or_error(
             $body,
             $path,
-            'Komplet dokumentów'
+            'Komplet dokumentów',
+            true
         );
     }
 
