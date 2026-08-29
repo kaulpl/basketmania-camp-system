@@ -22,6 +22,8 @@ jobs:
         run: php tests/release-1129-final-polish-test.php
       - name: Release 1.12.10 shirt hint and checkbox test
         run: php tests/release-11210-shirt-hint-checkbox-test.php
+      - name: Release 1.12.11 single shirt suggestion test
+        run: php tests/release-11211-single-shirt-suggestion-test.php
       - name: Deposit and final payment regression tests
         run: php tests/deposit-payments-test.php
       - name: Deposit JavaScript syntax
