@@ -71,7 +71,7 @@ final class BCS_Qualification {
     }
 
     public static function parent_fields(object $r): string {
-        $html='<label class="bcs-sole-switch bcs-span"><input type="checkbox" role="switch" name="sole_guardian" value="1" '.(!empty($r->sole_guardian)?'checked':'').'><span>samodzielnie sprawuje opiekę nad uczestnikiem obozu</span></label><fieldset class="bcs-second-parent bcs-span"><legend>Drugi rodzic / opiekun prawny</legend><div class="bcs-grid">';
+        $html='<label class="bcs-check bcs-check-left bcs-sole-guardian bcs-span"><input type="checkbox" name="sole_guardian" value="1" '.(!empty($r->sole_guardian)?'checked':'').'><span>samodzielnie sprawuje opiekę nad uczestnikiem obozu</span></label><fieldset class="bcs-second-parent bcs-span"><legend>Drugi rodzic / opiekun prawny</legend><div class="bcs-grid">';
         foreach (self::editor_fields() as $key=>$meta) {
             if ($key==='sole_guardian') continue;
             $html.='<label>'.esc_html($meta[0]).'<input name="'.esc_attr($key).'" type="'.esc_attr($meta[1]).'" value="'.esc_attr((string)($r->$key??'')).'" '.(!empty($r->sole_guardian)?'disabled':'required').'></label>';

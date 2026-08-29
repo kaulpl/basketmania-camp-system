@@ -34,7 +34,7 @@
 
     const ensureHint = (select) => {
         const form = select.closest('form') || document;
-        const existing = [...form.querySelectorAll('[data-bcs-shirt-hint-092]')];
+        const existing = [...form.querySelectorAll('[data-bcs-shirt-hint-092],[data-bcs-shirt-hint092]')];
         let hint = existing.find((item) => item.previousElementSibling === select) || existing[0] || null;
         existing.forEach((item) => {
             if (item !== hint) item.remove();
@@ -44,7 +44,7 @@
             return hint;
         }
         hint = document.createElement('small');
-        hint.dataset.bcsShirtHint092 = '1';
+        hint.setAttribute('data-bcs-shirt-hint-092', '1');
         hint.style.display = 'block';
         hint.style.marginTop = '5px';
         hint.style.color = '#64748b';
