@@ -210,18 +210,22 @@ class BCS_Documents {
         ));
         if (trim($signed_html) === '') $signed_html = (string)$r->agreement_html;
 
-        $body = '<h1>Komplet dokumentów Basketmania Camp</h1>'
-            .'<h2>1. Formularz zgłoszeniowy</h2>'.self::data_table($r)
-            .'<div class="page-break"></div><h2>2. Podpisana umowa</h2>'.$signed_html
-            .'<div class="page-break"></div><h2>3. Płatność i dokument sprzedaży</h2>'
+        $following = '<div class="page-break" style="page-break-before:always"></div><h1>Komplet dokumentów Basketmania Camp</h1>'
+            .'<h2>2. Podpisana umowa</h2>'.$signed_html
+            .'<div class="page-break" style="page-break-before:always"></div><h2>3. Formularz zgłoszeniowy</h2>'.self::data_table($r)
+            .'<div class="page-break" style="page-break-before:always"></div><h2>4. Płatność i dokument sprzedaży</h2>'
             .'<table><tr><th>Status płatności</th><td>Opłacono w całości</td></tr>'
             .'<tr><th>Kwota</th><td>'.number_format((float)$r->paid_amount, 2, ',', ' ').' zł</td></tr>'
             .'<tr><th>Numer faktury / rachunku</th><td>'.esc_html($invoice->invoice_number).'</td></tr>'
             .'<tr><th>Data wystawienia</th><td>'.esc_html($invoice->issue_date).'</td></tr>'
             .'<tr><th>Kwota brutto</th><td>'.number_format((float)$invoice->gross_amount, 2, ',', ' ').' zł</td></tr></table>';
-        $path = self::dir($id).'/00-komplet-dokumentow.pdf';
+        $body=BCS_Qualification::signed_document_html($id,$following);
+        if ($body==='') return '';
+        $year=preg_match('/^(\d{4})/',(string)$r->start_date,$match)?$match[1]:wp_date('Y');
+        $filename=self::clean_name($id.'_'.$year.'_'.trim((string)$r->child_first_name).'_'.trim((string)$r->child_last_name).'.pdf');
+        $path = self::dir($id).'/'.$filename;
         return self::pdf_or_error(
-            self::html_document('Komplet dokumentów', $body),
+            $body,
             $path,
             'Komplet dokumentów'
         );

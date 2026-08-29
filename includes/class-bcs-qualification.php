@@ -325,6 +325,15 @@ final class BCS_Qualification {
         return str_replace('</main>',self::proof($card).'</main>',$card['html']);
     }
 
+    public static function signed_document_html(int $id,string $following=''): string {
+        $card=self::card($id);
+        if (!$card || self::stage($card)!=='card_signed') return '';
+        if (!hash_equals((string)$card['hash'],hash('sha256',(string)$card['html']))) return '';
+        $html=self::final_html($card);
+        if ($following!=='') $html=preg_replace_callback('~</body>~i',static fn():string=>$following.'</body>',$html,1) ?: '';
+        return $html;
+    }
+
     private static function download(array $card): void {
         if (self::stage($card)!=='card_signed') throw new RuntimeException('PDF podpisanej karty będzie dostępny po wszystkich podpisach.');
         if (!hash_equals($card['hash'],hash('sha256',$card['html']))) throw new RuntimeException('Nieprawidłowy skrót dokumentu.');

@@ -58,6 +58,11 @@ foreach ($cases as $height => $expected) {
     $check($actual === $expected, "Wzrost {$height} cm powinien sugerować {$expected}, otrzymano {$actual}.");
 }
 
+$boundaryCases = [134=>'134-140',140=>'140-146',146=>'146-152',152=>'152-158',158=>'158-164',164=>'S-164-170',170=>'M-170-176',176=>'L-176-182',182=>'XL-182-188',188=>'2XL-188-194',194=>'3XL-194-200'];
+foreach ($boundaryCases as $height => $expected) {
+    $check(BCS_Release_092::suggest_shirt_size($height) === $expected, "Górna granica {$height} cm powinna przejść o jeden rozmiar wyżej: {$expected}.");
+}
+
 $sizes = ['XL-182-188','158-164','M-170-176','128-134','3XL-194-200','S-164-170','134-140','2XL-188-194','L-176-182'];
 usort($sizes, [BCS_Release_092::class, 'compare_shirt_sizes']);
 $expectedOrder = ['128-134','134-140','158-164','S-164-170','M-170-176','L-176-182','XL-182-188','2XL-188-194','3XL-194-200'];
@@ -67,6 +72,8 @@ $check(str_contains($js, 'input[name="child_height"]'), 'Skrypt sugestii powinie
 $check(str_contains($js, 'select[name="shirt_size"]'), 'Skrypt powinien ustawiać pole rozmiaru stroju.');
 $check(str_contains($js, 'value >= bounds.min && value < bounds.max'), 'JS powinien traktować dolną granicę jako należącą do rozmiaru, a górną jako przejście do następnego.');
 $check(str_contains($js, 'Sugerowany rozmiar'), 'Formularz powinien pokazywać rodzicowi czytelną sugestię rozmiaru.');
+$check(str_contains($js, "form.querySelectorAll('[data-bcs-shirt-hint-092]')"), 'Formularz powinien utrzymywać tylko jedną podpowiedź rozmiaru.');
+$check(str_contains($js, 'if (item !== hint) item.remove()'), 'Powielone lub nieaktualne podpowiedzi powinny być usuwane.');
 $check(str_contains($js, "current === '' || current === previousAutomatic"), 'Automatyczna sugestia nie powinna nadpisywać ręcznie wybranego rozmiaru.');
 
 $nodeOutput = [];

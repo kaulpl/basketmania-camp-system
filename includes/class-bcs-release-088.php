@@ -77,13 +77,20 @@ final class BCS_Release_088 {
 
         global $wpdb;
         $r = $wpdb->get_row($wpdb->prepare(
-            'SELECT child_first_name,child_last_name,invoice_ksef_description FROM '.BCS_DB::table('registrations').' WHERE public_token=%s LIMIT 1',
+            'SELECT r.child_first_name,r.child_last_name,r.invoice_ksef_description,c.name camp_name,c.start_date,c.end_date
+             FROM '.BCS_DB::table('registrations').' r
+             JOIN '.BCS_DB::table('camps').' c ON c.id=r.camp_id
+             WHERE r.public_token=%s LIMIT 1',
             $token
         ));
         if (!$r) return;
 
         $value = self::clean_description((string)($r->invoice_ksef_description ?? ''));
-        if ($value === '') $value = self::clean_description(trim((string)$r->child_first_name.' '.(string)$r->child_last_name));
+        if ($value === '') {
+            $participant = trim((string)$r->child_first_name.' '.(string)$r->child_last_name);
+            $dates = wp_date('d.m.Y', strtotime((string)$r->start_date)).' - '.wp_date('d.m.Y', strtotime((string)$r->end_date));
+            $value = self::clean_description($participant.', '.trim((string)$r->camp_name).' ('.$dates.')');
+        }
         ?>
         <script>
         (()=>{

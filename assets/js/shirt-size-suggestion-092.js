@@ -33,8 +33,16 @@
     };
 
     const ensureHint = (select) => {
-        let hint = select.parentElement?.querySelector('[data-bcs-shirt-hint-092]');
-        if (hint) return hint;
+        const form = select.closest('form') || document;
+        const existing = [...form.querySelectorAll('[data-bcs-shirt-hint-092]')];
+        let hint = existing.find((item) => item.previousElementSibling === select) || existing[0] || null;
+        existing.forEach((item) => {
+            if (item !== hint) item.remove();
+        });
+        if (hint) {
+            if (hint.previousElementSibling !== select) select.insertAdjacentElement('afterend', hint);
+            return hint;
+        }
         hint = document.createElement('small');
         hint.dataset.bcsShirtHint092 = '1';
         hint.style.display = 'block';
@@ -45,6 +53,10 @@
     };
 
     const apply = (heightInput, forceIfAutomatic = false) => {
+        const form = heightInput.closest('form') || document;
+        const visibleHeightInputs = [...form.querySelectorAll('input[name="child_height"]')]
+            .filter((input) => input.isConnected && input.getClientRects().length > 0);
+        if (visibleHeightInputs.length && visibleHeightInputs[0] !== heightInput) return;
         const select = findPair(heightInput);
         if (!select) return;
         const suggested = suggest(heightInput.value);

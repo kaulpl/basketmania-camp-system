@@ -31,6 +31,8 @@ $check(str_contains($release, "field?.name!=='invoice_notes'"), '0.88 powinno us
 $check(str_contains($release, "'dodatkowe dane na fakturze'"), '0.88 powinno usuwać stary podgląd Dodatkowych danych na fakturze.');
 
 $check(str_contains($release, "textarea.name='invoice_ksef_description'"), 'Rodzic powinien mieć jedno pole invoice_ksef_description.');
+$check(str_contains($release, 'c.name camp_name,c.start_date,c.end_date'), 'Domyślny opis powinien pobierać pełną nazwę i termin turnusu.');
+$check(str_contains($release, "wp_date('d.m.Y'"), 'Daty turnusu w opisie powinny być prezentowane czytelnie.');
 $check(substr_count($release, 'name="billing_ksef_description"') === 1, 'Accordion administratora powinien zawierać dokładnie jedno edytowalne pole billing_ksef_description.');
 $check(str_contains($release, '<span>Dodatkowy opis do KSeF</span>'), 'UI powinien pokazywać Dodatkowy opis do KSeF.');
 $check(!str_contains($release, '<span>Uwagi do faktury</span>'), '0.88 nie może pokazywać Uwagi do faktury.');

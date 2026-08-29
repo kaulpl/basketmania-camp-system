@@ -18,6 +18,8 @@ jobs:
             | xargs -0 -n1 php -l
       - name: Qualification card workflow and security tests
         run: php tests/release-112-qualification-test.php
+      - name: Release 1.12.9 final polish test
+        run: php tests/release-1129-final-polish-test.php
       - name: Deposit and final payment regression tests
         run: php tests/deposit-payments-test.php
       - name: Deposit JavaScript syntax
@@ -31,7 +33,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: qualification-1.12-preview
-          path: /tmp/qualification-*
+          path: |
+            /tmp/qualification-*
+            /tmp/complete-documents-*
           if-no-files-found: ignore
       - name: Agreement renderer regression test
         run: php tests/agreement-renderer-051-test.php
