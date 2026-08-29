@@ -59,9 +59,9 @@ class BCS_PDF {
     public static function generate(string $html, string $path, string $title='Dokument', bool $preserve_layout=false): bool {
         if (!self::available()) return false;
         try {
-            $useAgreementV2 = !$preserve_layout
-                && class_exists('BCS_Agreement_PDF_V2')
-                && BCS_Agreement_PDF_V2::is_agreement_document($html, $title);
+            $useAgreementV2 = class_exists('BCS_Agreement_PDF_V2')
+                && BCS_Agreement_PDF_V2::is_agreement_document($html, $title)
+                && !$preserve_layout;
             $canvasSourceHtml = $html;
 
             if ($useAgreementV2) {
