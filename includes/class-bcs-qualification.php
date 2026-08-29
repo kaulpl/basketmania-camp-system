@@ -307,18 +307,19 @@ final class BCS_Qualification {
         $html=BCS_Agreement_PDF_V2::prepare_pdf_html($body,'Karta kwalifikacyjna',$id);
         // Keep physical page margins on @page; do not reset the HTML root margin.
         $html=str_replace('html,body{margin:0;padding:0;', 'body{padding:0;', $html);
-        return str_replace('</head>','<style>.bcs-card-field{page-break-inside:avoid}.bcs-card-proof p{font-size:8.5pt;line-height:1.2;margin:0 0 3px}.bcs-card-proof h3{margin-top:12px}.bcs-card-proof{word-wrap:break-word}</style></head>',$html);
+        return str_replace('</head>','<style>.bcs-card-field{page-break-inside:avoid}.bcs-card-proof{page-break-before:always;break-before:page;margin:0;padding:0 0 0 9px;border:0;border-left:3px solid #f97316;background:#fff;color:#172033;word-wrap:break-word}.bcs-card-proof h2{margin:0 0 10px;color:#c2410c}.bcs-card-proof>p{font-size:8.5pt;line-height:1.25;margin:0 0 5px}.bcs-card-proof table{width:100%;table-layout:fixed;border-collapse:collapse;margin:10px 0 0;background:#fff}.bcs-card-proof tr{page-break-inside:avoid}.bcs-card-proof td{width:100%;padding:10px 12px;vertical-align:top;border:1px solid #f0a36f;background:#fff;color:#172033}.bcs-card-proof tr+tr td{border-top:1.4px solid #f97316}.bcs-card-proof h3{margin:0 0 6px;font-size:11pt;color:#c2410c}.bcs-card-proof td p{font-size:8.5pt;line-height:1.25;margin:0 0 4px}.bcs-card-proof td p:last-child{margin-bottom:0}</style></head>',$html);
     }
 
     private static function proof(array $card): string {
-        $html='<section class="bcs-card-proof" style="page-break-before:always"><h2>Dowód podpisów SMS</h2><p>Karta kwalifikacyjna uczestnika wypoczynku</p><p>SHA-256 podpisanej wersji: <span style="font-size:8pt;word-wrap:break-word">'.esc_html($card['hash']).'</span></p>';
+        $html='<section class="proof bcs-card-proof bcs-v2-evidence"><h2>Cyfrowe potwierdzenie podpisania karty kwalifikacyjnej</h2><p><strong>Dokument:</strong> Karta kwalifikacyjna uczestnika wypoczynku</p><p><strong>Status:</strong> karta kwalifikacyjna podpisana jednorazowymi kodami SMS przez wszystkie wymagane osoby</p><p><strong>Skrót SHA-256 podpisanej treści:</strong><br><code>'.esc_html($card['hash']).'</code></p>';
         if (!empty($card['sole_guardian'])) $html.='<p>'.esc_html(self::SOLE_DECLARATION).'.</p>';
+        $html.='<table class="bcs-v2-evidence-table" data-layout="signers-one-column"><tbody>';
         foreach ($card['signers'] as $role=>$s) {
-            $html.='<div style="page-break-inside:avoid"><h3>'.esc_html($role==='organizer'?'Organizator wypoczynku':($role==='parent'?'Pierwszy rodzic / opiekun prawny':'Drugi rodzic / opiekun prawny')).'</h3>';
-            foreach (['Imię i nazwisko'=>$s['name'],'E-mail'=>$s['email'],'Numer telefonu'=>$s['phone'],'Pierwsze otwarcie'=>$s['opened_at']??'','Podpisano (Europe/Warsaw)'=>$s['signed_at']??'Oczekuje na podpis','SMS wysłano'=>$s['sms_sent_at']??'','Identyfikator SMS'=>$s['sms_message_id']??'','Adres IP'=>$s['ip']??'','Oświadczenie'=>$s['declaration']??''] as $label=>$value) $html.='<p><strong>'.esc_html($label).':</strong> '.esc_html((string)$value).'</p>';
-            $html.='</div>';
+            $html.='<tr class="bcs-v2-evidence-row"><td class="bcs-v2-evidence-cell"><h3>'.esc_html($role==='organizer'?'Potwierdzenie Organizatora wypoczynku':($role==='parent'?'Potwierdzenie pierwszego Rodzica / Opiekuna prawnego':'Potwierdzenie drugiego Rodzica / Opiekuna prawnego')).'</h3>';
+            foreach (['Status'=>'potwierdzona kodem SMS','Imię i nazwisko'=>$s['name'],'E-mail'=>$s['email'],'Numer telefonu użyty do autoryzacji'=>$s['phone'],'Data i czas pierwszego otwarcia'=>$s['opened_at']??'','Data i czas podpisania (Europe/Warsaw)'=>$s['signed_at']??'Oczekuje na podpis','Data i czas wysłania SMS'=>$s['sms_sent_at']??'','Identyfikator wiadomości SMS'=>$s['sms_message_id']??'','Adres IP'=>$s['ip']??'','Oświadczenie podpisującego'=>$s['declaration']??''] as $label=>$value) $html.='<p><strong>'.esc_html($label).':</strong> '.esc_html((string)$value).'</p>';
+            $html.='</td></tr>';
         }
-        return $html.'</section>';
+        return $html.'</tbody></table></section>';
     }
 
     private static function final_html(array $card): string {
