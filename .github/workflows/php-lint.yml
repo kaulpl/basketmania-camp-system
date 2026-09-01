@@ -39,6 +39,9 @@ jobs:
 
       - name: Release 1.12.17 qualification evidence and form heading test
         run: php tests/release-11217-document-headings-evidence-test.php
+
+      - name: Release 1.12.18 registration documents sections test
+        run: php tests/release-11218-registration-documents-sections-test.php
       - name: Deposit and final payment regression tests
         run: php tests/deposit-payments-test.php
       - name: Deposit JavaScript syntax

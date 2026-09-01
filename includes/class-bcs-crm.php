@@ -434,6 +434,7 @@ class BCS_CRM {
         if(($r->form_status??'')==='complete' && empty($r->form_verified_at)) echo '<section class="bcs-panel bcs-form-verification"><h2>Weryfikacja formularza obozowego</h2><p>Formularz został uzupełniony przez rodzica i oczekuje na sprawdzenie. Po potwierdzeniu umowa będzie oczekiwać na ręczne wysłanie do podpisu przez organizatora.</p><form method="post">'.wp_nonce_field('bcs_crm_'.$id,'_wpnonce',true,false).'<input type="hidden" name="registration_id" value="'.$id.'"><button class="button button-primary" name="bcs_crm_action" value="verify_form"><span class="dashicons dashicons-yes-alt"></span> Potwierdź poprawność formularza obozowego</button></form></section>';
         echo self::agreement_accordion($r,$versions);
         echo self::documents_panel($r,$versions);
+        echo BCS_Qualification::admin_panel((int)$r->id);
         echo self::mail_correspondence_panel($id);
         echo '<section class="bcs-panel bcs-accordion-panel bcs-history-panel"><details><summary><span><span class="dashicons dashicons-backup"></span><strong>Historia klienta</strong></span><span class="bcs-accordion-hint">'.count($logs).' zdarzeń w logach</span></summary><div class="bcs-accordion-content"><div class="bcs-timeline">';
         $events=[];$has_created=false;$logged_activity_types=[];
@@ -586,13 +587,13 @@ class BCS_CRM {
     }
 
     private static function documents_panel(object $r,array $versions): string {
-        $form_ready=($r->form_status??'')==='complete'&&!empty($r->form_verified_at);$agreement_ready=!empty($r->form_verified_at)&&!empty($r->agreement_id);$paid=(float)$r->total_amount>0&&(float)$r->paid_amount>=(float)$r->total_amount;$complete=$form_ready&&$r->agreement_status==='accepted'&&$paid&&class_exists('BCS_Qualification')&&BCS_Qualification::invoice_signatures_complete((int)$r->id);
+        $form_ready=($r->form_status??'')==='complete'&&!empty($r->form_verified_at);$agreement_signed=!empty($r->agreement_id)&&$r->agreement_status==='accepted';$paid=(float)$r->total_amount>0&&(float)$r->paid_amount>=(float)$r->total_amount;$qualification_signed=class_exists('BCS_Qualification')&&BCS_Qualification::invoice_signatures_complete((int)$r->id);$complete=$form_ready&&$agreement_signed&&$paid&&$qualification_signed;
         $html='<section class="bcs-panel bcs-accordion-panel bcs-pdf-panel"><details><summary><span><span class="dashicons dashicons-pdf"></span><strong>Dokumenty PDF</strong></span><span class="bcs-accordion-hint">Rozwiń dokumenty</span></summary><div class="bcs-accordion-content"><div class="bcs-document-actions">';
-        if($form_ready)$html.='<a class="button button-primary" href="'.esc_url(BCS_Document_Engine::download_url((int)$r->id,'form')).'">Pobierz formularz obozowy PDF</a>';else$html.='<span class="bcs-muted">Formularz PDF będzie dostępny po jego uzupełnieniu.</span>';
-        if($agreement_ready)$html.='<a class="button" href="'.esc_url(BCS_Document_Engine::download_url((int)$r->id,$r->agreement_status==='accepted'?'agreement_signed':'agreement_current')).'">Pobierz aktualną umowę PDF</a>';
+        if($form_ready)$html.='<a class="button button-primary" href="'.esc_url(BCS_Document_Engine::download_url((int)$r->id,'form')).'"><span class="dashicons dashicons-download"></span> Pobierz formularz osobowy PDF</a>';else$html.='<span class="button disabled" aria-disabled="true">Formularz osobowy PDF niedostępny</span>';
+        if($agreement_signed)$html.='<a class="button" href="'.esc_url(BCS_Document_Engine::download_url((int)$r->id,'agreement_signed')).'"><span class="dashicons dashicons-download"></span> Pobierz podpisaną umowę PDF</a>';else$html.='<span class="button disabled" aria-disabled="true">Podpisana umowa PDF niedostępna</span>';
         if($complete)$html.='<a class="button button-primary bcs-complete-download" href="'.esc_url(BCS_Document_Engine::download_url((int)$r->id,'complete')).'"><span class="dashicons dashicons-download"></span> Pobierz komplet dokumentów PDF</a>';
-        else$html.='<p class="bcs-muted bcs-full">Komplet PDF pojawi się po: zaakceptowaniu formularza osobowego, podpisaniu umowy, pełnej płatności oraz podpisaniu karty kwalifikacyjnej przez wszystkie wymagane osoby.</p>';
-        $html .= BCS_Qualification::admin_panel((int)$r->id);
+        else$html.='<span class="button disabled" aria-disabled="true">Komplet dokumentów PDF niedostępny</span>';
+        if($qualification_signed)$html.='<a class="button" href="'.esc_url(BCS_Qualification::download_url((int)$r->id)).'"><span class="dashicons dashicons-download"></span> Pobierz kartę kwalifikacyjną PDF</a>';else$html.='<span class="button disabled" aria-disabled="true">Karta kwalifikacyjna PDF niedostępna</span>';
         return $html.'</div></div></details></section>';
     }
 

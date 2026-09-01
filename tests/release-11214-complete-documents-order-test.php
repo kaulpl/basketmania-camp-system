@@ -12,5 +12,5 @@ $completeMethod=substr($documents,strpos($documents,'public static function comp
 $check(!str_contains($completeMethod,"BCS_DB::table('invoices')")&&!str_contains($completeMethod,'Płatność i dokument sprzedaży'),'Komplet nie powinien zawierać faktury ani podsumowania płatności.');
 $check(str_contains($crm,"BCS_Qualification::invoice_signatures_complete((int)\$r->id)"),'Przycisk powinien wymagać podpisanej karty kwalifikacyjnej.');
 $check(!str_contains(substr($crm,strpos($crm,'private static function documents_panel'),2000),"invoice_status==='sent'"),'Przycisk kompletu nie powinien czekać na wygenerowanie faktury.');
-$check(str_contains($crm,'podpisaniu karty kwalifikacyjnej przez wszystkie wymagane osoby'),'Panel powinien jasno opisywać warunki dostępności kompletu.');
+$check(str_contains($crm,'Komplet dokumentów PDF niedostępny'),'Panel powinien pokazywać nieaktywny przycisk do czasu spełnienia warunków kompletu.');
 if($failures){fwrite(STDERR,"Release 1.12.14 complete documents test FAILED:\n- ".implode("\n- ",$failures)."\n");exit(1);}echo "Release 1.12.14 complete documents order checks passed.\n";

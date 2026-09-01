@@ -186,6 +186,10 @@ final class BCS_Qualification {
         return add_query_arg($args,admin_url('admin-post.php'));
     }
 
+    public static function download_url(int $id): string {
+        return self::url($id,'organizer','','download');
+    }
+
     private static function authorize(int $id,array $card,string $role,string $token): void {
         if (!isset($card['signers'][$role])) throw new RuntimeException('Nieprawidłowy link.');
         if ($role==='organizer') {
@@ -369,12 +373,11 @@ final class BCS_Qualification {
 
     public static function admin_panel(int $id): string {
         $card=self::card($id);
-        $html='<div class="bcs-full bcs-qualification-panel"><h3>Karta kwalifikacyjna</h3>';
+        $html='<section class="bcs-panel bcs-qualification-panel"><h2>Dane i obsługa karty kwalifikacyjnej</h2>';
         if ($card) {
             $html.='<p>'.esc_html(BCS_Workflow::statuses()[self::stage($card)]).'</p>';
             foreach ($card['signers'] as $role=>$s) $html.='<p>'.esc_html($s['name']).': '.(!empty($s['signed_at'])?'podpisano '.esc_html($s['signed_at']):($role==='organizer'?'oczekuje':(!empty($s['mail_sent_at'])?'wysłano zaproszenie':'błąd wysyłki zaproszenia'))).'</p>';
             $html.='<p><a class="button" '.(self::stage($card)==='card_organizer'?'data-qualification-organizer-sign ':'').'data-qualification-admin-preview href="'.esc_url(self::url($id)).'">'.(self::stage($card)==='card_organizer'?'Podpisz kartę kwalifikacyjną':'Podgląd karty kwalifikacyjnej').'</a></p>';
-            if (self::stage($card)==='card_signed') $html.='<p><a class="button button-primary" href="'.esc_url(self::url($id,'organizer','','download')).'">Pobierz podpisaną kartę kwalifikacyjną PDF</a></p>';
         } else $html.='<p>Karta zostanie wysłana po pełnej wpłacie. Wymagane są kompletne dane rodziców i zaakceptowany formularz.</p>';
         if (!$card) {
             $r=self::registration($id);
@@ -383,7 +386,7 @@ final class BCS_Qualification {
             }
         }
         if (!$card||self::stage($card)==='card_parents') $html.='<form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="bcs_qualification"><input type="hidden" name="op" value="retry"><input type="hidden" name="registration_id" value="'.$id.'">'.wp_nonce_field('bcs_qualification_'.$id,'_wpnonce',true,false).'<button class="button">Wyślij / ponów zaproszenia do podpisu karty</button><p>Nowe linki zastępują poprzednie linki niepodpisanych rodziców.</p></form>';
-        return $html.'</div>';
+        return $html.'</section>';
     }
 
     public static function portal_url(int $id,string $role,string $token): string {

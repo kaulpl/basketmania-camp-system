@@ -110,8 +110,9 @@ foreach (BCS_SMS::$messages as $sms) check(!str_contains($sms,'#') && str_contai
 check(str_contains(file_get_contents(BCS_DIR.'includes/class-bcs-crm.php'),'echo BCS_Qualification::organizer_action($r);'),'Registration detail uses same signing action');
 $adminPanel=BCS_Qualification::admin_panel(1);
 check(str_contains($adminPanel,'data-qualification-admin-preview'),'CRM preview opens through popup trigger');
-check(str_contains($adminPanel,'op=download'),'Signed PDF remains a separate download');
-check(substr_count($adminPanel,'data-qualification-admin-preview')===1,'Only preview, not download, is intercepted');
+check(!str_contains($adminPanel,'op=download'),'Signed PDF download was moved out of the qualification data panel');
+check(str_contains(BCS_Qualification::download_url(1),'op=download'),'Signed PDF remains available through a secure download URL');
+check(substr_count($adminPanel,'data-qualification-admin-preview')===1,'Qualification data panel contains only the popup preview trigger');
 $proof=invoke('proof',$card);foreach(['Anna','Jan','Organizator','sms-1','sms-2','sms-3',$card['hash']] as $v)check(str_contains($proof,$v),'Proof contains '.$v);
 $one=$card;unset($one['signers']['second_parent']);unset($one['signers']['organizer']['signed_at']);$one['sole_guardian']=1;check(BCS_Qualification::stage($one)==='card_organizer','Sole parent path');
 $auth=$card;$auth['signers']['parent']['token_hash']=hash('sha256','secret');$auth['signers']['parent']['token_expires']=time()+60;
