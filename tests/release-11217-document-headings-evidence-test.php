@@ -16,7 +16,7 @@ $check(str_contains($qualification,'bcs-v2-evidence-table')&&str_contains($quali
 $check(str_contains($qualification,"'Status'=>'potwierdzona kodem SMS'")&&str_contains($qualification,"'Identyfikator wiadomości SMS'")&&str_contains($qualification,"'Oświadczenie podpisującego'"),'Dowód karty musi zawierać standardowe pola dowodu SMS.');
 $check(str_contains($documents,'<h1>Formularz obozowy</h1>'),'Formularz obozowy musi mieć własny nagłówek.');
 $check(!str_contains($documents,'<h1>2. Formularz obozowy</h1>'),'Nagłówek formularza nie może przywracać numeracji dokumentów.');
-$check(str_contains($plugin,"Version: 1.12.17")&&str_contains($plugin,"BCS_VERSION', '1.12.17'"),'Wersja wtyczki musi wynosić 1.12.17.');
+$check(preg_match('/Version: ([0-9.]+)/',$plugin,$header)===1&&preg_match("/BCS_VERSION', '([0-9.]+)'/",$plugin,$constant)===1&&$header[1]===$constant[1]&&version_compare($header[1],'1.12.17','>='),'Wersja 1.12.17 lub nowsza powinna być spójna.');
 
 if ($failed) exit(1);
 echo "OK\n";
